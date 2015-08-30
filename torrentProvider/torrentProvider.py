@@ -75,7 +75,12 @@ class torrentProvider:
 	def select_torrent(self,result):
 		return getattr(self, "select_" + self.provider['id'] )(result)
 
-extensions = os.walk(os.path.dirname(os.path.abspath(__file__))+"../")
-for ext in [x[0] for x in extensions if x[0][0:18] == './torrentProvider_']:
-	import_module(ext)
+#extensions = os.walk(os.path.dirname(os.path.abspath(__file__))+"/../")
+#for ext in [x[0] for x in extensions if x[0][0:18] == './torrentProvider_']:
+#	import_module(ext)
+def loadProviders():
+	extensionPrefix = 'torrentProvider_'
+	thedir = os.path.dirname(os.path.abspath(__file__))+"/../"
+	for ext in [x for x in os.listdir(thedir) if os.path.isdir(os.path.join(thedir, x)) and x[0:len(extensionPrefix)] == extensionPrefix]:
+		import_module(ext)
 

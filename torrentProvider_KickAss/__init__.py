@@ -1,3 +1,4 @@
 __all__ = ['torrentProviderKickAss']
 
-from torrentProviderKickAss import connect_kickass
+import torrentProviderKickAss
+#from torrentProviderKickAss import connect_kickass
