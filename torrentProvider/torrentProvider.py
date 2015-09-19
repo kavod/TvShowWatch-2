@@ -17,7 +17,8 @@ def check_provider(trackerID):
 	# Selecting requested provider
 	provider = [x for x in TRACKER_CONF if x['id'] == trackerID]
 	if len(provider) < 1:
-		raise Exception('tracker ' + str(trackerID) + ' not recognized')
+		providers = [x['id'] for x in TRACKER_CONF]
+		raise Exception('Provider ' + str(trackerID) + ' not recognized (installed providers are ' + str(providers))
 		return False
 	else:
 		return provider[0]

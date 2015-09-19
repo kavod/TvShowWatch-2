@@ -1,0 +1,76 @@
+{
+	"title":"Configuration",
+	"type":"object",
+	"properties":
+	{
+		"providers":
+		{
+			"title":"Providers",
+			"type":"array",
+			"items":
+			{
+				"title": "Provider",
+				"type":"object",
+				"properties":
+				{
+					"id":
+					{
+						"title":"id",
+						"$def":"#/choices/providers",
+						"choices":
+						{
+							"providers":
+							{
+								"t411":"T411",
+								"kickass":"KickAss"
+							}
+						},
+						"order":1
+					},
+					"config":
+					{
+						"type":"object",
+						"title":"Torrent provider configuration",
+						"properties":
+						{
+							"username":
+							{
+								"title":"Username",
+								"type":"string",
+								"order":1
+							},
+							"password":
+							{
+								"title":"Password",
+								"$def":"#/def/password",
+								"order":2
+							}
+						},
+						"order":2
+					}
+				},
+				"conditions": 
+				[
+					{
+						"if_prop": "id", 
+						"if_val": [null,"kickass"], 
+						"then_prop": "config", 
+						"then_status": "disabled"
+					}
+				]
+			},
+			"order":1
+		},
+		"keywords":
+		{
+			"title":"keyword",
+			"type":"array",
+			"order":2,
+			"items":
+			{
+				"title": "Keyword",
+				"type":"string"
+			}
+		}
+	}
+}
