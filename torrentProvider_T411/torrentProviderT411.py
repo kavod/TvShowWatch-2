@@ -6,15 +6,21 @@ import requests
 import json
 import torrentProvider
 import logging
+import tempfile
+from simplejson.decoder import JSONDecodeError
 
 torrentProvider.TRACKER_CONF.append({'id':'t411','name':'T411','url':'https://api.t411.io','param':['username','password']})
 
 def connect_t411(self):
 	if not self.token: #If no token, let's connect
 		req = requests.post(self.provider['url']+"/auth", {'username': self.param['username'], 'password': self.param['password']}, verify=False)
-		if 'code' not in req.json().keys():
-			self.token = req.json()['token']
-			self.uid = req.json()['uid']
+		try:
+			result = req.json()
+		except JSONDecodeError:
+			raise Exception("Invalid response from server: {0}".format(unicode(req)))
+		if 'code' not in result.keys():
+			self.token = result['token']
+			self.uid = result['uid']
 			return True
 		else:
 			raise requests.exceptions.ConnectionError('Unable to login on T411. Please check username/password')
@@ -30,12 +36,20 @@ def test_t411(self):
 		return False
 	else: 
 		req = requests.post(self.provider['url']+"/users/profile/" + self.uid,headers={"Authorization": self.token}, verify=False)
-		return ('code' not in req.json().keys())
+		try:
+			result = req.json()
+		except JSONDecodeError:
+			raise Exception("Invalid response from server: {0}".format(unicode(req)))
+		return ('code' not in result.keys())
 			
 def search_t411(self, search):
 	if not self.test():
 		self.connect()
-	result = requests.post(self.provider['url']+"/torrents/search/" + search,headers={"Authorization": self.token}, verify=False).json()
+	try:
+		result = requests.post(self.provider['url']+"/torrents/search/" + search,headers={"Authorization": self.token}, verify=False)
+		result = result.json()
+	except JSONDecodeError:
+		Exception("Unable to parse JSON: {0}".format(result))
 	logging.debug('%s', result)
 	if 'torrents' in result.keys():
 		result = result['torrents']
@@ -48,12 +62,13 @@ def search_t411(self, search):
 def download_t411(self,torrent_id):
 	logging.debug("/torrents/download/"+str(torrent_id))
 	stream = requests.post(self.provider['url']+"/torrents/download/"+str(torrent_id),headers={"Authorization": self.token}, stream=True, verify=False)
-	with open(self.tmppath + '/file.torrent', 'wb') as f:
+	tmpFile = unicode(tempfile.mkstemp('.torrent')[1])
+	with open(tmpFile, 'wb') as f:
 		for chunk in stream.iter_content(chunk_size=1024): 
 			if chunk: # filter out keep-alive new chunks
 				f.write(chunk)
 		     		f.flush()
-	return 'file://' + self.tmppath + '/file.torrent'
+	return tmpFile
 	
 def select_t411(self,result):
 	logging.debug(result)

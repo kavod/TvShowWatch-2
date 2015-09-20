@@ -17,9 +17,10 @@ class torrentSearch(object):
 		self.conf.setFilename(confFile)
 		try:
 			self.conf.load()
-		except:
+		except IOError:
 			print "File does not exist. Creating a new one"
 			self.conf.save()
+
 	def cliConf(self):
 		self.conf.cliCreate()
 		self.conf.proposeSave(display=True)
@@ -60,7 +61,7 @@ class torrentSearch(object):
 			raise Exception("Torrent provider is missing")
 		if tor['provider'] not in availProviders:
 			raise Exception("Unknown torrent provider: {0} ({1})\nKnown providers: {2}".format(tor['provider'],type(tor['provider']),unicode(availProviders)))
-		self.providers[tor['provider']].download(tor['id'])
+		return self.providers[tor['provider']].download(tor['id'])
 					
 					
 		

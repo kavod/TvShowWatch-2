@@ -36,15 +36,25 @@ class TestTorrentProviderT411(unittest.TestCase):
 		
 	def test_search(self):
 		self.torProv.connect()
-		self.assertIsInstance(self.torProv.search('linux'),list)
-		self.assertGreater(len(self.torProv.search('linux')),0)
+		result = self.torProv.search('linux')
+		self.assertIsInstance(result,list)
+		self.assertGreater(len(result),0)
+		
+	def test_search_filter(self):
+		self.torProv.connect()
+		result = self.torProv.search('linux')
+		self.assertIsInstance(result,list)
+		self.assertGreater(len(result),0)
+		self.assertGreaterEqual(len(result),len(filter(self.torProv.filter,result)))
 		
 	def test_download(self):
 		self.torProv.connect()
 		result = self.torProv.search('linux')
 		result = self.torProv.select_torrent(result)
-		self.assertEqual(self.torProv.download(result['id']),'file:///tmp/file.torrent')
-		self.assertGreater(os.path.getsize('/tmp/file.torrent'),1000)
+		tmpFile = self.torProv.download(result['id'])
+		self.assertTrue(os.path.isfile(tmpFile))
+		self.assertGreater(os.path.getsize(tmpFile),1000)
+		os.remove(tmpFile)
 		
 	def test_select(self):
 		self.torProv.connect()

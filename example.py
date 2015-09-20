@@ -2,6 +2,7 @@
 #encoding:utf-8
 from __future__ import unicode_literals
 
+import os
 import torrentSearch
 import JSAG
 import JSAG.Prompt as Prompt
@@ -19,4 +20,6 @@ elif reponse == 1:
 	reponse = Prompt.promptText("Search pattern",default = None,selected=[],warning='',password=False,mandatory=True,cleanScreen=True)
 	tor = ts.search(reponse)
 	if tor is not None:
-		ts.download(tor)
+		tmpFile = ts.download(tor)
+		print tmpFile
+		os.remove(tmpFile)
