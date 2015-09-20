@@ -17,4 +17,6 @@ if reponse == 0:
 	ts.cliConf()
 elif reponse == 1:
 	reponse = Prompt.promptText("Search pattern",default = None,selected=[],warning='',password=False,mandatory=True,cleanScreen=True)
-	ts.search(reponse)
+	tor = ts.search(reponse)
+	if tor is not None:
+		ts.download(tor)

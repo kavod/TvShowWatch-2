@@ -11,6 +11,7 @@ class torrentSearch(object):
 	def __init__(self):
 		self.confSchema = JSAG.loadParserFromFile("torrentSearch/torrentSearch.jschem")
 		self.conf = JSAG.JSAGdata(configParser=self.confSchema,value={})
+		self.providers = dict()
 		
 	def loadConfig(self,confFile):
 		self.conf.setFilename(confFile)
@@ -27,15 +28,17 @@ class torrentSearch(object):
 		self.conf.display()
 		
 	def search(self,pattern):
-		if pattern is None or str(pattern) == "":
+		if pattern is None or unicode(pattern) == "":
 			raise Exception("Empty pattern")
-		pattern = str(pattern)
+		pattern = unicode(pattern)
 		for provider in self.conf['providers']:
-			torProv = torrentProvider.torrentProvider(unicode(provider['id']),provider['config'] if 'config' in provider.keys() else None)
+			provID = unicode(provider['id'])
+			self.providers[provID] = torrentProvider.torrentProvider(provID,provider['config'] if 'config' in provider.keys() else None)
+			torProv = self.providers[provID]
 			for keyword in self.conf['keywords']:
 				query = "{0} {1}".format(pattern,keyword)
 				result = torProv.search(query)
-				result = torProv.select_torrent(result)
+				result = filter(torProv.filter,result)
 				print "Search of \033[1m{0}\033[0m on \033[1m{1}\033[0m".format(query,provider['id'])
 				if len(result) < 1:
 					print " > No result"
@@ -43,13 +46,21 @@ class torrentSearch(object):
 				elif len(result) == 1:
 					print " > 1 result"
 				elif len(result) > 1:
-					print " > {0} results".format(str(len(result)))
-				torProv.download(result['id'])
-				break
-			if len(result) < 1:
-				continue
-			else:
-				break
+					print " > {0} results".format(unicode(len(result)))
+				result = torProv.select_torrent(result)
+				result['provider'] = provID
+				return result
+		return None
+		
+	def download(self,tor):
+		availProviders = [prov['id'] for prov in torrentProvider.TRACKER_CONF]
+		if tor is None:
+			raise Exception("No torrent to be downloaded")
+		if 'provider' not in tor.keys():
+			raise Exception("Torrent provider is missing")
+		if tor['provider'] not in availProviders:
+			raise Exception("Unknown torrent provider: {0} ({1})\nKnown providers: {2}".format(tor['provider'],type(tor['provider']),unicode(availProviders)))
+		self.providers[tor['provider']].download(tor['id'])
 					
 					
 		

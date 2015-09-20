@@ -75,6 +75,12 @@ class torrentProvider:
 
 	def select_torrent(self,result):
 		return getattr(self, "select_" + self.provider['id'] )(result)
+		
+	def filter_none(self,tor):
+		return []
+
+	def filter(self,tor):
+		return getattr(self, "filter_" + self.provider['id'] )(tor)
 
 #extensions = os.walk(os.path.dirname(os.path.abspath(__file__))+"/../")
 #for ext in [x[0] for x in extensions if x[0][0:18] == './torrentProvider_']:
