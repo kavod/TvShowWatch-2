@@ -9,7 +9,7 @@ torrentProvider.loadProviders()
 
 class TestTorrentProviderKickAss(unittest.TestCase):
 	def setUp(self):
-		self.torProv = torrentProvider.torrentProvider('kickass',{})
+		self.torProv = torrentProvider.torrentProvider('kickass',None)
 		
 	def test_creation(self):
 		self.assertIsInstance(self.torProv,torrentProvider.torrentProvider)
