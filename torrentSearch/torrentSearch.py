@@ -34,24 +34,42 @@ class torrentSearch(object):
 		pattern = unicode(pattern)
 		for provider in self.conf['providers']:
 			provID = unicode(provider['id'])
-			self.providers[provID] = torrentProvider.torrentProvider(provID,provider['config'] if 'config' in provider.keys() else None)
-			torProv = self.providers[provID]
+			self.connect_provider(provID)
 			for keyword in self.conf['keywords']:
 				query = "{0} {1}".format(pattern,keyword)
-				result = torProv.search(query)
-				result = filter(torProv.filter,result)
-				print "Search of \033[1m{0}\033[0m on \033[1m{1}\033[0m".format(query,provider['id'])
-				if len(result) < 1:
-					print " > No result"
-					continue
-				elif len(result) == 1:
-					print " > 1 result"
-				elif len(result) > 1:
-					print " > {0} results".format(unicode(len(result)))
-				result = torProv.select_torrent(result)
-				result['provider'] = provID
-				return result
+				
+				if 'keywords' in provider.keys() and len(provider['keywords']) > 0:
+					queries = ["{0} {1}".format(query,keyword) for keyword in provider['keywords']]
+				else:
+					queries = [query]
+				for query in queries:
+					result = self.search_query(provID,query)
+					if len(result)<1:
+						continue
+					return result
 		return None
+		
+	def search_query(self,provID,query):
+		torProv = self.providers[provID]
+		result = torProv.search(query)
+		result = filter(torProv.filter,result)
+		print "Search of \033[1m{0}\033[0m on \033[1m{1}\033[0m".format(query,provID)
+		if len(result) < 1:
+			print " > No result"
+			return []
+		elif len(result) == 1:
+			print " > 1 result"
+		elif len(result) > 1:
+			print " > {0} results".format(unicode(len(result)))
+		result = torProv.select_torrent(result)
+		result['provider'] = provID
+		return result
+		
+		
+	def connect_provider(self,provID):
+		provider = [provider for provider in self.conf['providers'] if unicode(provider['id']) == provID][0]
+		if provID not in self.providers.keys():
+			self.providers[provID] = torrentProvider.torrentProvider(provID,provider['config'] if 'config' in provider.keys() else None)
 		
 	def download(self,tor):
 		availProviders = [prov['id'] for prov in torrentProvider.TRACKER_CONF]

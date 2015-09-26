@@ -47,6 +47,18 @@
 							}
 						},
 						"order":2
+					},
+					"keywords":
+					{
+						"title":"Torrent provider specific keywords",
+						"description":"Keywords used for searchs with this torrent provider",
+						"type":"array",
+						"order":3,
+						"items":
+						{
+							"title": "Keyword",
+							"type":"string"
+						}
 					}
 				},
 				"conditions": 
@@ -57,13 +69,15 @@
 						"then_prop": "config", 
 						"then_status": "disabled"
 					}
-				]
+				],
+				"required":["id"]
 			},
 			"order":1
 		},
 		"keywords":
 		{
-			"title":"keyword",
+			"title":"Global keywords",
+			"description":"Keywords used for all searchs",
 			"type":"array",
 			"order":2,
 			"items":

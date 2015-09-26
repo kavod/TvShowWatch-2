@@ -7,14 +7,16 @@ import unittest
 import tempfile
 import json
 import torrentSearch
+import logging
 
 t411LoginFile = os.path.dirname(os.path.abspath(__file__)) + '/loginT411.json'
+#logging.basicConfig(level=logging.DEBUG)
 
 class TestTorrentProviderKickAss(unittest.TestCase):
 	def setUp(self):
 		self.ts = torrentSearch.torrentSearch()
 		self.configFile1 = "tests/torrentSearch1.json"
-		self.conf1 = {u'keywords': [u'720p'], u'providers': [{u'id': u'kickass'}]}
+		self.conf1 = {u'keywords': [u'720p'], u'providers': [{u'id': u'kickass',"keywords":["lang_id:2 verified:1"]}]}
 		if os.path.isfile(t411LoginFile):
 			with open(t411LoginFile) as data_file:    
 				data = json.load(data_file)

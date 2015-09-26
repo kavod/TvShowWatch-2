@@ -9,7 +9,7 @@ import torrentProvider
 import logging
 import tempfile
 
-torrentProvider.TRACKER_CONF.append({'id':'kickass','name':'KickAss','url':"https://kickass.to",'param':[]})
+torrentProvider.TRACKER_CONF.append({'id':'kickass','name':'KickAss','url':"https://kat.cr",'param':[]})
 
 def connect_kickass(self):
 	return self.test_kickass()
@@ -25,17 +25,17 @@ def search_kickass(self, search):
 	result = requests.post(self.provider['url']+"/json.php",params=params, verify=False)
 	result = result.json()
 	logging.debug('%s', result)
-        if 'list' in result.keys():
-                result = result['list']
-                logging.debug('%s torrents found', int(len(result)))
-                result = filter(self.filter_kickass,result)
-                return result
-        else:
-                return []
+	if 'list' in result.keys():
+		result = result['list']
+		logging.debug('%s torrents found', int(len(result)))
+		result = filter(self.filter_kickass,result)
+		return result
+	else:
+		return []
                     
 def download_kickass(self,torrent_id):
-	logging.debug(str(torrent_id))
-	stream = requests.get(str(torrent_id), stream=True, verify=False, headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/43.0.2357.130 Chrome/43.0.2357.130 Safari/537.36'})
+	logging.debug(unicode(torrent_id))
+	stream = requests.get(unicode(torrent_id), stream=True, verify=False, headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/43.0.2357.130 Chrome/43.0.2357.130 Safari/537.36'})
 	tmpFile = unicode(tempfile.mkstemp('.torrent')[1])
 	with open(tmpFile, 'wb') as f:
 		for chunk in stream.iter_content(chunk_size=1024): 

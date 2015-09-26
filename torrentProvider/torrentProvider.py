@@ -60,7 +60,7 @@ class torrentProvider:
 		return []
 
 	def search(self,search):
-		search = re.sub('[%s]' % re.escape(string.punctuation), '', search)
+		#search = re.sub('[%s]' % re.escape(string.punctuation), '', search)
 		return getattr(self, "search_" + self.provider['id'] )(search)
 		
 	def download_none(self,torrent_id):
