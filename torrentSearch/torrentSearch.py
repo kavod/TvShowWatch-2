@@ -43,7 +43,11 @@ class torrentSearch(object):
 				else:
 					queries = [query]
 				for query in queries:
-					result = self.search_query(provID,query)
+					try:
+						result = self.search_query(provID,query)
+					except:
+						print "Timeout from {0}".format(unicode(provID))
+						continue
 					if len(result)<1:
 						continue
 					return result

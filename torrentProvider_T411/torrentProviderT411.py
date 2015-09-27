@@ -13,7 +13,7 @@ torrentProvider.TRACKER_CONF.append({'id':'t411','name':'T411','url':'https://ap
 
 def connect_t411(self):
 	if not self.token: #If no token, let's connect
-		req = requests.post(self.provider['url']+"/auth", {'username': self.param['username'], 'password': self.param['password']}, verify=False)
+		req = requests.post(self.provider['url']+"/auth", {'username': self.param['username'], 'password': self.param['password']}, verify=False, timeout=5)
 		try:
 			result = req.json()
 		except JSONDecodeError:
@@ -35,7 +35,7 @@ def test_t411(self):
 	if not self.token: 
 		return False
 	else: 
-		req = requests.post(self.provider['url']+"/users/profile/" + self.uid,headers={"Authorization": self.token}, verify=False)
+		req = requests.post(self.provider['url']+"/users/profile/" + self.uid,headers={"Authorization": self.token}, verify=False, timeout=5)
 		try:
 			result = req.json()
 		except JSONDecodeError:
@@ -46,7 +46,7 @@ def search_t411(self, search):
 	if not self.test():
 		self.connect()
 	try:
-		result = requests.post(self.provider['url']+"/torrents/search/" + search,headers={"Authorization": self.token}, verify=False)
+		result = requests.post(self.provider['url']+"/torrents/search/" + search,headers={"Authorization": self.token}, verify=False, timeout=5)
 		result = result.json()
 	except JSONDecodeError:
 		Exception("Unable to parse JSON: {0}".format(result))
@@ -61,7 +61,7 @@ def search_t411(self, search):
                     
 def download_t411(self,torrent_id):
 	logging.debug("/torrents/download/"+str(torrent_id))
-	stream = requests.post(self.provider['url']+"/torrents/download/"+str(torrent_id),headers={"Authorization": self.token}, stream=True, verify=False)
+	stream = requests.post(self.provider['url']+"/torrents/download/"+str(torrent_id),headers={"Authorization": self.token}, stream=True, verify=False, timeout=5)
 	tmpFile = unicode(tempfile.mkstemp('.torrent')[1])
 	with open(tmpFile, 'wb') as f:
 		for chunk in stream.iter_content(chunk_size=1024): 

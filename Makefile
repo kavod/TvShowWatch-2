@@ -21,4 +21,4 @@ uninstall:
 	@python utils/execute_color.py "Removing JsonSchemaAppGenerator" python utils/pkg_manager.py "uninstall" "JSAG"
 	
 test:JSAG
-	@python utils/execute_color.py "Process unittests" python -m unittest discover
+	@python -m unittest discover
