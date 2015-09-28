@@ -13,8 +13,8 @@ class torrentSearch(object):
 		self.conf = JSAG.JSAGdata(configParser=self.confSchema,value={})
 		self.providers = dict()
 		
-	def loadConfig(self,confFile):
-		self.conf.setFilename(confFile)
+	def loadConfig(self,confFile,path=[]):
+		self.conf.setFilename(confFile,path=path)
 		try:
 			self.conf.load()
 		except IOError:
