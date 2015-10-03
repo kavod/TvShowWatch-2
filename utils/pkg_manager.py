@@ -11,7 +11,7 @@ PACKAGES = {
 		'JSAG':{
 			'install':
 				[
-					['wget',"https://github.com/kavod/jsonSchemaAppGenerator/releases/download/v1.5.10/JSAG.tgz",'-q'],
+					['wget',"https://github.com/kavod/jsonSchemaAppGenerator/releases/download/v1.5.11/JSAG.tgz",'-q'],
 					['tar','zxf','JSAG.tgz'],
 					['rm','JSAG.tgz']
 				],
@@ -21,7 +21,7 @@ PACKAGES = {
 				],
 			'root_install':
 				[
-					['wget',"https://github.com/kavod/jsonSchemaAppGenerator/releases/download/v1.5.10/JSAG.tgz",'-q'],
+					['wget',"https://github.com/kavod/jsonSchemaAppGenerator/releases/download/v1.5.11/JSAG.tgz",'-q'],
 					['tar','zxf','JSAG.tgz'],
 					['rm','JSAG.tgz']
 				],
@@ -30,27 +30,28 @@ PACKAGES = {
 					['rm','-rf','JSAG']
 				]
 			},
-		'tvdb-api':{
+		'python_packages':{
 			'install':
 				[
-					['pip',"install",'--user','tvdb-api']
+					['pip',"install",'--user','-r','requirements.txt']
 				],
 			'uninstall':
 				[
-					['pip',"uninstall",'tvdb-api']
+					['true']
 				],
 			'root_install':
 				[
-					['pip',"install",'tvdb-api']
+					['pip',"install",'-r','requirements.txt']
 				],
 			'root_uninstall':
 				[
-					['pip',"uninstall",'tvdb-api']
+					['true']
 				]
 			}
 		}
-
+		
 if len(sys.argv) < 3:
+	print "Missing argument"
 	sys.exit(1)
 
 action = unicode(sys.argv[1])
@@ -59,9 +60,11 @@ if getpass.getuser() == 'root':
 pkg = unicode(sys.argv[2])
 
 if pkg not in PACKAGES.keys():
+	print "Unknown package {0}".format(pkg)
 	sys.exit(1)
 
 if action not in PACKAGES[pkg]:
+	print "Unknown action {0}".format(action)
 	sys.exit(1)
 
 FNULL = open(os.devnull, 'w')
