@@ -1,0 +1,52 @@
+{
+	"title":"Watched TV Shows",
+	"type":"array",
+	"items":
+	{
+		"title":"TV Show",
+		"type":"object",
+		"properties":
+		{
+			"id":
+			{
+				"title":"TV Show ID",
+				"type":"integer",
+				"min":0,
+				"max":999999
+			},
+			"title":
+			{
+				"title":"TV Show title",
+				"type":"string"
+			},
+			"status":
+			{
+				"title":"TV Show status",
+				"type":"integer",
+				"min":0,
+				"max":99
+			},
+			"nextUpdate":
+			{
+				"title":"Next update",
+				"description":"Date and time of the next status update",
+				"type":"string",
+				"format":"date-time"
+			},
+			"season":
+			{
+				"title":"Season",
+				"type":"integer",
+				"min":1,
+				"max":99
+			},
+			"episode":
+			{
+				"title":"Episode number",
+				"type":"integer",
+				"min":1,
+				"max":99
+			}
+		}
+	}
+}
