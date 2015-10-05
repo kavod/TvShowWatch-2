@@ -8,6 +8,7 @@ import json
 import myTvDB
 import tvShowList
 import tempfile
+import JSAG
 
 class TestTvShowList(unittest.TestCase):
 	def setUp(self):
@@ -26,3 +27,10 @@ class TestTvShowList(unittest.TestCase):
 		self.test_creation()
 		self.l1.loadFile('tests/tvShowList1.json',path=[])
 		self.assertEqual(len(self.l1),3)
+		
+	def test_add_TvShow_achieved(self):
+		self.test_creation()
+		self.l1.add(self.tvShowLost)
+		self.assertEqual(len(self.l1),1)
+		self.assertEqual(JSAG.toJSON(self.l1.tvList[0]['season']),1)
+		self.assertEqual(JSAG.toJSON(self.l1.tvList[0]['episode']),1)

@@ -11,7 +11,7 @@ PACKAGES = {
 		'JSAG':{
 			'install':
 				[
-					['wget',"https://github.com/kavod/jsonSchemaAppGenerator/releases/download/v1.5.11/JSAG.tgz",'-q'],
+					['wget',"https://github.com/kavod/jsonSchemaAppGenerator/releases/download/v1.5.13/JSAG.tgz",'-q'],
 					['tar','zxf','JSAG.tgz'],
 					['rm','JSAG.tgz']
 				],
@@ -21,7 +21,7 @@ PACKAGES = {
 				],
 			'root_install':
 				[
-					['wget',"https://github.com/kavod/jsonSchemaAppGenerator/releases/download/v1.5.11/JSAG.tgz",'-q'],
+					['wget',"https://github.com/kavod/jsonSchemaAppGenerator/releases/download/v1.5.13/JSAG.tgz",'-q'],
 					['tar','zxf','JSAG.tgz'],
 					['rm','JSAG.tgz']
 				],
