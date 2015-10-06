@@ -14,8 +14,11 @@ class TestTvShowList(unittest.TestCase):
 	def setUp(self):
 		self.t = myTvDB.myTvDB()
 		self.idLost = 73739
+		self.idDexter = 79349
 		self.titleLost = 'Lost'
+		self.titleDexter = 'Dexter'
 		self.tvShowLost = self.t[self.idLost]
+		self.tvShowDexter = self.t[self.idDexter]
 		self.d1 = [{"id":self.idLost,"title":self.titleLost,"status":0}]
 		
 	def test_creation(self):
@@ -34,3 +37,44 @@ class TestTvShowList(unittest.TestCase):
 		self.assertEqual(len(self.l1),1)
 		self.assertEqual(JSAG.toJSON(self.l1.tvList[0]['season']),1)
 		self.assertEqual(JSAG.toJSON(self.l1.tvList[0]['episode']),1)
+		
+	def test_add_TvShow_from_id(self):
+		self.test_creation()
+		self.l1.add(self.idLost)
+		self.assertEqual(len(self.l1),1)
+		self.assertEqual(JSAG.toJSON(self.l1.tvList[0]['season']),1)
+		self.assertEqual(JSAG.toJSON(self.l1.tvList[0]['episode']),1)
+		
+	def test_add_TvShow_with_episode(self):
+		self.test_creation()
+		self.l1.add(self.idLost,season=2,epno=2)
+		self.assertEqual(len(self.l1),1)
+		self.assertEqual(JSAG.toJSON(self.l1.tvList[0]['season']),2)
+		self.assertEqual(JSAG.toJSON(self.l1.tvList[0]['episode']),2)
+		
+	def test_add_TvShow_with_wrong_episode(self):
+		self.test_creation()
+		with self.assertRaises(Exception):
+			self.l1.add(self.idLost,season=7,epno=2)
+		self.assertEqual(len(self.l1),0)
+		
+	def test_add_TvShow_already_in(self):
+		self.test_creation()
+		self.l1.add(self.idLost)
+		with self.assertRaises(Exception):
+			self.l1.add(self.tvShowLost)
+		self.assertEqual(len(self.l1),1)
+	
+	def test_add_TvShow_multi(self):
+		self.test_creation()
+		self.l1.add(self.idLost)
+		self.l1.add(self.tvShowDexter)
+		self.assertEqual(len(self.l1),2)
+		
+	def test_inList(self):
+		self.test_creation()
+		self.l1.add(self.tvShowLost)
+		self.assertTrue(self.l1.inList(self.idLost))
+		self.assertTrue(self.l1.inList(self.tvShowLost))
+		self.assertFalse(self.l1.inList(self.tvShowDexter))
+		
