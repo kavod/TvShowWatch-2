@@ -30,6 +30,17 @@ class TestTvShowList(unittest.TestCase):
 		self.test_creation()
 		self.l1.loadFile('tests/tvShowList1.json',path=[])
 		self.assertEqual(len(self.l1),3)
+	
+	def test_save(self):
+		self.test_creation()
+		self.l1.add(self.tvShowLost)
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		os.remove(tmpfile)
+		self.l1.save(filename=tmpfile,path=['tvShowList'])
+		with open(tmpfile) as data_file:    
+			data = json.load(data_file)
+		self.assertEqual({'tvShowList':[{'id':self.idLost,'title':self.titleLost,'status':0,'season':1,'episode':1}]},data),
+		os.remove(tmpfile)
 		
 	def test_add_TvShow_achieved(self):
 		self.test_creation()

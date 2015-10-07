@@ -12,12 +12,21 @@ class tvShowList(object):
 		self.tvdb = None
 		
 	def loadFile(self,filename,path=[]):
+		self.filename = filename
+		self.path = path
 		self.tvList.setFilename(filename,path=path)
 		try:
 			self.tvList.load()
 		except IOError:
 			print "File does not exist. Creating a new one"
-			self.tvList.save()
+			self.save(filename=filename,path=path)
+			
+	def save(self,filename=None,path=[]):
+		if filename is not None:
+			self.filename = filename
+			self.path = path
+		self.tvList.setFilename(filename,path=path)
+		self.tvList.save()
 
 	def __len__(self):
 		if self is None:
