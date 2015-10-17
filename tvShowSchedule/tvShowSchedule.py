@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import os
 import datetime
 import json
-import JSAG
 import myTvDB
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -125,4 +124,9 @@ class tvShowSchedule(object):
 					self._setAchieved()
 				else:
 					self._setNotYetAired(next)
+					
+	def pushTorrent(self,filename):
+		if self.season * self.episode < 1:
+			raise Exception("Season & episode are not set")
+		pass
 	

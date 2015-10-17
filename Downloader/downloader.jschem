@@ -1,0 +1,97 @@
+{
+	"title":"Downloader Configuration",
+	"type":"object",
+	"properties":
+	{
+		"client":
+		{
+			"title":"Downloader client",
+			"$def":"#/choices/clients",
+			"choices":
+			{
+				"clients":
+				{
+					"none":"None",
+					"transmission":"TransmissionRPC"
+				}
+			},
+			"default":"none",
+			"order":1
+		}, 
+		"transConf":
+		{
+			"title":"Transmission configuration",
+			"type":"object",
+			"properties":
+			{
+				"address":
+				{
+					"title":"Server address",
+					"type":"string",
+					"format":"hostname",
+					"default":"localhost",
+					"order":1
+				},
+				"port":
+				{
+					"title":"Server port",
+					"type":"integer",
+					"min":1,
+					"max":65535,
+					"default":9091,
+					"order":2
+				},
+				"username":
+				{
+					"title":"Username",
+					"type":"string",
+					"order":3
+				},
+				"password":
+				{
+					"title":"Password",
+					"$def":"#/def/password",
+					"order":4
+				},
+				"maxSlots":
+				{
+					"title":"max slot",
+					"description":"Maximum number of slots available",
+					"type":"integer",
+					"min":1,
+					"max":99,
+					"default":6,
+					"order":5
+				},
+				"cleanMethod":
+				{
+					"title":"Cleaning method",
+					"description":"Strategy to be followed for removing achieved torrents",
+					"$def":"#/choices/method",
+					"order":6,
+					"default":"oldest",
+					"choices":
+					{
+						"method":
+						{
+							"oldest":"When max slots is reached, remove oldest torrent",
+							"sharest":"When max slots is reached, remove the most shared torrent"
+						}
+					}
+				}
+			},
+			"order":2,
+			"required":["address","port"]
+		}
+	},
+	"conditions": 
+	[
+		{
+			"if_prop": "client", 
+			"if_val": ["none"], 
+			"then_prop": "transConf", 
+			"then_status": "disabled"
+		}
+	],
+	"required":["client"]
+}
