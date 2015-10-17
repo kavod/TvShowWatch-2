@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import os
 import unittest
 import tempfile
+import shutil
 import json
 import Downloader
 
@@ -53,7 +54,22 @@ class TestDownloader(unittest.TestCase):
 		if self.testTransmission:
 			self.d = Downloader.Downloader()
 			self.d.loadConfig(self.configFileTransmission)
-			self.d.add_torrent(1)
+			filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+			
+			tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+			os.remove(tmpfile)
+			shutil.copyfile(filename, tmpfile)
+			
+			id = self.d.add_torrent(tmpfile,delTorrent=True)
+			self.assertIsInstance(id,int)
+			self.assertFalse(os.path.isfile(tmpfile))
+			return id
+			
+	def test_get_status_transmission(self):
+		if self.testTransmission:
+			id = self.test_add_torrent_transmission()
+			status = self.d.get_status(id)
+			self.assertIn(status,['check pending', 'checking', 'downloading', 'seeding'])
 		
 	#Interactives tests
 	"""def test_cliConf(self):

@@ -2,6 +2,7 @@
 #encoding:utf-8
 from __future__ import unicode_literals
 
+import os
 import transmissionrpc
 import JSAG
 
@@ -26,10 +27,19 @@ class Downloader(object):
 	def displayConf(self):
 		self.conf.display()
 		
-	def add_torrent(self,tor):
+	def add_torrent(self,tor,delTorrent=True):
 		if self.conf.getValue(['client']) == 'transmission':
 			if not self._transAvailableSlot():
 				self._transClean()
+			result = self.transmission.add_torrent('file://{0}'.format(tor))
+			if isinstance(result,transmissionrpc.Torrent):
+				if delTorrent:
+					os.remove(tor)
+				return result.id
+				
+	def get_status(self,id):
+		if self.conf.getValue(['client']) == 'transmission':
+			return self.transmission.get_torrent(id).status
 		
 	#TransmissionRPC
 	def _transConnect(self):
@@ -51,7 +61,7 @@ class Downloader(object):
 			if self.transmission is None:
 				self._transConnect()
 			tor = self.transmission.get_torrents()
-			return len(tor)+1 < self.transConf['maxSlots']
+			return len(tor)+1 <= self.transConf['maxSlots']
 		else:
 			return True
 
@@ -59,9 +69,11 @@ class Downloader(object):
 		torrents = self.transmission.get_torrents()
 		torrents = [ tor for tor in torrents if tor.status == 'seeding']
 		if self.transConf['cleanMethod'] == 'oldest':
-			torrent = sorted(torrents, key=lambda tor: tor.date_added)[0]
+			torrents = sorted(torrents, key=lambda tor: tor.date_added)
 		elif self.transConf['cleanMethod'] == 'sharest':
-			torrent = sorted(torrents, key=lambda tor: tor.uploadRatio,reverse=True)[0]
+			torrents = sorted(torrents, key=lambda tor: tor.uploadRatio,reverse=True)
 		else:
 			raise Exception("Unknown clean method: {0}".format(unicode(self.transConf['cleanMethod'])))
-		print "torrent {0} will be removed".format(unicode(torrent))
+		if len(torrents)<1:
+			raise Exception("No available torrents")
+		return self.transmission.remove_torrent(torrents[0].id, delete_data=True)['id']
