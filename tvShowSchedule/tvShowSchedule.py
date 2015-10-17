@@ -6,6 +6,8 @@ import os
 import datetime
 import json
 import myTvDB
+import Downloader
+import torrentSearch
 
 path = os.path.dirname(os.path.realpath(__file__))
 with open(path + '/status.json') as data_file:    
@@ -51,6 +53,8 @@ class tvShowSchedule(object):
 	def __init__(self, id, title, season=0, episode=0,status=0, nextUpdate=None):
 		self.id = int(id)
 		self._set(title=unicode(title), season=season, episode=episode,status=status, nextUpdate=nextUpdate)
+		self.downloader = None
+		self.searcher = None
 		
 	def _set(self,title=None,season=None,episode=None,status=None,nextUpdate=None):
 		if title is not None:
@@ -68,6 +72,16 @@ class tvShowSchedule(object):
 		else:
 			self.nextUpdate = datetime.datetime.now() + datetime.timedelta(minutes=2)
 			
+	def _setDownloader(self,downloader):
+		if not isinstance(downloader,Downloader.Downloader):
+			raise TypeError("parameter is not Downloader instance")
+		self.downloader=downloader
+			
+	def _setTorrentSearch(self,searcher):
+		if not isinstance(searcher,torrentSearch.torrentSearch):
+			raise TypeError("parameter is not torrentSearch instance")
+		self.searcher=searcher
+			
 	def _setAchieved(self):
 		nextUpdate = datetime.datetime.now() + datetime.timedelta(days=7)
 		self._set(season = 0,episode = 0,status = 90,nextUpdate=nextUpdate)
@@ -76,8 +90,16 @@ class tvShowSchedule(object):
 		nextUpdate = min(datetime.datetime.strptime(episode['firstaired'],'%Y-%m-%d'),datetime.datetime.now()+datetime.timedelta(days=7))
 		self._set(season=int(episode['seasonnumber']),episode=int(episode['episodenumber']),status=10,nextUpdate=nextUpdate)
 		
-	def update(self,force=False):
+	def update(self,downloader=None,searcher=None,force=False):
 		global t
+		if downloader is not None:
+			self._setDownloader(downloader)
+		if not isinstance(self.downloader,Downloader.Downloader):
+			raise Exception("No downloader provided")
+		if searcher is not None:
+			self._setTorrentSearch(searcher)
+		if not isinstance(self.searcher,torrentSearch.torrentSearch):
+			raise Exception("No torrentSearch provided")
 		if force or self.nextUpdate < datetime.datetime.now():
 			# Added
 			if self.status == 0:
@@ -107,6 +129,12 @@ class tvShowSchedule(object):
 			# Torrent watch
 			elif self.status == 20:
 				#TODO Search Torrent 
+				tor = self.searcher.search("{0} S{1:02}E{2:02}".format(self.title,self.season,self.episode))
+				if tor is not None:
+					tmpFile = self.searcher.download(tor)
+					print tmpFile
+					self.downloader.add_torrent(tmpFile)
+					self._set(status=30)
 				nextUpdate = datetime.datetime.now()+datetime.timedelta(minutes=15)
 				self._set(nextUpdate=nextUpdate)
 			

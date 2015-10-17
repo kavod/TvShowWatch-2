@@ -76,4 +76,5 @@ class Downloader(object):
 			raise Exception("Unknown clean method: {0}".format(unicode(self.transConf['cleanMethod'])))
 		if len(torrents)<1:
 			raise Exception("No available torrents")
-		return self.transmission.remove_torrent(torrents[0].id, delete_data=True)['id']
+		id = torrents[0].id
+		return self.transmission.remove_torrent(id, delete_data=True)['id']
