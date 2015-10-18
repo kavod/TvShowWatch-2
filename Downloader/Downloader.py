@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import os
 import transmissionrpc
+import logging
 import JSAG
 
 class Downloader(object):
@@ -28,6 +29,7 @@ class Downloader(object):
 		self.conf.display()
 		
 	def add_torrent(self,tor,delTorrent=True):
+		logging.info('[Downloader] Add_torrent method called, client is {0}'.format(self.conf.getValue(['client'])))
 		if self.conf.getValue(['client']) == 'transmission':
 			if not self._transAvailableSlot():
 				self._transClean()
@@ -66,6 +68,7 @@ class Downloader(object):
 			return True
 
 	def _transClean(self):
+		logging.info('[Downloader] Max slots reached, removing 1 achieved torrent with {0} method'.format(self.transConf['cleanMethod']))
 		torrents = self.transmission.get_torrents()
 		torrents = [ tor for tor in torrents if tor.status == 'seeding']
 		if self.transConf['cleanMethod'] == 'oldest':
@@ -74,7 +77,9 @@ class Downloader(object):
 			torrents = sorted(torrents, key=lambda tor: tor.uploadRatio,reverse=True)
 		else:
 			raise Exception("Unknown clean method: {0}".format(unicode(self.transConf['cleanMethod'])))
+		logging.info('[Downloader] {0} torrent eligible for cleaning: {1}'.format(len(torrents),torrents))
 		if len(torrents)<1:
-			raise Exception("No available torrents")
+			raise Exception("No eligible torrent for cleaning")
 		id = torrents[0].id
+		logging.info('[Downloader] Removing {0}'.format(torrents[0]))
 		return self.transmission.remove_torrent(id, delete_data=True)['id']

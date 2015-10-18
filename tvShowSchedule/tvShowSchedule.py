@@ -120,7 +120,7 @@ class tvShowSchedule(object):
 			# Not yet aired
 			elif self.status == 10:
 				firstaired = datetime.datetime.strptime(t[self.id][self.season][self.episode]['firstaired'],'%Y-%m-%d')
-				if firstaired < datetime.datime.now():
+				if firstaired < datetime.datetime.now():
 					self._set(status=20)
 					self.update(force=True)
 				else:
@@ -132,7 +132,6 @@ class tvShowSchedule(object):
 				tor = self.searcher.search("{0} S{1:02}E{2:02}".format(self.title,self.season,self.episode))
 				if tor is not None:
 					tmpFile = self.searcher.download(tor)
-					print tmpFile
 					self.downloader.add_torrent(tmpFile)
 					self._set(status=30)
 				nextUpdate = datetime.datetime.now()+datetime.timedelta(minutes=15)
