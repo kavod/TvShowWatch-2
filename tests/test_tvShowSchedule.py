@@ -72,7 +72,7 @@ class TestTvShowSchedule(unittest.TestCase):
 		tvShow.update(downloader=self.downloader,searcher=self.ts,force=True)
 		self.assertEqual(tvShow.status,20)
 		
-	def test_update_0_to_30(self):
+	def test_update_0_to_30(self): # Added to Download in progress
 		if not self.testTransmission:
 			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
 		self.downloader.loadConfig(self.configFileTransmission)
@@ -115,7 +115,7 @@ class TestTvShowSchedule(unittest.TestCase):
 		tvShow.update(downloader=self.downloader,searcher=self.ts,force=True)
 		self.assertEqual(tvShow.status,30)
 		
-	def test_update_90_to_10(self):
+	def test_update_90_to_10(self): # Achieved to watching
 		self.fakeTvDB(73739,6,18,'2099-12-31')	
 		tvShow = tvShowSchedule.tvShowSchedule(id=73739,title='Lost',season=0,episode=0,status=90,nextUpdate=datetime.datetime.now())
 		self.assertEqual(tvShow.status,90)
