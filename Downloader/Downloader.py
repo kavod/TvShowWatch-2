@@ -9,6 +9,8 @@ import JSAG
 
 class Downloader(object):
 	def __init__(self):
+		logger = logging.getLogger()
+		#logger.setLevel('INFO')
 		self.confSchema = JSAG.loadParserFromFile("Downloader/downloader.jschem")
 		self.conf = JSAG.JSAGdata(configParser=self.confSchema,value={})
 		self.transmission = None
@@ -16,6 +18,7 @@ class Downloader(object):
 	def loadConfig(self,confFile,path=[]):
 		self.conf.setFilename(confFile,path=path)
 		try:
+			logging.info('[Downloader] config file {0} will be loaded.'.format(confFile))
 			self.conf.load()
 		except IOError:
 			print "File does not exist. Creating a new one"
