@@ -115,6 +115,32 @@ class TestTvShowSchedule(unittest.TestCase):
 		tvShow.update(downloader=self.downloader,searcher=self.ts,force=True)
 		self.assertEqual(tvShow.status,30)
 		
+	def test_update_20_to_30(self):
+		if not self.testTransmission:
+			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
+		self.downloader.loadConfig(self.configFileTransmission)
+		
+		tvShow = tvShowSchedule.tvShowSchedule(id=73739,title='Lost',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now())
+		tvShow._set(status=20)
+		tvShow.update(downloader=self.downloader,searcher=self.ts,force=True)
+		self.assertEqual(tvShow.status,30)
+		
+	def test_update_30_to_35(self):
+		if not self.testTransmission:
+			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
+		self.downloader.loadConfig(self.configFileTransmission)
+		self.downloader._transConnect()
+		
+		tors = self.downloader.transmission.get_torrents(arguments=['id','status'])
+		tors = [tor for tor in tors if tor.status == "seeding"]
+		
+		if len(tors) < 1:
+			raise Exception("Please have at least 1 achieved torrent in transmission for testing")
+		tvShow = tvShowSchedule.tvShowSchedule(id=73739,title='Lost',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now())
+		tvShow._set(status=30,downloader_id = tors[0].id)		
+		tvShow.update(downloader=self.downloader,searcher=self.ts,force=True)
+		self.assertEqual(tvShow.status,35)
+	
 	def test_update_90_to_10(self): # Achieved to watching
 		self.fakeTvDB(73739,6,18,'2099-12-31')	
 		tvShow = tvShowSchedule.tvShowSchedule(id=73739,title='Lost',season=0,episode=0,status=90,nextUpdate=datetime.datetime.now())

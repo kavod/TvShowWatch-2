@@ -43,6 +43,11 @@
 			"type":"integer",
 			"min":1,
 			"max":99
+		},
+		"downloader_id":
+		{
+			"title":"Downloader identifier",
+			"type":"string"
 		}
 	},
 	"required":["id","title"]

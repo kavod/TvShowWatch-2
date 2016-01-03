@@ -3,6 +3,7 @@
 	"10": "Not yet aired",
 	"20": "Watching torrent",
 	"30": "Download in progress",
+	"35": "Download achieved. To be transfered",
 	"90": "Tv Show achieved",
 	"99": "Error"
 }

@@ -62,7 +62,7 @@ class TestDownloader(unittest.TestCase):
 				shutil.copyfile(filename, tmpfile)
 			
 				id = self.d.add_torrent(tmpfile,delTorrent=True)
-				self.assertIsInstance(id,int)
+				self.assertIsInstance(id,unicode)
 				self.assertFalse(os.path.isfile(tmpfile))
 				return id
 			

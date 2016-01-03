@@ -40,11 +40,16 @@ class Downloader(object):
 			if isinstance(result,transmissionrpc.Torrent):
 				if delTorrent:
 					os.remove(tor)
-				return result.id
+				return unicode(result.id)
 				
 	def get_status(self,id):
 		if self.conf.getValue(['client']) == 'transmission':
-			return self.transmission.get_torrent(id).status
+			if ( isinstance(id,unicode) or isinstance(id,str) ) and id.isdigit():
+				id = int(id)
+			if isinstance(id,int):
+				return self.transmission.get_torrent(id).status
+			else:
+				raise Exception("Incorrect identifier")
 		
 	#TransmissionRPC
 	def _transConnect(self):
