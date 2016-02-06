@@ -24,11 +24,17 @@ def check_provider(trackerID):
 		return provider[0]
 
 class torrentProvider:
-	def __init__(self,trackerID,param_data,tmppath = TMPPATH ):
+	def __init__(self,trackerID,param_data,tmppath = TMPPATH, verbosity=False ):
 		self.provider = {} 		# Provider data
 		self.token = ''			# If required by provider, authentification token
 		self.param = {}			# If required by provider, extra parameters (like username / password)
 		self.tmppath = tmppath
+		
+		# Set verbosity
+		if verbosity:
+			logger = logging.getLogger()
+			logger.setLevel(level=logging.DEBUG)
+			logger.debug("Verbosity set to On")
 
 		# Selecting requested provider
 		try:
@@ -89,5 +95,6 @@ def loadProviders():
 	extensionPrefix = 'torrentProvider_'
 	thedir = os.path.dirname(os.path.abspath(__file__))+"/../"
 	for ext in [x for x in os.listdir(thedir) if os.path.isdir(os.path.join(thedir, x)) and x[0:len(extensionPrefix)] == extensionPrefix]:
+		logging.debug("Loading {0}".format(ext))
 		import_module(ext)
 

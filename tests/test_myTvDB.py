@@ -8,16 +8,17 @@ import httpretty
 import requests
 
 httpretty_urls = [
-	("http://thetvdb.com/api/GetSeries.php",'tests/httpretty_myTvDB1'),
-	("http://thetvdb.com/api/A2894E6CB335E443/series/123/en.xml",'tests/httpretty_myTvDB2'),
-	("http://thetvdb.com/api/A2894E6CB335E443/series/123/all/en.xml",'tests/httpretty_myTvDB3'),
-	("http://thetvdb.com/api/A2894E6CB335E443/series/321/en.xml",'tests/httpretty_myTvDB4'),
-	("http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",'tests/httpretty_myTvDB5')
+	("http://thetvdb.com/api/GetSeries.php",'tests/httpretty_myTvDB1.xml'),
+	("http://thetvdb.com/api/A2894E6CB335E443/series/123/en.xml",'tests/httpretty_myTvDB2.xml'),
+	("http://thetvdb.com/api/A2894E6CB335E443/series/123/all/en.xml",'tests/httpretty_myTvDB3.xml'),
+	("http://thetvdb.com/api/A2894E6CB335E443/series/321/en.xml",'tests/httpretty_myTvDB4.xml'),
+	("http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",'tests/httpretty_myTvDB5.xml')
 				]
+DEBUG=True
 
 class TestMyTvDB(unittest.TestCase):
 	def setUp(self):
-		self.t = myTvDB.myTvDB(debug=False,cache=False)
+		self.t = myTvDB.myTvDB(debug=DEBUG,cache=False)
 		
 	def test_creation(self):
 		self.assertIsInstance(self.t,myTvDB.myTvDB)

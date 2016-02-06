@@ -53,8 +53,9 @@ def search_t411(self, search):
 	logging.debug('%s', result)
 	if 'torrents' in result.keys():
 		result = result['torrents']
-		logging.debug('%s torrents found', int(len(result)))
+		logging.debug('%s torrents found before filtering', int(len(result)))
 		result = filter(self.filter_t411,result)
+		logging.debug('%s torrents found after filtering', int(len(result)))
 		return result
 	else:
 		return []

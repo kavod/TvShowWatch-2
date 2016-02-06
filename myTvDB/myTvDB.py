@@ -28,6 +28,7 @@ class myTvDB(tvdb_api.Tvdb):
                 dvdorder=False):
 		if debug:
 			logging.basicConfig(level=logging.DEBUG)
+			logging.debug("Debugger in set to On")
 		tvdb_api.Tvdb.__init__(self,
                 interactive = interactive,
                 select_first = select_first,
