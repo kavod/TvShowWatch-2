@@ -8,6 +8,7 @@ import tvdb_api
 import json
 import argparse
 import string
+import logging
 from datetime import datetime
 
 class myTvDB(tvdb_api.Tvdb):
@@ -25,10 +26,12 @@ class myTvDB(tvdb_api.Tvdb):
                 forceConnect=False,
                 useZip=False,
                 dvdorder=False):
+		if debug:
+			logging.basicConfig(level=logging.DEBUG)
 		tvdb_api.Tvdb.__init__(self,
                 interactive = interactive,
                 select_first = select_first,
-                debug = debug,
+                debug = False,
                 cache = cache,
                 banners = banners,
                 actors = actors,
@@ -118,9 +121,11 @@ class myShow(tvdb_api.Show):
 class myEpisode(tvdb_api.Episode):
 	def next(self):
 		epno = int(self.get(u'episodenumber', 0))
+		logging.debug("{0} episodes in season, looking for episode {1}".format(len(self.season),(epno + 1)))
 		if len(self.season) < (epno + 1):
 			seasno = int(self.get(u'seasonnumber', 0))
-			if len(self.season.show) < (seasno +1):
+			logging.debug("{0} seasons in TvShow, looking for S{1:02}E01".format(len(self.season.show),(seasno +1)))
+			if len([season for season in self.season.show if season>0]) > (seasno +1):
 				return self.season.show[seasno+1][1]
 			else:
 				return None

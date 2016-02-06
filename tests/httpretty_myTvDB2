@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Data>
+  <Series>
+    <id>123</id>
+    <Actors>|Boris Kavod|Boris the king of the slip|</Actors>
+    <Airs_DayOfWeek>Tuesday</Airs_DayOfWeek>
+    <Airs_Time>9:00 PM</Airs_Time>
+    <ContentRating>TV-14</ContentRating>
+    <FirstAired>2004-09-22</FirstAired>
+    <Genre>|Action|Adventure|Drama|Science-Fiction|</Genre>
+    <IMDB_ID>tt0411008</IMDB_ID>
+    <Language>en</Language>
+    <Network>Kavod One (US)</Network>
+    <NetworkID></NetworkID>
+    <Overview>This is the description of the TvShow number 1 used by myTvDB class tests.</Overview>
+    <Rating>9.8</Rating>
+    <RatingCount>734</RatingCount>
+    <Runtime>45</Runtime>
+    <SeriesID>321</SeriesID>
+    <SeriesName>TvShow 1</SeriesName>
+    <Status>Ended</Status>
+    <added></added>
+    <addedBy></addedBy>
+    <banner>graphical/123-g4.jpg</banner>
+    <fanart>fanart/original/123-7.jpg</fanart>
+    <lastupdated>1453415473</lastupdated>
+    <poster>posters/123-11.jpg</poster>
+    <tms_wanted_old>1</tms_wanted_old>
+    <zap2it_id>SH672362</zap2it_id>
+  </Series>
+</Data>
