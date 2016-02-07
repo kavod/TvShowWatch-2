@@ -13,7 +13,7 @@ DEBUG=False
 
 httpretty_urls = [
 	("https://kat.cr/json.php",'tests/httpretty_kat_search_home.json'),
-	("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent?title=[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en",'tests/httpretty_kat_download_home.magnet'),
+	("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",'tests/httpretty_kat_download_home.magnet'),
 	]
 
 class TestTorrentProviderKickAss(unittest.TestCase):

@@ -33,12 +33,22 @@ class TestDownloader(unittest.TestCase):
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.assertIsInstance(self.d,Downloader.Downloader)
 		
+	@httpretty.activate
 	def test_loadConfig(self):
+		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+                            ])
 		self.assertTrue(os.path.isfile(self.configFile1))
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile1)
 		
+	@httpretty.activate
 	def test_loadConfig_with_path(self):
+		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+                            ])
 		self.assertTrue(os.path.isfile(self.configFile2))
 		self.d = Downloader.Downloader()
 		self.d.loadConfig(self.configFile2,path=['downloader'])
@@ -88,7 +98,18 @@ class TestDownloader(unittest.TestCase):
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
                             ])
 		if self.testTransmission:
-			id = self.test_add_torrent_transmission()
+			self.d = Downloader.Downloader()
+			self.d.loadConfig(self.configFileTransmission)
+			if self.d.conf['client'] is not None:
+				filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+			
+				tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+				os.remove(tmpfile)
+				shutil.copyfile(filename, tmpfile)
+			
+				id = self.d.add_torrent(tmpfile,delTorrent=True)
+				self.assertEqual(id,"3")
+				self.assertFalse(os.path.isfile(tmpfile))
 			status = self.d.get_status(id)
 			self.assertIn(status,['check pending', 'checking', 'downloading', 'seeding'])
 		

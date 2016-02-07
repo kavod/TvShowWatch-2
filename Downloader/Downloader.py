@@ -22,6 +22,8 @@ class Downloader(object):
 		try:
 			logging.info('[Downloader] config file {0} will be loaded.'.format(confFile))
 			self.conf.load()
+			if self.conf.getValue(['client']) == 'transmission':
+				self._transConnect()
 		except IOError:
 			logging.info( "File does not exist. Creating a new one")
 			self.conf.save()
@@ -45,11 +47,17 @@ class Downloader(object):
 				return unicode(result.id)
 				
 	def get_status(self,id):
+		logging.debug("[Downloader] client is {0}".format(unicode(self.conf.getValue(['client']))))
 		if self.conf.getValue(['client']) == 'transmission':
+			logging.debug("[Downloader] retrieving status of slot #{0}".format(unicode(id)))
 			if ( isinstance(id,unicode) or isinstance(id,str) ) and id.isdigit():
 				id = int(id)
 			if isinstance(id,int):
-				return self.transmission.get_torrent(id).status
+				tor = self.transmission.get_torrent(id)
+				logging.debug("[Downloader] torrent #{0}: ".format(unicode(id),unicode(tor)))
+				status = tor.status
+				logging.debug("[Downloader] Status of slot #{0} is {1}".format(unicode(id),status))
+				return status
 			else:
 				raise Exception("Incorrect identifier: {0}".format(id))
 		
@@ -61,8 +69,8 @@ class Downloader(object):
 				self.transmission = transmissionrpc.Client(
 										address=self.transConf['address'], 
 										port=self.transConf['port'], 
-										user=self.transConf['username'], 
-										password=self.transConf['password']
+										user=self.transConf['username'] if 'username' in self.transConf.keys() else '', 
+										password=self.transConf['password'] if 'password' in self.transConf.keys() else ''
 										)
 			except:
 				conf = self.conf['transConf'].getValue(hidePasswords=True)
