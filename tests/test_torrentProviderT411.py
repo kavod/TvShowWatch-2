@@ -19,23 +19,13 @@ httpretty_urls = [
 	("https://api.t411.in/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
 	]
 
-msg = ''
-loginFile = 'loginT411.json'
-try:
-	with open(os.path.dirname(os.path.abspath(__file__)) + '/' + loginFile) as data_file:    
-		login = json.load(data_file)
-except:
-	msg=loginFile +" file in \"" + os.path.dirname(os.path.abspath(__file__)) + '" directory is expected with following content:\n{"username":"your_username","password":"your_password"}'
 	
 class TestTorrentProviderT411(unittest.TestCase):
 	@httpretty.activate
 	def setUp(self):
-		global msg
-		global login
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-		self.assertEqual(msg,'',msg)
-		self.torProv = torrentProvider.torrentProvider('t411',login,verbosity=DEBUG)
+		self.torProv = torrentProvider.torrentProvider('t411',{"username":"your_username","password":"your_password"},verbosity=DEBUG)
 		
 	def test_creation(self):
 		self.assertIsInstance(self.torProv,torrentProvider.torrentProvider)
