@@ -4,9 +4,15 @@ from __future__ import unicode_literals
 
 import JSAG
 import myTvDB
+import logging
 
 class tvShowList(object):
-	def __init__(self, l_tvShows=[]):
+	def __init__(self, l_tvShows=[],verbosity=False):
+		logger = logging.getLogger()
+		if verbosity:
+			logger.setLevel(logging.DEBUG)
+		logging.debug("[tvShowList] Verbosity is set to {0}".format(unicode(verbosity)))
+		
 		self.schema = JSAG.loadParserFromFile("tvShowList/tvShowList.jschem")
 		self.tvList = JSAG.JSAGdata(self.schema,value=l_tvShows)
 		self.tvdb = None
