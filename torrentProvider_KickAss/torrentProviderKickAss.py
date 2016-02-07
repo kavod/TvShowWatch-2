@@ -27,8 +27,9 @@ def search_kickass(self, search):
 	logging.debug('%s', result)
 	if 'list' in result.keys():
 		result = result['list']
-		logging.debug('%s torrents found', int(len(result)))
+		logging.debug('%s torrents found before filter', int(len(result)))
 		result = filter(self.filter_kickass,result)
+		logging.debug('%s torrents found after filter', int(len(result)))
 		return result
 	else:
 		return []
