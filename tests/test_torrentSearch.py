@@ -8,13 +8,24 @@ import tempfile
 import json
 import torrentSearch
 import logging
+import httpretty
 
 t411LoginFile = os.path.dirname(os.path.abspath(__file__)) + '/loginT411.json'
-#logging.basicConfig(level=logging.DEBUG)
 
-class TestTorrentProviderKickAss(unittest.TestCase):
+DEBUG=False
+
+httpretty_urls = [
+	("https://api.t411.in/auth",'tests/httpretty_t411_auth.json'),
+	("https://api.t411.in/users/profile/12345678",'tests/httpretty_t411_auth.json'),
+	("https://api.t411.in/torrents/search/home%20720p",'tests/httpretty_t411_search_home.json'),
+	("https://api.t411.in/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
+	("https://kat.cr/json.php",'tests/httpretty_kat_search_home.json'),
+	("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent?title=[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en",'tests/httpretty_kat_download_home.magnet'),
+	]
+	
+class TestTorrentSearch(unittest.TestCase):
 	def setUp(self):
-		self.ts = torrentSearch.torrentSearch()
+		self.ts = torrentSearch.torrentSearch(verbosity=DEBUG)
 		self.configFile1 = "tests/torrentSearch1.json"
 		self.conf1 = {u'keywords': [u'720p'], u'providers': [{u'id': u'kickass',"keywords":["lang_id:2 verified:1"]}]}
 		if os.path.isfile(t411LoginFile):
@@ -72,18 +83,26 @@ class TestTorrentProviderKickAss(unittest.TestCase):
 		self.assertEqual(data,{u'torrentSearch': {}})
 		os.remove(tmpfile)
 		
-	def test_displayConf(self):
+	"""def test_displayConf(self):
 		self.test_loadConfig()
-		self.ts.displayConf()
+		self.ts.displayConf()"""
 		
+	@httpretty.activate
 	def test_search(self):
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		self.test_loadConfig()
-		tor = self.ts.search("home 2009")
+		tor = self.ts.search("home")
 		self.assertIsInstance(tor,dict)
 		
+	@httpretty.activate
 	def test_download(self):
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		self.test_loadConfig()
-		tor = self.ts.search("home 2009")
+		tor = self.ts.search("home")
 		tmpFile = self.ts.download(tor)
 		self.assertTrue(os.path.isfile(tmpFile))
 		os.remove(tmpFile)

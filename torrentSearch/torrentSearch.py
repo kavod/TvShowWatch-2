@@ -4,11 +4,17 @@ from __future__ import unicode_literals
 
 import torrentProvider
 import JSAG
+import logging
 
 torrentProvider.loadProviders()
 
 class torrentSearch(object):
-	def __init__(self):
+	def __init__(self,verbosity=False):
+		logger = logging.getLogger()
+		if verbosity:
+			logger.setLevel(logging.DEBUG)
+		logging.debug("[torrentSearch] Verbosity is set to {0}".format(unicode(verbosity)))
+		
 		self.confSchema = JSAG.loadParserFromFile("torrentSearch/torrentSearch.jschem")
 		self.conf = JSAG.JSAGdata(configParser=self.confSchema,value={})
 		self.providers = dict()
@@ -18,7 +24,7 @@ class torrentSearch(object):
 		try:
 			self.conf.load()
 		except IOError:
-			print "File does not exist. Creating a new one"
+			logging.info( "File does not exist. Creating a new one")
 			self.conf.save()
 
 	def cliConf(self):
@@ -46,7 +52,7 @@ class torrentSearch(object):
 					try:
 						result = self.search_query(provID,query)
 					except:
-						print "Timeout from {0}".format(unicode(provID))
+						logging.info("Timeout from {0}".format(unicode(provID)))
 						continue
 					if len(result)<1:
 						continue
@@ -57,14 +63,14 @@ class torrentSearch(object):
 		torProv = self.providers[provID]
 		result = torProv.search(query)
 		result = filter(torProv.filter,result)
-		print "Search of \033[1m{0}\033[0m on \033[1m{1}\033[0m".format(query,provID)
+		logging.info( "Search of \033[1m{0}\033[0m on \033[1m{1}\033[0m".format(query,provID))
 		if len(result) < 1:
-			print " > No result"
+			logging.info( " > No result")
 			return []
 		elif len(result) == 1:
-			print " > 1 result"
+			logging.info( " > 1 result")
 		elif len(result) > 1:
-			print " > {0} results".format(unicode(len(result)))
+			logging.info( " > {0} results".format(unicode(len(result))))
 		result = torProv.select_torrent(result)
 		result['provider'] = provID
 		return result
