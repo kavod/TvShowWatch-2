@@ -20,7 +20,7 @@ httpretty_urls = [
 	("https://api.t411.in/torrents/search/home%20720p",'tests/httpretty_t411_search_home.json'),
 	("https://api.t411.in/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
 	("https://kat.cr/json.php",'tests/httpretty_kat_search_home.json'),
-	("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent?title=[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en",'tests/httpretty_kat_download_home.magnet'),
+	("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",'tests/httpretty_kat_download_home.magnet'),
 	]
 	
 class TestTorrentSearch(unittest.TestCase):
