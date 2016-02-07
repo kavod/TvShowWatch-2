@@ -8,9 +8,11 @@ import logging
 import JSAG
 
 class Downloader(object):
-	def __init__(self):
+	def __init__(self,verbosity=False):
 		logger = logging.getLogger()
-		#logger.setLevel('INFO')
+		if verbosity:
+			logger.setLevel(logging.DEBUG)
+		logging.debug("[Downloader] Verbosity is set to {0}".format(unicode(verbosity)))
 		self.confSchema = JSAG.loadParserFromFile("Downloader/downloader.jschem")
 		self.conf = JSAG.JSAGdata(configParser=self.confSchema,value={})
 		self.transmission = None
@@ -21,7 +23,7 @@ class Downloader(object):
 			logging.info('[Downloader] config file {0} will be loaded.'.format(confFile))
 			self.conf.load()
 		except IOError:
-			print "File does not exist. Creating a new one"
+			logging.info( "File does not exist. Creating a new one")
 			self.conf.save()
 
 	def cliConf(self):
@@ -49,7 +51,7 @@ class Downloader(object):
 			if isinstance(id,int):
 				return self.transmission.get_torrent(id).status
 			else:
-				raise Exception("Incorrect identifier")
+				raise Exception("Incorrect identifier: {0}".format(id))
 		
 	#TransmissionRPC
 	def _transConnect(self):

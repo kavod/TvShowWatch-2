@@ -8,6 +8,13 @@ import tempfile
 import shutil
 import json
 import Downloader
+import httpretty
+
+DEBUG=False
+
+httpretty_urls = [
+	("http://localhost:9091/transmission/rpc",'tests/httpretty_transmission_add_torrent.json'),
+	]
 
 class TestDownloader(unittest.TestCase):
 	def setUp(self):
@@ -23,12 +30,12 @@ class TestDownloader(unittest.TestCase):
 			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
 		
 	def test_creation(self):
-		self.d = Downloader.Downloader()
+		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.assertIsInstance(self.d,Downloader.Downloader)
 		
 	def test_loadConfig(self):
 		self.assertTrue(os.path.isfile(self.configFile1))
-		self.d = Downloader.Downloader()
+		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile1)
 		
 	def test_loadConfig_with_path(self):
@@ -50,7 +57,13 @@ class TestDownloader(unittest.TestCase):
 		self.assertEqual(data,{"client":"none"})
 		os.remove(tmpfile)
 		
+	@httpretty.activate
 	def test_add_torrent_transmission(self):
+		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+                            ])
 		if self.testTransmission:
 			self.d = Downloader.Downloader()
 			self.d.loadConfig(self.configFileTransmission)
@@ -62,11 +75,18 @@ class TestDownloader(unittest.TestCase):
 				shutil.copyfile(filename, tmpfile)
 			
 				id = self.d.add_torrent(tmpfile,delTorrent=True)
-				self.assertIsInstance(id,unicode)
+				self.assertEqual(id,"3")
 				self.assertFalse(os.path.isfile(tmpfile))
 				return id
 			
+	@httpretty.activate
 	def test_get_status_transmission(self):
+		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+                            ])
 		if self.testTransmission:
 			id = self.test_add_torrent_transmission()
 			status = self.d.get_status(id)
