@@ -1,0 +1,52 @@
+{
+	"fields":{
+		"providers":{
+			"items": {
+				"fields" : {
+					"provider_type": {
+						"label": "Provider",
+						"type": "select",
+						"dataSource": [
+							{
+								"value":"t411",
+								"text":"T411",
+								"auth":true
+							},
+							{
+								"value":"kat",
+								"text":"KickAss Torrents",
+								"auth":false
+							}	
+						],
+						"removeDefaultNone": true,
+						"order":1
+					},
+					"authentification": {
+						"dependencies": {
+							"provider_type": ["t411"]
+						},
+						"order":2
+					},
+					"keywords": {
+						"actionbarStyle": "right",
+						"order":3
+					}
+				},
+				"collapsed":true
+			},
+			"collapsible":false,
+			"actionbar":{
+				"actions":[{
+					"action":"up",
+					"enabled":false
+				},{
+					"action":"down",
+					"enabled":false
+				}]
+			}
+		},
+		"keywords":{
+			"collapsible":false
+		}
+	}
+}

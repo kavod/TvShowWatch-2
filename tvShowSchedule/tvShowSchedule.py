@@ -6,6 +6,7 @@ import os
 import datetime
 import tzlocal
 import json
+import logging
 import myTvDB
 import Downloader
 import torrentSearch
@@ -17,15 +18,18 @@ with open(path + '/status.json') as data_file:
 for key,item in STATUS.items():
 	STATUS[int(key)] = item
 	
-def resetTvDB():
+def resetTvDB(cache=True):
 	global t
 	global tz
-	t = myTvDB.myTvDB()
+	try:
+		isinstance(t,myTvDB.myTvDB)
+	except:
+		t = myTvDB.myTvDB(cache=cache)
+		logging.debug("[tvShowSchedule] cache is disabled")
 	tz = tzlocal.get_localzone()
 	
-resetTvDB()
 	
-def tvShowScheduleFromMyTvDB(tvShow):
+def tvShowScheduleFromMyTvDB(tvShow, verbosity=False):
 	if not isinstance(tvShow,myTvDB.myShow):
 		raise TypeError("Incorrect argument: {0} ({1})".format(unicode(tvShow).encode('utf8'),type(tvShow)))
 	next = tvShow.nextAired()
@@ -41,13 +45,22 @@ def tvShowScheduleFromMyTvDB(tvShow):
 		status = 10
 		nextUpdate = datetime.strptime(next['firstaired'],'%Y-%m-%d')
 		downloader_id = ""
-	return tvShowSchedule(id=tvShow['id'],title=tvShow['seriesname'],season=season,episode=episode,status=status,nextUpdate=nextUpdate,downloader_id=downloader_id)
+	return tvShowSchedule(
+				id=tvShow['id'],
+				title=tvShow['seriesname'],
+				season=season,
+				episode=episode,
+				status=status,
+				nextUpdate=nextUpdate,
+				downloader_id=downloader_id, 
+				verbosity=verbosity
+				)
 	
-def tvShowScheduleFromId(tvShow):
+def tvShowScheduleFromId(tvShow, verbosity=False):
 	global t
 	if not isinstance(tvShow,int):
 		raise TypeError("Incorrect argument: {0}".format(unicode(tvShow).encode('utf8')))
-	return tvShowScheduleFromMyTvDB(t[int(tvShow)])
+	return tvShowScheduleFromMyTvDB(t[int(tvShow)], verbosity=verbosity)
 	
 def fakeTvDB(tvDB):
 	global t
@@ -56,7 +69,13 @@ def fakeTvDB(tvDB):
 	t=tvDB
 
 class tvShowSchedule(object):
-	def __init__(self, id, title, season=0, episode=0,status=0, nextUpdate=None, downloader_id = ""):
+	def __init__(self, id, title, season=0, episode=0,status=0, nextUpdate=None, downloader_id = "", verbosity=False):
+		logger = logging.getLogger()
+		if verbosity:
+			logger.setLevel(logging.DEBUG)
+		logging.debug("[tvShowSchedule] Verbosity is set to {0}".format(unicode(verbosity)))
+		resetTvDB(cache=not verbosity)
+		
 		self.confSchema = JSAG.loadParserFromFile("tvShowSchedule/tvShowSchedule.jschem")
 		self.id = int(id)
 		self.conf = JSAG.JSAGdata(configParser=self.confSchema,value=None)
@@ -127,6 +146,7 @@ class tvShowSchedule(object):
 		if not isinstance(self.searcher,torrentSearch.torrentSearch):
 			raise Exception("No torrentSearch provided")
 		if force or self['nextUpdate'] < datetime.datetime.now(tz):
+			logging.debug("[tvShowSchedule] Former status: {0}".format(self['status']))
 			# Added
 			if self['status'] == 0:
 				# Episode identified
@@ -177,7 +197,9 @@ class tvShowSchedule(object):
 				if self.downloader_id != "":
 					# Identifing status
 					try:
+						logging.debug("[tvShowSchedule] Downloader: {0}".format(self.downloader))
 						status = self.downloader.get_status(self.downloader_id)
+						logging.debug("[tvShowSchedule] Get new status: {0}".format(status))
 					except:
 						status = ''
 					

@@ -1,90 +1,56 @@
 {
 	"title":"Configuration",
 	"type":"object",
-	"properties":
-	{
-		"providers":
-		{
-			"title":"Providers",
+	"properties":{
+		"providers":{
+			"title":"Torrents providers",
+			"description":"Which torrent provider do you wish to use?",
 			"type":"array",
-			"items":
-			{
-				"title": "Provider",
+			"items": {
+				"title":"provider",
 				"type":"object",
-				"properties":
-				{
-					"id":
-					{
-						"title":"id",
-						"$def":"#/choices/providers",
-						"choices":
-						{
-							"providers":
-							{
-								"t411":"T411",
-								"kickass":"KickAss"
-							}
-						},
-						"order":1
+				"properties": {
+					"provider_type": {
+						"type":"string",
+						"title":"provider_type"
 					},
-					"config":
-					{
+					"authentification": {
 						"type":"object",
-						"title":"Torrent provider configuration",
-						"properties":
-						{
-							"username":
-							{
-								"title":"Username",
-								"type":"string",
-								"order":1
+						"description": "Torrent Provider authentification",
+						"properties": {
+							"username":{
+								"title": "Username",
+								"type":"string"
 							},
-							"password":
-							{
-								"title":"Password",
-								"$def":"#/def/password",
-								"order":2
+							"password":{
+								"title": "Password",
+								"type":"string",
+								"format":"password"
 							}
-						},
-						"order":2
+						}
 					},
-					"keywords":
-					{
-						"title":"Torrent provider specific keywords",
-						"description":"Keywords used for searchs with this torrent provider",
-						"type":"array",
-						"order":3,
-						"items":
-						{
-							"title": "Keyword",
+					"keywords": {
+						"title": "Keywords",
+						"type": "array",
+						"items": {
 							"type":"string"
 						}
 					}
 				},
-				"conditions": 
-				[
-					{
-						"if_prop": "id", 
-						"if_val": [null,"kickass"], 
-						"then_prop": "config", 
-						"then_status": "disabled"
-					}
-				],
-				"required":["id"]
-			},
-			"order":1
+				"dependencies": {
+					"authentification":["provider_type"]
+				}
+			}
 		},
-		"keywords":
-		{
+		"keywords": {
 			"title":"Global keywords",
-			"description":"Keywords used for all searchs",
+			"description":"Keywords used for all providers",
 			"type":"array",
-			"order":2,
-			"items":
-			{
-				"title": "Keyword",
+			"items":{
+				"title":"Keyword",
 				"type":"string"
 			}
 		}
 	}
 }
+	

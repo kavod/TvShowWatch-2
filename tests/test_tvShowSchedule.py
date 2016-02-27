@@ -36,13 +36,7 @@ class TestTvShowSchedule(unittest.TestCase):
 		self.configFileTransmission = "tests/downloaderTransmission.json"
 		self.testTransmission =  os.path.isfile(self.configFileTransmission)
 		
-		t411LoginFile = os.path.dirname(os.path.abspath(__file__)) + '/loginT411.json'
-		self.ts = torrentSearch.torrentSearch(verbosity=DEBUG)
-		self.ts.loadConfig("tests/torrentSearch1.json")
-		if os.path.isfile(t411LoginFile):
-			with open(t411LoginFile) as data_file:    
-				data = json.load(data_file)
-			self.ts.conf['providers'].insert(0,{'id':'t411','config':data})
+		self.ts = torrentSearch.torrentSearch(id="torrentSearch",dataFile="tests/torrentSearch2.json",verbosity=DEBUG)
 		self.t = myTvDB.myTvDB(debug=DEBUG,cache=not DEBUG)
 		
 	def fakeTvDB(self,id,season,episode,date):

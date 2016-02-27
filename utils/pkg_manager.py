@@ -30,6 +30,28 @@ PACKAGES = {
 					['rm','-rf','JSAG']
 				]
 			},
+		'JSAG3':{
+			'install':
+				[
+					['wget',"https://github.com/kavod/JSAG3/releases/download/v3.0/JSAG3.tgz",'-q'],
+					['tar','zxf','JSAG3.tgz'],
+					['rm','JSAG3.tgz']
+				],
+			'uninstall':
+				[
+					['rm','-rf','JSAG3']
+				],
+			'root_install':
+				[
+					['wget',"https://github.com/kavod/JSAG3/releases/download/v3.0/JSAG3.tgz",'-q'],
+					['tar','zxf','JSAG3.tgz'],
+					['rm','JSAG3.tgz']
+				],
+			'root_uninstall':
+				[
+					['rm','-rf','JSAG3']
+				]
+			},
 		'python_packages':{
 			'install':
 				[

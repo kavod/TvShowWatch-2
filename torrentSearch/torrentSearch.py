@@ -4,44 +4,33 @@ from __future__ import unicode_literals
 
 import torrentProvider
 import JSAG
+import JSAG3
 import logging
 
 torrentProvider.loadProviders()
 
-class torrentSearch(object):
-	def __init__(self,verbosity=False):
-		logger = logging.getLogger()
-		if verbosity:
-			logger.setLevel(logging.DEBUG)
-		logging.debug("[torrentSearch] Verbosity is set to {0}".format(unicode(verbosity)))
-		
-		self.confSchema = JSAG.loadParserFromFile("torrentSearch/torrentSearch.jschem")
-		self.conf = JSAG.JSAGdata(configParser=self.confSchema,value={})
+class torrentSearch(JSAG3.JSAG3):
+	def __init__(self,id="torrentSearch",dataFile=None,verbosity=False):		
 		self.providers = dict()
+		JSAG3.JSAG3.__init__(self,
+			id=id,
+			schemaFile="torrentSearch/torrentSearch.jschem",
+			optionsFile="torrentSearch/torrentSearch.jopt",
+			dataFile=dataFile,
+			verbosity=verbosity
+		)
 		
 	def loadConfig(self,confFile,path=[]):
-		self.conf.setFilename(confFile,path=path)
-		try:
-			self.conf.load()
-		except IOError:
-			logging.info( "File does not exist. Creating a new one")
-			self.conf.save()
-
-	def cliConf(self):
-		self.conf.cliCreate()
-		self.conf.proposeSave(display=True)
-		
-	def displayConf(self):
-		self.conf.display()
+		self.addData(confFile)
 		
 	def search(self,pattern):
 		if pattern is None or unicode(pattern) == "":
 			raise Exception("Empty pattern")
 		pattern = unicode(pattern)
-		for provider in self.conf['providers']:
+		for provider in self.data['providers']:
 			provID = unicode(provider['id'])
 			self.connect_provider(provID)
-			for keyword in self.conf['keywords']:
+			for keyword in self.data['keywords']:
 				query = "{0} {1}".format(pattern,keyword)
 				
 				if 'keywords' in provider.keys() and len(provider['keywords']) > 0:
@@ -77,7 +66,7 @@ class torrentSearch(object):
 		
 		
 	def connect_provider(self,provID):
-		provider = [provider for provider in self.conf['providers'] if unicode(provider['id']) == provID][0]
+		provider = [provider for provider in self.data['providers'] if unicode(provider['id']) == provID][0]
 		if provID not in self.providers.keys():
 			self.providers[provID] = torrentProvider.torrentProvider(provID,provider['config'] if 'config' in provider.keys() else None)
 		
