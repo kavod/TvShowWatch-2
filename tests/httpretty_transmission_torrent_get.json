@@ -1,2 +1,1 @@
 {"arguments":{"torrents":[{"addedDate":1454839996,"downloadDir":"/home/kavod/Downloads","error":0,"errorString":"","eta":-1,"id":3,"isFinished":false,"isStalled":false,"leftUntilDone":0,"metadataPercentComplete":1,"name":"Test for Downloader","peersConnected":0,"peersGettingFromUs":0,"peersSendingToUs":0,"percentDone":1,"queuePosition":2,"rateDownload":0,"rateUpload":0,"recheckProgress":0,"seedRatioLimit":2,"seedRatioMode":0,"sizeWhenDone":7010624,"status":6,"totalSize":7010624,"trackers":[],"uploadRatio":0,"uploadedEver":0,"webseedsSendingToUs":0}]},"result":"success"}
-

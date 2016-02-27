@@ -2,20 +2,21 @@
 #encoding:utf-8
 from __future__ import unicode_literals
 
+import os
 import torrentProvider
-import JSAG
 import JSAG3
 import logging
 
 torrentProvider.loadProviders()
 
 class torrentSearch(JSAG3.JSAG3):
-	def __init__(self,id="torrentSearch",dataFile=None,verbosity=False):		
+	def __init__(self,id="torrentSearch",dataFile=None,verbosity=False):	
+		curPath = os.path.dirname(os.path.realpath(__file__))	
 		self.providers = dict()
 		JSAG3.JSAG3.__init__(self,
 			id=id,
-			schemaFile="torrentSearch/torrentSearch.jschem",
-			optionsFile="torrentSearch/torrentSearch.jopt",
+			schemaFile=curPath+"/torrentSearch.jschem",
+			optionsFile=curPath+"/torrentSearch.jopt",
 			dataFile=dataFile,
 			verbosity=verbosity
 		)

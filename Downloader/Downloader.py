@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import os
 import transmissionrpc
 import logging
-import JSAG
 import JSAG3
 
 class Downloader(JSAG3.JSAG3):
@@ -39,15 +38,18 @@ class Downloader(JSAG3.JSAG3):
 		logging.debug("[Downloader] client is {0}".format(unicode(self.data['client'])))
 		if self.data['client'] == 'transmission':
 			logging.debug("[Downloader] retrieving status of slot #{0}".format(unicode(id)))
-			if ( isinstance(id,unicode) or isinstance(id,str) ) and id.isdigit():
+			if ( isinstance(id,basestring) ) and id.isdigit():
 				id = int(id)
 			if isinstance(id,int):
+				if self.transmission is None:
+					self._transConnect()
 				tor = self.transmission.get_torrent(id)
 				logging.debug("[Downloader] torrent #{0}: ".format(unicode(id),unicode(tor)))
 				status = tor.status
 				logging.debug("[Downloader] Status of slot #{0} is {1}".format(unicode(id),status))
 				return status
 			else:
+				logging.error("[Downloader] Incorrect identifier: {0}".format(unicode(id)))
 				raise Exception("Incorrect identifier: {0}".format(id))
 		
 	#TransmissionRPC
