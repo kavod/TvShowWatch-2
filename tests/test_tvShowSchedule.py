@@ -27,7 +27,7 @@ httpretty_urls = [
 	("https://api.t411.in/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
 	("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",'tests/httpretty_kat_download_home.magnet'),
 				]
-DEBUG=False
+DEBUG=True
 
 class TestTvShowSchedule(unittest.TestCase):
 	def setUp(self):

@@ -1,0 +1,60 @@
+{
+	"fields": {
+		"client": {
+			"label": "Downloader client",
+			"type": "select",
+			"dataSource": [
+				{
+					"value": "none",
+					"text": "None"
+				},
+				{
+					"value": "transmission",
+					"text" : "TransmissionRPC"
+				}
+			],
+			"removeDefaultNone": true,
+			"order":1
+		},
+		"transConf": {
+			"fields": {
+				"address": {
+					"order":1
+				},
+				"port": {
+					"order":2
+				},
+				"username": {
+					"order":3
+				},
+				"password": {
+					"order": 4
+				},
+				"maxSlots": {
+					"order": 5
+				},
+				"cleanMethod": {
+					"label": "Clean method",
+					"type": "select",
+					"dataSource": [
+						{
+							"value": "oldest",
+							"text": "When max slots is reached, remove oldest torrent"
+						},
+						{
+							"value": "sharest",
+							"text" : "When max slots is reached, remove the most shared torrent"
+						}
+					],
+					"removeDefaultNone": true,
+					"order":6
+				}
+			},
+			"order":2,
+			"collapsible":false,
+			"dependencies": {
+				"client": ["transmission"]
+			}
+		}
+	}
+}

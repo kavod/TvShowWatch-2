@@ -1,1 +1,1 @@
-{"client":"transmission","transConf":{"address":"localhost","port":9091}}
+{"downloader": {"transConf": {"port": 9091, "address": "localhost"}, "client": "transmission"}}

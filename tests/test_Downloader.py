@@ -9,6 +9,7 @@ import shutil
 import json
 import Downloader
 import httpretty
+import logging
 
 DEBUG=False
 
@@ -64,7 +65,7 @@ class TestDownloader(unittest.TestCase):
 		self.assertTrue(os.path.isfile(tmpfile))
 		with open(tmpfile) as data_file:    
 			data = json.load(data_file)
-		self.assertEqual(data,{"client":"none"})
+		self.assertEqual(data,{"downloader":{}})
 		os.remove(tmpfile)
 		
 	@httpretty.activate
@@ -75,9 +76,10 @@ class TestDownloader(unittest.TestCase):
                                httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
                             ])
 		if self.testTransmission:
-			self.d = Downloader.Downloader()
+			self.d = Downloader.Downloader(verbosity=DEBUG)
 			self.d.loadConfig(self.configFileTransmission)
-			if self.d.conf['client'] is not None:
+			logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
+			if self.d.getValue()['client'] is not None:
 				filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 			
 				tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
@@ -100,7 +102,7 @@ class TestDownloader(unittest.TestCase):
 		if self.testTransmission:
 			self.d = Downloader.Downloader()
 			self.d.loadConfig(self.configFileTransmission)
-			if self.d.conf['client'] is not None:
+			if self.d.data['client'] is not None:
 				filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 			
 				tmpfile = unicode(tempfile.mkstemp('.torrent')[1])

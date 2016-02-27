@@ -6,38 +6,27 @@ import os
 import transmissionrpc
 import logging
 import JSAG
+import JSAG3
 
-class Downloader(object):
-	def __init__(self,verbosity=False):
-		logger = logging.getLogger()
-		if verbosity:
-			logger.setLevel(logging.DEBUG)
-		logging.debug("[Downloader] Verbosity is set to {0}".format(unicode(verbosity)))
-		self.confSchema = JSAG.loadParserFromFile("Downloader/downloader.jschem")
-		self.conf = JSAG.JSAGdata(configParser=self.confSchema,value={})
+class Downloader(JSAG3.JSAG3):
+	def __init__(self,id="downloader",dataFile=None,verbosity=False):
+		curPath = os.path.dirname(os.path.realpath(__file__))
+	
+		JSAG3.JSAG3.__init__(self,
+			id=id,
+			schemaFile=curPath+"/downloader.jschem",
+			optionsFile=curPath+"/downloader.jopt",
+			dataFile=dataFile,
+			verbosity=verbosity
+		)
 		self.transmission = None
 		
 	def loadConfig(self,confFile,path=[]):
-		self.conf.setFilename(confFile,path=path)
-		try:
-			logging.info('[Downloader] config file {0} will be loaded.'.format(confFile))
-			self.conf.load()
-			if self.conf.getValue(['client']) == 'transmission':
-				self._transConnect()
-		except IOError:
-			logging.info( "File does not exist. Creating a new one")
-			self.conf.save()
-
-	def cliConf(self):
-		self.conf.cliCreate()
-		self.conf.proposeSave(display=True)
-		
-	def displayConf(self):
-		self.conf.display()
+		self.addData(confFile)
 		
 	def add_torrent(self,tor,delTorrent=True):
-		logging.info('[Downloader] Add_torrent method called, client is {0}'.format(self.conf.getValue(['client'])))
-		if self.conf.getValue(['client']) == 'transmission':
+		logging.info('[Downloader] Add_torrent method called, client is {0}'.format(self.data['client']))
+		if self.data['client'] == 'transmission':
 			if not self._transAvailableSlot():
 				self._transClean()
 			result = self.transmission.add_torrent('file://{0}'.format(tor))
@@ -47,8 +36,8 @@ class Downloader(object):
 				return unicode(result.id)
 				
 	def get_status(self,id):
-		logging.debug("[Downloader] client is {0}".format(unicode(self.conf.getValue(['client']))))
-		if self.conf.getValue(['client']) == 'transmission':
+		logging.debug("[Downloader] client is {0}".format(unicode(self.data['client'])))
+		if self.data['client'] == 'transmission':
 			logging.debug("[Downloader] retrieving status of slot #{0}".format(unicode(id)))
 			if ( isinstance(id,unicode) or isinstance(id,str) ) and id.isdigit():
 				id = int(id)
@@ -64,7 +53,7 @@ class Downloader(object):
 	#TransmissionRPC
 	def _transConnect(self):
 		if self.transmission is None:
-			self.transConf = self.conf['transConf'].getValue(hidePasswords=False)
+			self.transConf = self.getValue(hidePassword=False)['transConf']
 			try:
 				self.transmission = transmissionrpc.Client(
 										address=self.transConf['address'], 
@@ -73,11 +62,11 @@ class Downloader(object):
 										password=self.transConf['password'] if 'password' in self.transConf.keys() else ''
 										)
 			except:
-				conf = self.conf['transConf'].getValue(hidePasswords=True)
+				conf = self.getValue(hidePassword=True)['transConf']
 				raise Exception("Transmission connection error {0}".format(unicode(conf)))
 				
 	def _transAvailableSlot(self):
-		if self.conf.getValue(['client']) == 'transmission':
+		if self.data['client'] == 'transmission':
 			if self.transmission is None:
 				self._transConnect()
 			tor = self.transmission.get_torrents()
