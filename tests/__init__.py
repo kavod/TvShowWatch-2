@@ -6,7 +6,8 @@ __all__ = [
 		'test_torrentProviderT411',
 		'test_torrentSearch',
 		'test_tvShowList',
-		'test_tvShowSchedule'
+		'test_tvShowSchedule',
+		'test_transferer'
 		]
 
 # from directory.fichier import class
@@ -18,3 +19,4 @@ from test_torrentProviderT411 import TestTorrentProviderT411
 from test_torrentSearch import TestTorrentSearch
 from test_tvShowList import TestTvShowList
 from test_tvShowSchedule import TestTvShowSchedule
+from test_transferer import TestTransferer

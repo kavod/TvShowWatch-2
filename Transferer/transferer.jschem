@@ -1,0 +1,105 @@
+{
+	"title": "Transferer",
+	"type": "object",
+	"properties": {
+		"source": {
+			"title": "Source",
+			"$ref": "#/definitions/endpoint"
+		}, 
+		"destination": {
+			"title": "Destination",
+			"$ref": "#/definitions/endpoint"
+		}
+	},
+	"definitions": {
+		"endpoint": {
+			"type": "object",
+			"properties": {
+				"protocol": {
+					"title": "Protocol",
+					"type": "string",
+					"default": "file"
+				},
+				"user": {
+					"title": "Username",
+					"type": "string"
+				},
+				"password": {
+					"title": "Password",
+					"type": "string",
+					"format": "password"
+				},
+				"host": {
+					"title": "hostname",
+					"type": "string",
+					"format": "hostname"
+				},
+				"port":
+				{
+					"title":"Server port",
+					"type":"integer",
+					"min":1,
+					"max":65535
+				},
+				"path":
+				{
+					"title":"Root path",
+					"type":"string"
+				},
+				"auth_endpoint": {
+					"title":"Swift authentification endpoint",
+					"type":"string",
+					"format":"uri"
+				},
+				"tenant_id": {
+					"title": "Swift authentification endpoint",
+					"type": "integer"
+				},
+				"region": {
+					"title": "Region",
+					"type": "string",
+					"maxlength": 3,
+					"default":"DFW"
+				},
+				"public": {
+					"title": "Use the internal ServiceNet network",
+					"type": "boolean",
+					"default": true
+				},
+				"api_key": {
+					"title": "Authentification API key",
+					"type": "string"
+				},
+				"temp_url_key": {
+					"title": "Temporary URL key",
+					"type": "string",
+					"format": "uri"
+				},
+				"access_key": {
+					"title": "Access key",
+					"type": "string"
+				},
+				"secret_key": {
+					"title": "Secret access key",
+					"type": "string",
+					"format": "password"
+				}
+			},
+			"required":["path"],
+			"dependencies": {
+				"user":["protocol"],
+				"password":["protocol"],
+				"host":["protocol"],
+				"port":["protocol"],
+				"auth_endpoint":["protocol"],
+				"tenant_id":["protocol"],
+				"region":["protocol"],
+				"public":["protocol"],
+				"api_key":["protocol"],
+				"temp_url_key":["protocol"],
+				"access_key":["protocol"],
+				"secret_key":["protocol"]
+			}
+		}
+	}
+}

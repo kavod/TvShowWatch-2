@@ -1,0 +1,115 @@
+{
+	"definitions":{
+		"endpoint":{
+			"fields":{
+				"protocol":{
+					"label": "Protocol",
+					"type": "select",
+					"dataSource": [
+						{
+							"value": "file",
+							"text": "Local file"
+						},
+						{
+							"value": "swift",
+							"text" : "OpenStack Swift"
+						},
+						{
+							"value": "cloud",
+							"text" : "Rackspace CloudFiles"
+						},
+						{
+							"value": "s3",
+							"text" : "Amazon S3"
+						},
+						{
+							"value": "ftp",
+							"text" : "FTP"
+						},
+						{
+							"value": "ftps",
+							"text" : "FTPS (a.k.a. FTP_TLS)"
+						}
+					],
+					"removeDefaultNone": true,
+					"order":1
+				},
+				"user": {
+					"order":2,
+					"dependencies": {
+						"protocol": ["swift","cloud","ftp","ftps"]
+					}
+				},
+				"password": {
+					"order":3,
+					"dependencies": {
+						"protocol": ["swift","ftp","ftps"]
+					}
+				},
+				"host": {
+					"order":4,
+					"dependencies": {
+						"protocol": ["swift","cloud","ftp","ftps"]
+					}
+				},
+				"port": {
+					"order":5,
+					"dependencies": {
+						"protocol": ["swift","cloud","ftp","ftps"]
+					}
+				},
+				"path": {
+					"order":6
+				},
+				"auth_endpoint": {
+					"order":7,
+					"dependencies": {
+						"protocol": ["swift"]
+					}
+				},
+				"tenant_id": {
+					"order":8,
+					"dependencies": {
+						"protocol": ["swift"]
+					}
+				},
+				"region": {
+					"order":9,
+					"dependencies": {
+						"protocol": ["swift","cloud"]
+					}
+				},
+				"public": {
+					"order":10,
+					"dependencies": {
+						"protocol": ["swift"]
+					}
+				},
+				"api_key": {
+					"order":11,
+					"dependencies": {
+						"protocol": ["swift","cloud"]
+					}
+				},
+				"temp_url_key": {
+					"order":12,
+					"dependencies": {
+						"protocol": ["swift"]
+					}
+				},
+				"access_key": {
+					"order":13,
+					"dependencies": {
+						"protocol": ["s3"]
+					}
+				},
+				"secret_key": {
+					"order":14,
+					"dependencies": {
+						"protocol": ["s3"]
+					}
+				}
+			}
+		}
+	}
+}

@@ -7,6 +7,9 @@ import json
 import cherrypy
 from cherrypy.lib import auth_digest
 import JSAG3
+import Downloader
+import torrentSearch
+import Transferer
 
 
 class Root(object):
@@ -38,15 +41,20 @@ if __name__ == '__main__':
 	cherrypy.config["tools.encode.on"] = True
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
 
-	torrentSearch = JSAG3.JSAG3("torrentSearch",schemaFile=curPath+"/torrentSearch/torrentSearch.jschem",optionsFile=curPath+"/torrentSearch/torrentSearch.jopt",dataFile=curPath+"/config.json")
+	torrentSearch = torrentSearch.torrentSearch("torrentSearch",dataFile=curPath+"/config.json")
 	root = torrentSearch.getRoot(root)
 	conf = torrentSearch.getConf(conf)
 	root.update.torrentSearch = updateData(torrentSearch)
 	
-	downloader = JSAG3.JSAG3("downloader",schemaFile=curPath+"/Downloader/downloader.jschem",optionsFile=curPath+"/Downloader/downloader.jopt",dataFile=curPath+"/config.json")
+	downloader = Downloader.Downloader("downloader",dataFile=curPath+"/config.json")
 	root = downloader.getRoot(root)
 	conf = downloader.getConf(conf)
 	root.update.downloader = updateData(downloader)
+	
+	transferer = Transferer.Transferer("transferer",dataFile=curPath+"/config.json")
+	root = transferer.getRoot(root)
+	conf = transferer.getConf(conf)
+	root.update.transferer = updateData(transferer)
 	
 	cherrypy.quickstart(root,"/".encode('utf8'),conf)
 
