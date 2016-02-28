@@ -59,10 +59,10 @@
 			},
 			"order":2,
 			"required":["address","port"]
-		},
-		"dependencies": {
-			"transConf":["client"]
 		}
 	},
-	"required":["client"]
+	"required":["client"],
+	"dependencies": {
+		"transConf":["client"]
+	}
 }

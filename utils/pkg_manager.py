@@ -33,7 +33,7 @@ PACKAGES = {
 		'JSAG3':{
 			'install':
 				[
-					['wget',"https://github.com/kavod/JSAG3/releases/download/v3.0/JSAG3.tgz",'-q'],
+					['wget',"https://github.com/kavod/JSAG3/releases/download/v3.0.1/JSAG3.tgz",'-q'],
 					['tar','zxf','JSAG3.tgz'],
 					['rm','JSAG3.tgz']
 				],
@@ -43,7 +43,7 @@ PACKAGES = {
 				],
 			'root_install':
 				[
-					['wget',"https://github.com/kavod/JSAG3/releases/download/v3.0/JSAG3.tgz",'-q'],
+					['wget',"https://github.com/kavod/JSAG3/releases/download/v3.0.1/JSAG3.tgz",'-q'],
 					['tar','zxf','JSAG3.tgz'],
 					['rm','JSAG3.tgz']
 				],
