@@ -51,6 +51,25 @@ class Downloader(JSAG3.JSAG3):
 			else:
 				logging.error("[Downloader] Incorrect identifier: {0}".format(unicode(id)))
 				raise Exception("Incorrect identifier: {0}".format(id))
+				
+	def get_files(self,id):
+		logging.debug("[Downloader] client is {0}".format(unicode(self.data['client'])))
+		if self.data['client'] == 'transmission':
+			logging.debug("[Downloader] retrieving files of slot #{0}".format(unicode(id)))
+			if ( isinstance(id,basestring) ) and id.isdigit():
+				id = int(id)
+			if isinstance(id,int):
+				if self.transmission is None:
+					self._transConnect()
+				tor = self.transmission.get_torrent(id)
+				logging.debug("[Downloader] torrent #{0}: ".format(unicode(id),unicode(tor)))
+				files = tor.files()
+				logging.debug("[Downloader] Files of slot #{0} are {1}".format(unicode(id),files))
+				result = []
+				return [myFile['name'] for myFile in files.values() if myFile['selected']]
+			else:
+				logging.error("[Downloader] Incorrect identifier: {0}".format(unicode(id)))
+				raise Exception("Incorrect identifier: {0}".format(id))
 		
 	#TransmissionRPC
 	def _transConnect(self):
