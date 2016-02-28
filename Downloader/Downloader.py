@@ -44,7 +44,7 @@ class Downloader(JSAG3.JSAG3):
 				if self.transmission is None:
 					self._transConnect()
 				tor = self.transmission.get_torrent(id)
-				logging.debug("[Downloader] torrent #{0}: ".format(unicode(id),unicode(tor)))
+				logging.debug("[Downloader] torrent #{0}: {1}".format(unicode(id),unicode(tor)))
 				status = tor.status
 				logging.debug("[Downloader] Status of slot #{0} is {1}".format(unicode(id),status))
 				return status
@@ -62,7 +62,7 @@ class Downloader(JSAG3.JSAG3):
 				if self.transmission is None:
 					self._transConnect()
 				tor = self.transmission.get_torrent(id)
-				logging.debug("[Downloader] torrent #{0}: ".format(unicode(id),unicode(tor)))
+				logging.debug("[Downloader] torrent #{0}: {1}".format(unicode(id),unicode(tor)))
 				files = tor.files()
 				logging.debug("[Downloader] Files of slot #{0} are {1}".format(unicode(id),files))
 				result = []

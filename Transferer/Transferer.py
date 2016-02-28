@@ -58,7 +58,7 @@ class Transferer(JSAG3.JSAG3):
 		)
 		
 	def get_uri(self,endpoint="source",filename="."):
-		self.checkCompleted()
+		self.checkUsable()
 		if not isinstance(endpoint,basestring) or unicode(endpoint) not in ['source','destination']:
 			raise Exception("You must choose 'endpoint' parameter among 'source'/'destination'")
 		endpoint = unicode(endpoint)
@@ -92,3 +92,17 @@ class Transferer(JSAG3.JSAG3):
 		os.remove(tmpfile)
 		if delete_after:
 			source_file.delete()
+			
+	def checkUsable(self):
+		if 'source' not in self.data.keys() or self.data['source'] is None:
+			raise Exception("Source not specified")
+		if 'destination' not in self.data.keys() or self.data['source'] is None:
+			raise Exception("Destination not specified")
+		if 'protocol' not in self.data['source'].keys() or self.data['source']['protocol'] is None:
+			raise Exception("Protocol missing for source")
+		if 'path' not in self.data['source'].keys() or self.data['source']['path'] is None:
+			raise Exception("Path missing for source")
+		if 'protocol' not in self.data['destination'].keys() or self.data['destination']['protocol'] is None:
+			raise Exception("Protocol missing for destination")
+		if 'path' not in self.data['destination'].keys() or self.data['destination']['path'] is None:
+			raise Exception("Path missing for destination")
