@@ -23,13 +23,14 @@ class torrentSearch(JSAG3.JSAG3):
 		
 	def loadConfig(self,confFile,path=[]):
 		self.addData(confFile)
+		logging.debug("[torrentSearch] Data loaded: {0}.".format(unicode(self.data)))
 		
 	def search(self,pattern):
 		if pattern is None or unicode(pattern) == "":
 			raise Exception("Empty pattern")
 		pattern = unicode(pattern)
 		for provider in self.data['providers']:
-			provID = unicode(provider['id'])
+			provID = unicode(provider['provider_type'])
 			self.connect_provider(provID)
 			for keyword in self.data['keywords']:
 				query = "{0} {1}".format(pattern,keyword)
@@ -67,7 +68,8 @@ class torrentSearch(JSAG3.JSAG3):
 		
 		
 	def connect_provider(self,provID):
-		provider = [provider for provider in self.data['providers'] if unicode(provider['id']) == provID][0]
+		provider = [provider for provider in self.data['providers'] if unicode(provider['provider_type']) == provID][0]
+		logging.info( "[torrentSearch] provider: ".format(unicode(self.data['providers'])))
 		if provID not in self.providers.keys():
 			self.providers[provID] = torrentProvider.torrentProvider(provID,provider['config'] if 'config' in provider.keys() else None)
 		

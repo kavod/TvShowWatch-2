@@ -1,0 +1,8 @@
+{
+	"fields": {
+		"nextUpdate": {
+			"label":"Next time tvShow needs to be updated",
+			"dateFormat": "YYYY-MM-DD HH:mm:ss"
+		}
+	}
+}

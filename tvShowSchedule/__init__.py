@@ -5,4 +5,3 @@ from tvShowSchedule import tvShowSchedule
 from tvShowSchedule import tvShowScheduleFromMyTvDB
 from tvShowSchedule import tvShowScheduleFromId
 from tvShowSchedule import fakeTvDB
-from tvShowSchedule import resetTvDB

@@ -11,24 +11,13 @@ import myTvDB
 import Downloader
 import torrentSearch
 import Transferer
-import JSAG
+import JSAG3
 
 path = os.path.dirname(os.path.realpath(__file__))
 with open(path + '/status.json') as data_file:    
 	STATUS = json.load(data_file)
 for key,item in STATUS.items():
 	STATUS[int(key)] = item
-	
-def resetTvDB(cache=True):
-	global t
-	global tz
-	try:
-		isinstance(t,myTvDB.myTvDB)
-	except:
-		t = myTvDB.myTvDB(cache=cache)
-		logging.debug("[tvShowSchedule] cache is disabled")
-	tz = tzlocal.get_localzone()
-	
 	
 def tvShowScheduleFromMyTvDB(tvShow, verbosity=False):
 	if not isinstance(tvShow,myTvDB.myShow):
@@ -38,7 +27,7 @@ def tvShowScheduleFromMyTvDB(tvShow, verbosity=False):
 		season = 0
 		episode = 0
 		status = 90
-		nextUpdate = datetime.datetime.now(tz) + datetime.timedelta(days=7)
+		nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(days=7)
 		downloader_id = ""
 	else:
 		season = int(next['seasonnumber'])
@@ -47,7 +36,7 @@ def tvShowScheduleFromMyTvDB(tvShow, verbosity=False):
 		nextUpdate = datetime.strptime(next['firstaired'],'%Y-%m-%d')
 		downloader_id = ""
 	return tvShowSchedule(
-				id=tvShow['id'],
+				seriesid=tvShow['id'],
 				title=tvShow['seriesname'],
 				season=season,
 				episode=episode,
@@ -58,7 +47,7 @@ def tvShowScheduleFromMyTvDB(tvShow, verbosity=False):
 				)
 	
 def tvShowScheduleFromId(tvShow, verbosity=False):
-	global t
+	t = myTvDB.myTvDB()
 	if not isinstance(tvShow,int):
 		raise TypeError("Incorrect argument: {0}".format(unicode(tvShow).encode('utf8')))
 	return tvShowScheduleFromMyTvDB(t[int(tvShow)], verbosity=verbosity)
@@ -69,30 +58,32 @@ def fakeTvDB(tvDB):
 		raise TypeError("Incorrect argument: {0}".format(unicode(tvDB).encode('utf8')))
 	t=tvDB
 
-class tvShowSchedule(object):
-	def __init__(self, id, title, season=0, episode=0,status=0, nextUpdate=None, downloader_id = "", verbosity=False):
-		logger = logging.getLogger()
-		if verbosity:
-			logger.setLevel(logging.DEBUG)
-		logging.debug("[tvShowSchedule] Verbosity is set to {0}".format(unicode(verbosity)))
-		resetTvDB(cache=not verbosity)
+class tvShowSchedule(JSAG3.JSAG3):
+	def __init__(self, seriesid, title, season=0, episode=0,status=0, nextUpdate=None, downloader_id = "", verbosity=False):
+		curPath = os.path.dirname(os.path.realpath(__file__))
+		JSAG3.JSAG3.__init__(self,
+			id="tvShow"+unicode(seriesid),
+			schemaFile=curPath+"/tvShowSchedule.jschem",
+			optionsFile=curPath+"/tvShowSchedule.jopt",
+			dataFile=None,
+			verbosity=verbosity
+		)
 		
-		self.confSchema = JSAG.loadParserFromFile("tvShowSchedule/tvShowSchedule.jschem")
-		self.id = int(id)
-		self.conf = JSAG.JSAGdata(configParser=self.confSchema,value=None)
+		self.seriesid = int(seriesid)
 		if nextUpdate is None:
-			nextUpdate = datetime.datetime.now(tz) + datetime.timedelta(minutes=2)
-		self._set(id=int(id),title=unicode(title), season=season, episode=episode,status=status, nextUpdate=nextUpdate,downloader_id=downloader_id)
+			nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2)
+		self._set(seriesid=int(seriesid),title=unicode(title), season=season, episode=episode,status=status, nextUpdate=nextUpdate,downloader_id=downloader_id)
 		self.downloader = None
 		self.searcher = None
 		
-	def _set(self,id=None,title=None,season=None,episode=None,status=None,nextUpdate=None, downloader_id = None):
+	def _set(self,seriesid=None,title=None,season=None,episode=None,status=None,nextUpdate=None, downloader_id = None):
+		logging.debug("[tvShowSchedule] TvShow will be updated. Old value:\n {0}".format(unicode(self.data)))
 		value = {}
-		value['id'] = int(id) if id is not None else self.conf.getValue(['id'])
-		value['title'] = unicode(title) if title is not None else self.conf.getValue(['title'])
+		value['seriesid'] = int(seriesid) if seriesid is not None else self.data['seriesid']
+		value['title'] = unicode(title) if title is not None else self.data['title']
 		if season is None or episode is None or (int(season) > 0) != (int(episode) > 0):
-			value['season'] = self.conf.getValue(['season'])
-			value['episode'] = self.conf.getValue(['episode'])
+			value['season'] = self.data['season']
+			value['episode'] = self.data['episode']
 		else:
 			value['season'] = int(season)
 			value['episode'] = int(episode)
@@ -102,22 +93,22 @@ class tvShowSchedule(object):
 				raise Exception("Incorrect status: {0}".format(unicode(status).encode('utf8')))
 			value['status'] = int(status)
 		else:
-			value['status'] = self.conf.getValue(['status'])
+			value['status'] = self.data['status']
 		if isinstance(nextUpdate,datetime.datetime):
+			logging.debug("[tvShowSchedule] Next update is set to {0} ({1})".format(unicode(nextUpdate),type(nextUpdate)))
 			if nextUpdate.tzinfo is None:
-				nextUpdate = nextUpdate.replace(tzinfo=tz)
+				nextUpdate = nextUpdate.replace(tzinfo=tzlocal.get_localzone())
+				logging.debug("[tvShowSchedule] Applying timezone. Now next update is set to {0} ({1})".format(unicode(nextUpdate),type(nextUpdate)))
 			value['nextUpdate'] = nextUpdate
 		else:
-			value['nextUpdate'] = self.conf.getValue(['nextUpdate'])
-		if isinstance(downloader_id,int):
+			value['nextUpdate'] = self.data['nextUpdate']
+			
+		if isinstance(downloader_id,int) or isinstance(downloader_id,basestring):
 			value['downloader_id'] = unicode(downloader_id)
-		self.conf.update(value)
-							
-	def __getitem__(self,key):
-		return JSAG.toJSON(self.conf[key])
-		
-	def __getattr__(self,key):
-		return JSAG.toJSON(self.conf[key])
+		else:
+			value['downloader_id'] = self.data['downloader_id']
+		self.data = JSAG3.updateData(self.data,value,self.schema)
+		logging.debug("[tvShowSchedule] TvShow has been updated. New value:\n {0}".format(unicode(self.data)))
 			
 	def _setDownloader(self,downloader):
 		if not isinstance(downloader,Downloader.Downloader):
@@ -135,15 +126,16 @@ class tvShowSchedule(object):
 		self.searcher=searcher
 			
 	def _setAchieved(self):
-		nextUpdate = datetime.datetime.now(tz) + datetime.timedelta(days=30)
+		nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(days=30)
 		self._set(season = 0,episode = 0,status = 90,nextUpdate=nextUpdate)
 		
 	def _setNotYetAired(self,episode):
-		nextUpdate = min(tz.localize(datetime.datetime.strptime(episode['firstaired'],'%Y-%m-%d')),datetime.datetime.now(tz)+datetime.timedelta(days=7))
+		nextUpdate = min(tzlocal.get_localzone().localize(datetime.datetime.strptime(episode['firstaired'],'%Y-%m-%d')),datetime.datetime.now(tzlocal.get_localzone())+datetime.timedelta(days=7))
 		self._set(season=int(episode['seasonnumber']),episode=int(episode['episodenumber']),status=10,nextUpdate=nextUpdate)
 		
 	def update(self,downloader=None,searcher=None,transferer=None,force=False):
-		global t
+		now = datetime.datetime.now(tzlocal.get_localzone())
+		t = myTvDB.myTvDB()
 		if downloader is not None:
 			self._setDownloader(downloader)
 		if not isinstance(self.downloader,Downloader.Downloader):
@@ -159,23 +151,24 @@ class tvShowSchedule(object):
 		if not isinstance(self.transferer,Transferer.Transferer):
 			raise Exception("No transferer provided")
 			
-		if force or self['nextUpdate'] < datetime.datetime.now(tz):
+		logging.debug("[tvShowSchedule] Next status scheduled on {0} ({2}). It is {1} ({3})".format(unicode(self['nextUpdate']),unicode(now),type(self['nextUpdate']),type(now)))
+		if force or self['nextUpdate'] < now:
 			logging.debug("[tvShowSchedule] Former status: {0}".format(self['status']))
 			# Added
 			if self['status'] == 0:
 				# Episode identified
 				if self['season'] * self['episode'] > 0:
-					firstaired = tz.localize(datetime.datetime.strptime(t[self['id']][self['season']][self['episode']]['firstaired'],'%Y-%m-%d'))
+					firstaired = tzlocal.get_localzone().localize(datetime.datetime.strptime(t[self['seriesid']][self['season']][self['episode']]['firstaired'],'%Y-%m-%d'))
 					# Episode already aired, do next step
-					if firstaired < datetime.datetime.now(tz):
+					if firstaired < now:
 						self._set(status=20)
 						self.update(force=True)
 					else:
 						# Episode not yet aired. Let's wait for it
-						self._setNotYetAired(t[self['id']][self['season']][self['episode']])
+						self._setNotYetAired(t[self['seriesid']][self['season']][self['episode']])
 				# No episode identified
 				else:
-					tvShow = t[self['id']]
+					tvShow = t[self['seriesid']]
 					next = tvShow.nextAired()
 					# No next episode. TV show is achieved
 					if next is None:
@@ -186,14 +179,14 @@ class tvShowSchedule(object):
 						
 			# Not yet aired
 			elif self['status'] == 10:
-				firstaired = tz.localize(datetime.datetime.strptime(t[self['id']][self['season']][self['episode']]['firstaired'],'%Y-%m-%d'))
+				firstaired = tzlocal.get_localzone().localize(datetime.datetime.strptime(t[self['seriesid']][self['season']][self['episode']]['firstaired'],'%Y-%m-%d'))
 				# Episode now aired. Do next step
-				if firstaired < datetime.datetime.now(tz):
+				if firstaired < now:
 					self._set(status=20)
 					self.update(force=True)
 				# Episode still not aired. Let's wait until its broadcast
 				else:
-					self._setNotYetAired(t[self['id']][self['season']][self['episode']])
+					self._setNotYetAired(t[self['seriesid']][self['season']][self['episode']])
 			
 			# Torrent watch
 			elif self['status'] == 20:
@@ -204,27 +197,27 @@ class tvShowSchedule(object):
 					downloader_id=self.downloader.add_torrent(tmpFile)
 					self._set(status=30,downloader_id=downloader_id)
 				# In all case (torrent found or not) wait for 15min.
-				nextUpdate = datetime.datetime.now(tz)+datetime.timedelta(minutes=15)
+				nextUpdate = now+datetime.timedelta(minutes=15)
 				self._set(nextUpdate=nextUpdate)
 			
 			# Download in progress
 			elif self['status'] == 30:
-				logging.debug("[tvShowSchedule] downloader_id is: {0}".format(self.downloader_id))
-				if self.downloader_id is not None:
+				logging.debug("[tvShowSchedule] downloader_id is: {0}".format(self['downloader_id']))
+				if self['downloader_id'] is not None:
 					# Identifing status
 					try:
 						logging.debug("[tvShowSchedule] Downloader: {0}".format(self.downloader))
-						status = self.downloader.get_status(self.downloader_id)
+						status = self.downloader.get_status(self['downloader_id'])
 						logging.debug("[tvShowSchedule] Get new status: {0}".format(status))
 					except:
-						logging.warning("[tvShowSchedule] Unable to retrieve status for: {0}".format(unicode(self.downloader_id)))
+						logging.warning("[tvShowSchedule] Unable to retrieve status for: {0}".format(unicode(self['downloader_id'])))
 						status = ''
 					
 					if status != '':
 						# Status identified
 						if status == "downloading":
 							# Still downloading. Wait for 15min
-							nextUpdate = datetime.datetime.now(tz)+datetime.timedelta(minutes=15)
+							nextUpdate = now+datetime.timedelta(minutes=15)
 							self._set(nextUpdate=nextUpdate)
 						elif status == "seeding":
 							# Download achieved. To be transfered.
@@ -241,12 +234,12 @@ class tvShowSchedule(object):
 					
 			# To be transfered
 			elif self['status'] == 35:
-				logging.debug("[tvShowSchedule] downloader_id is: {0}".format(self.downloader_id))
-				if self.downloader_id is not None:
+				logging.debug("[tvShowSchedule] downloader_id is: {0}".format(self['downloader_id']))
+				if self['downloader_id'] is not None:
 					# Identifing status
 					try:
 						logging.debug("[tvShowSchedule] Downloader: {0}".format(self.downloader))
-						status = self.downloader.get_status(self.downloader_id)
+						status = self.downloader.get_status(self['downloader_id'])
 						logging.debug("[tvShowSchedule] Get new status: {0}".format(status))
 					except:
 						status = ''
@@ -255,18 +248,18 @@ class tvShowSchedule(object):
 						# Status identified
 						if status == "downloading":
 							# Still downloading. Download in progress. Wait for 15min
-							nextUpdate = datetime.datetime.now(tz)+datetime.timedelta(minutes=15)
+							nextUpdate = now+datetime.timedelta(minutes=15)
 							self._set(status=30)
 							self._set(nextUpdate=nextUpdate)
 						elif status == "seeding":
 							# Transfer torrent
 							logging.debug("[tvShowSchedule] Transferer: {0}".format(self.transferer))
-							files = self.downloader.get_files(self.downloader_id)
+							files = self.downloader.get_files(self['downloader_id'])
 							for myFile in files:
 								self.transferer.transfer(myFile,delete_after=True)
 								
 							# Schedule next episode
-							tvShow = t[self['id']][self['season']][self['episode']]
+							tvShow = t[self['seriesid']][self['season']][self['episode']]
 							logging.debug("[tvShowSchedule] Current episode: {0}".format(unicode(tvShow)))
 							next = tvShow.next()
 							logging.debug("[tvShowSchedule] Next episode: {0}".format(unicode(next)))
@@ -287,7 +280,7 @@ class tvShowSchedule(object):
 				
 			# Broadcast achieved
 			elif self['status'] == 90:
-				tvShow = t[self['id']]
+				tvShow = t[self['seriesid']]
 				next = tvShow.nextAired()
 				if next is None:
 					self._setAchieved()

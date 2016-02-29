@@ -110,4 +110,5 @@ class Downloader(JSAG3.JSAG3):
 			raise Exception("No eligible torrent for cleaning")
 		id = torrents[0].id
 		logging.info('[Downloader] Removing {0}'.format(torrents[0]))
-		return self.transmission.remove_torrent(id, delete_data=True)['id']
+		self.transmission.remove_torrent(id, delete_data=True)
+		return id

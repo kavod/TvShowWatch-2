@@ -18,7 +18,7 @@ httpretty_urls = [
 
 class TestTorrentProviderKickAss(unittest.TestCase):
 	def setUp(self):
-		self.torProv = torrentProvider.torrentProvider('kickass',None,verbosity=DEBUG)
+		self.torProv = torrentProvider.torrentProvider('kat',None,verbosity=DEBUG)
 		
 	def test_creation(self):
 		self.assertIsInstance(self.torProv,torrentProvider.torrentProvider)

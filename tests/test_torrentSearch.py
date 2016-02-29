@@ -24,10 +24,9 @@ httpretty_urls = [
 class TestTorrentSearch(unittest.TestCase):
 	def setUp(self):
 		self.ts = torrentSearch.torrentSearch(id="torrentSearch",verbosity=DEBUG)
-		self.configFile1 = "tests/torrentSearch1.json"
 		self.configFile2 = "tests/torrentSearch2.json"
-		self.conf1 = {u'keywords': [u'720p'], u'providers': [{u'id': u'kickass',"keywords":["lang_id:2 verified:1"]}]}
-		self.conf1['providers'].insert(0,{'id':'t411','config':{"username":"your_username","password":"your_password"}})
+		self.conf1 = {u'keywords': [u'720p'], u'providers': [{u'provider_type': u'kat',"keywords":["lang_id:2 verified:1"]}]}
+		self.conf1['providers'].insert(0,{'provider_type':'t411','config':{"username":"your_username","password":"your_password"}})
 		
 	def test_creation(self):
 		self.assertIsInstance(self.ts,torrentSearch.torrentSearch)
@@ -35,6 +34,7 @@ class TestTorrentSearch(unittest.TestCase):
 	def test_loadConfig(self):
 		self.assertTrue(os.path.isfile(self.configFile2))
 		self.ts.loadConfig(self.configFile2)
+		logging.debug("[torrentSearch] Comparison of\n{0}\n-- and --\n{1}".format(self.ts.getValue(hidePassword=False),self.conf1))
 		self.assertEqual(self.ts.getValue(hidePassword=False),self.conf1)
 
 		

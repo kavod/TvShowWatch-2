@@ -3,7 +3,7 @@
 	"type":"object",
 	"properties":
 	{
-		"id":
+		"seriesid":
 		{
 			"title":"TV Show ID",
 			"type":"integer",
@@ -28,7 +28,7 @@
 			"title":"Next update",
 			"description":"Date and time of the next status update",
 			"type":"string",
-			"format":"date-time"
+			"format":"datetime"
 		},
 		"season":
 		{
@@ -50,5 +50,5 @@
 			"type":"string"
 		}
 	},
-	"required":["id","title"]
+	"required":["seriesid","title"]
 }

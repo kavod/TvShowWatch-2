@@ -9,16 +9,16 @@ import torrentProvider
 import logging
 import tempfile
 
-torrentProvider.TRACKER_CONF.append({'id':'kickass','name':'KickAss','url':"https://kat.cr",'param':[]})
+torrentProvider.TRACKER_CONF.append({'id':'kat','name':'KickAss Torrents','url':"https://kat.cr",'param':[]})
 
-def connect_kickass(self):
-	return self.test_kickass()
+def connect_kat(self):
+	return self.test_kat()
 
-def test_kickass(self):
+def test_kat(self):
 	req = requests.post(self.provider['url']+"/json.php", verify=False)
 	return ('title' in req.json().keys())
 			
-def search_kickass(self, search):
+def search_kat(self, search):
 	if not self.test():
 		self.connect()
 	params = {'q':search}
@@ -28,13 +28,13 @@ def search_kickass(self, search):
 	if 'list' in result.keys():
 		result = result['list']
 		logging.debug('%s torrents found before filter', int(len(result)))
-		result = filter(self.filter_kickass,result)
+		result = filter(self.filter_kat,result)
 		logging.debug('%s torrents found after filter', int(len(result)))
 		return result
 	else:
 		return []
                     
-def download_kickass(self,torrent_id):
+def download_kat(self,torrent_id):
 	logging.debug(unicode(torrent_id))
 	stream = requests.get(unicode(torrent_id), stream=True, verify=False, headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/43.0.2357.130 Chrome/43.0.2357.130 Safari/537.36'})
 	tmpFile = unicode(tempfile.mkstemp('.torrent')[1])
@@ -45,16 +45,16 @@ def download_kickass(self,torrent_id):
 		     		f.flush()
 	return tmpFile
 	
-def select_kickass(self,result):
+def select_kat(self,result):
 	logging.debug(result)
 	return {'id':sorted(result, key=lambda tor: int(tor[u'votes']), reverse=True)[0]['torrentLink']}
 	
-def filter_kickass(self,tor):
+def filter_kat(self,tor):
 	return int(tor['seeds']) > 0 and tor['verified'] == 1 and int(tor['votes']) > 0
 
-setattr(torrentProvider.torrentProvider,'connect_kickass',connect_kickass)
-setattr(torrentProvider.torrentProvider,'test_kickass',test_kickass)
-setattr(torrentProvider.torrentProvider,'search_kickass',search_kickass)
-setattr(torrentProvider.torrentProvider,'download_kickass',download_kickass)
-setattr(torrentProvider.torrentProvider,'filter_kickass',filter_kickass)
-setattr(torrentProvider.torrentProvider,'select_kickass',select_kickass)
+setattr(torrentProvider.torrentProvider,'connect_kat',connect_kat)
+setattr(torrentProvider.torrentProvider,'test_kat',test_kat)
+setattr(torrentProvider.torrentProvider,'search_kat',search_kat)
+setattr(torrentProvider.torrentProvider,'download_kat',download_kat)
+setattr(torrentProvider.torrentProvider,'filter_kat',filter_kat)
+setattr(torrentProvider.torrentProvider,'select_kat',select_kat)

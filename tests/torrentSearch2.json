@@ -1,1 +1,1 @@
-{"torrentSearch":{"keywords": ["720p"], "providers": [{"id":"t411","config":{"username":"your_username","password":"your_password"}},{"id": "kickass","keywords":["lang_id:2 verified:1"]}]}}
+{"torrentSearch":{"keywords": ["720p"], "providers": [{"provider_type":"t411","config":{"username":"your_username","password":"your_password"}},{"provider_type": "kat","keywords":["lang_id:2 verified:1"]}]}}
