@@ -2,43 +2,62 @@
 #encoding:utf-8
 from __future__ import unicode_literals
 
-import JSAG
+import json
 import myTvDB
 import logging
+import JSAG3
 
-class tvShowList(object):
-	def __init__(self, l_tvShows=[],verbosity=False):
-		logger = logging.getLogger()
-		if verbosity:
-			logger.setLevel(logging.DEBUG)
-		logging.debug("[tvShowList] Verbosity is set to {0}".format(unicode(verbosity)))
-		
-		self.schema = JSAG.loadParserFromFile("tvShowList/tvShowList.jschem")
-		self.tvList = JSAG.JSAGdata(self.schema,value=l_tvShows)
+class tvShowList(JSAG3.JSAG3):
+	def __init__(self, l_tvShows=None,verbosity=False):
+		if l_tvShows is None:
+			l_tvShows = []
+		JSAG3.JSAG3.__init__(self,
+			id="tvShowList",
+			schemaFile=None,
+			optionsFile=None,
+			dataFile=None,
+			verbosity=verbosity
+		)
+		with open("tvShowSchedule/tvShowSchedule.jschem") as schema_file:    
+			schema = json.load(schema_file)
+		schema = {
+					"type":"array",
+					"items":schema
+				}
+		self.addSchema(schema)
+		self.setValue(l_tvShows)
 		self.tvdb = None
 		
 	def loadFile(self,filename,path=[]):
-		self.filename = filename
+		self.addData(filename)
+		logging.warning("[tvShowList] loadFile method is depreciate. Please use addData method")
+		if path != []:
+			logging.error("[tvShowList] loadFile method does not take path parameter anymore (JSAG3 limitation)")
+		"""self.filename = filename
 		self.path = path
 		self.tvList.setFilename(filename,path=path)
 		try:
 			self.tvList.load()
 		except IOError:
 			print "File does not exist. Creating a new one"
-			self.save(filename=filename,path=path)
+			self.save(filename=filename,path=path)"""
 			
+	"""
+	# Use method of parrent class JSAG3
 	def save(self,filename=None,path=[]):
 		if filename is not None:
 			self.filename = filename
 			self.path = path
 		self.tvList.setFilename(filename,path=path)
-		self.tvList.save()
+		self.tvList.save()"""
 
+	"""
+	# Use method of parrent class JSAG3
 	def __len__(self):
 		if self is None:
 			return 0
 		else:
-			return len(self.tvList)
+			return len(self.tvList)"""
 			
 	def _add_from_myTvDB(self,tvShow,season=None,epno=None):
 		if not isinstance(tvShow,myTvDB.myShow) and not isinstance(tvShow,myTvDB.myEpisode):
@@ -69,13 +88,13 @@ class tvShowList(object):
 			self.tvdb[id][season][epno]
 		except:
 			raise Exception("S{0:02}E{1:02} does not exists for {2}".format())
-		self.tvList.append({
-							'id':int(id),
-							'title':unicode(title),
-							'status':0,
-							'season':season,
-							'episode':epno
-							})
+		self.append({
+					'seriesid':int(id),
+					'title':unicode(title),
+					'status':0,
+					'season':season,
+					'episode':epno
+					})
 	
 	def add(self,tvShow,season=None,epno=None):
 		if isinstance(tvShow,myTvDB.myShow) or isinstance(tvShow,myTvDB.myEpisode):
@@ -93,7 +112,7 @@ class tvShowList(object):
 			id = tvShow
 		else:
 			raise Exception("Not yet implemented")
-		return id in [show['id'] for show in JSAG.toJSON(self.tvList)]
+		return id in [show['seriesid'] for show in self.getValue()]
 			
 	def _create_tvdb_api(self):
 		if self.tvdb is None:

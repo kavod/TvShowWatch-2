@@ -1,5 +1,7 @@
-[
-	{"title":"Lost","id":73739,"status":0},
-	{"title":"ER","id":70761,"status":0},
-	{"title":"Game of Thrones","id":121361,"status":0}
-]
+{
+	"tvShowList":[
+		{"title":"Lost","seriesid":73739,"status":0},
+		{"title":"ER","seriesid":70761,"status":0},
+		{"title":"Game of Thrones","seriesid":121361,"status":0}
+	]
+}
