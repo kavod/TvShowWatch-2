@@ -26,7 +26,7 @@ class TestTorrentSearch(unittest.TestCase):
 		self.ts = torrentSearch.torrentSearch(id="torrentSearch",verbosity=DEBUG)
 		self.configFile2 = "tests/torrentSearch2.json"
 		self.conf1 = {u'keywords': [u'720p'], u'providers': [{u'provider_type': u'kat',"keywords":["lang_id:2 verified:1"]}]}
-		self.conf1['providers'].insert(0,{'provider_type':'t411','config':{"username":"your_username","password":"your_password"}})
+		self.conf1['providers'].insert(0,{'provider_type':'t411','authentification':{"username":"your_username","password":"your_password"}})
 		
 	def test_creation(self):
 		self.assertIsInstance(self.ts,torrentSearch.torrentSearch)

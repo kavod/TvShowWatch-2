@@ -50,5 +50,5 @@
 			"type":"string"
 		}
 	},
-	"required":["seriesid","title"]
+	"required":["seriesid","title","status","nextUpdate","season","episode","downloader_id"]
 }

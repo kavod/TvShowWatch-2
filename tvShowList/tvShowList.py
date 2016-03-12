@@ -6,11 +6,32 @@ import json
 import myTvDB
 import logging
 import JSAG3
+import Downloader
+import Transferer
+import torrentSearch
+import tvShowSchedule
 
 class tvShowList(JSAG3.JSAG3):
-	def __init__(self, l_tvShows=None,verbosity=False):
-		if l_tvShows is None:
-			l_tvShows = []
+	def __init__(self, tvShows=None,verbosity=False):
+		self.tvdb = None
+		if tvShows is None:
+			tvShows = []
+		if (
+			(
+				isinstance(tvShows,list) 
+				and not all(
+						isinstance(item,myTvDB.myShow) 
+						or isinstance(item,myTvDB.myEpisode) 
+						or isinstance(item,tvShowSchedule.tvShowSchedule) 
+						or isinstance(item,int)
+						for item in tvShows
+					)
+			) 
+			and not isinstance(tvShows,basestring)
+		):
+			raise Exception("tvShows parameter must be a basestring (for filename) or a list of myShow, myEpisode, tvShowSchedule or int values")
+			
+		self.verbosity = verbosity
 		JSAG3.JSAG3.__init__(self,
 			id="tvShowList",
 			schemaFile=None,
@@ -25,39 +46,26 @@ class tvShowList(JSAG3.JSAG3):
 					"items":schema
 				}
 		self.addSchema(schema)
-		self.setValue(l_tvShows)
-		self.tvdb = None
+		if isinstance(tvShows,basestring):
+			self.addData(tvShows)
+		else:
+			for item in tvShows:
+				self.add(item)
+		#self.setValue(tvShows)
+		self.downloader=None
+		self.transferer=None
+		self.searcher=None
 		
 	def loadFile(self,filename,path=[]):
 		self.addData(filename)
 		logging.warning("[tvShowList] loadFile method is depreciate. Please use addData method")
 		if path != []:
 			logging.error("[tvShowList] loadFile method does not take path parameter anymore (JSAG3 limitation)")
-		"""self.filename = filename
-		self.path = path
-		self.tvList.setFilename(filename,path=path)
-		try:
-			self.tvList.load()
-		except IOError:
-			print "File does not exist. Creating a new one"
-			self.save(filename=filename,path=path)"""
 			
-	"""
-	# Use method of parrent class JSAG3
-	def save(self,filename=None,path=[]):
-		if filename is not None:
-			self.filename = filename
-			self.path = path
-		self.tvList.setFilename(filename,path=path)
-		self.tvList.save()"""
-
-	"""
-	# Use method of parrent class JSAG3
-	def __len__(self):
-		if self is None:
-			return 0
-		else:
-			return len(self.tvList)"""
+	def _add_from_tvShowSchedule(self,tvShow):
+		if not isinstance(tvShow,tvShowSchedule.tvShowSchedule):
+			raise TypeError("argument must be a tvShowSchedule instance")
+		self.append(tvShow.getValue())
 			
 	def _add_from_myTvDB(self,tvShow,season=None,epno=None):
 		if not isinstance(tvShow,myTvDB.myShow) and not isinstance(tvShow,myTvDB.myEpisode):
@@ -88,13 +96,17 @@ class tvShowList(JSAG3.JSAG3):
 			self.tvdb[id][season][epno]
 		except:
 			raise Exception("S{0:02}E{1:02} does not exists for {2}".format())
-		self.append({
-					'seriesid':int(id),
-					'title':unicode(title),
-					'status':0,
-					'season':season,
-					'episode':epno
-					})
+		
+		self.append(tvShowSchedule.tvShowSchedule(
+			int(id), 
+			unicode(title), 
+			season=season, 
+			episode=epno,
+			status=0, 
+			nextUpdate=None, 
+			downloader_id = "", 
+			verbosity=False).getValue()
+		)
 	
 	def add(self,tvShow,season=None,epno=None):
 		if isinstance(tvShow,myTvDB.myShow) or isinstance(tvShow,myTvDB.myEpisode):
@@ -102,8 +114,10 @@ class tvShowList(JSAG3.JSAG3):
 		elif isinstance(tvShow,int):
 			self._create_tvdb_api()
 			self._add_from_myTvDB(self.tvdb[tvShow],season=season,epno=epno)
+		elif isinstance(tvShow,tvShowSchedule.tvShowSchedule):
+			self._add_from_tvShowSchedule(tvShow)
 		else:
-			raise Exception("Not yet implemented")
+			raise Exception("Add from {0} type is not yet implemented".format(type(tvShow)))
 			
 	def inList(self,tvShow):
 		if isinstance(tvShow,myTvDB.myShow):
@@ -112,9 +126,56 @@ class tvShowList(JSAG3.JSAG3):
 			id = tvShow
 		else:
 			raise Exception("Not yet implemented")
+		if self.data is None:
+			return []
 		return id in [show['seriesid'] for show in self.getValue()]
 			
 	def _create_tvdb_api(self):
 		if self.tvdb is None:
 			self.tvdb = myTvDB.myTvDB()
-				
+			
+	def _setDownloader(self,downloader):
+		if not isinstance(downloader,Downloader.Downloader):
+			raise TypeError("parameter is not Downloader instance")
+		self.downloader=downloader
+		
+	def _setTransferer(self,transferer):
+		if not isinstance(transferer,Transferer.Transferer):
+			raise TypeError("parameter is not Transferer instance")
+		self.transferer=transferer
+			
+	def _setTorrentSearch(self,searcher):
+		if not isinstance(searcher,torrentSearch.torrentSearch):
+			raise TypeError("parameter is not torrentSearch instance")
+		self.searcher=searcher
+		
+	def update(self,downloader=None,searcher=None,transferer=None,force=False):
+		if downloader is not None:
+			self._setDownloader(downloader)
+		if not isinstance(self.downloader,Downloader.Downloader):
+			raise Exception("No downloader provided")
+			
+		if searcher is not None:
+			self._setTorrentSearch(searcher)
+		if not isinstance(self.searcher,torrentSearch.torrentSearch):
+			raise Exception("No torrentSearch provided")
+			
+		if transferer is not None:
+			self._setTransferer(transferer)
+		if not isinstance(self.transferer,Transferer.Transferer):
+			raise Exception("No transferer provided")
+		
+		for key,item in enumerate(self.data):
+			logging.info("[tvShowList] ******* UPDATE *******\nTvShow {0}".format(unicode(key)))
+			tvShow = tvShowSchedule.tvShowSchedule(
+				item['seriesid'], 
+				item['title'], 
+				item['season'], 
+				item['episode'],
+				item['status'], 
+				item['nextUpdate'], 
+				item['downloader_id'], 
+				verbosity=self.verbosity)
+			tvShow.update(downloader=self.downloader,searcher=self.searcher,transferer=self.transferer,force=force)
+			self.data[key] = tvShow.getValue()
+			

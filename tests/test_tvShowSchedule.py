@@ -10,7 +10,6 @@ import tempfile
 import httpretty
 import myTvDB
 import tvShowSchedule
-import JSAG
 import Downloader
 import torrentSearch
 import Transferer
@@ -62,7 +61,7 @@ class TestTvShowSchedule(unittest.TestCase):
 		t = myTvDB.myTvDB()
 		tvShow = tvShowSchedule.tvShowScheduleFromMyTvDB(t[123],verbosity=DEBUG)
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
-		self.assertEqual(tvShow['status'],90)
+		self.assertEqual(tvShow['status'],0)
 		
 	@httpretty.activate
 	def test_creation_from_id(self):
@@ -70,7 +69,7 @@ class TestTvShowSchedule(unittest.TestCase):
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tvShow = tvShowSchedule.tvShowScheduleFromId(123,verbosity=DEBUG)
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
-		self.assertEqual(tvShow['status'],90)
+		self.assertEqual(tvShow['status'],0)
 		
 	@httpretty.activate
 	def test_update_0_to_10(self):
@@ -83,7 +82,7 @@ class TestTvShowSchedule(unittest.TestCase):
 		self.assertEqual(tvShow['status'],10)
 		
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=0,episode=0,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
-		self.assertEqual(tvShow['status'],0)
+		self.assertEqual(tvShow['status'],10)
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],10)
 		
@@ -128,6 +127,8 @@ class TestTvShowSchedule(unittest.TestCase):
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],30)
 		
+	"""
+	# No more relevant. A new added TvShow without episode indicated will schedule the pilot
 	@httpretty.activate
 	def test_update_0_to_90(self): # Added to TvShow Achieved
 		for mock_url in httpretty_urls:
@@ -136,7 +137,7 @@ class TestTvShowSchedule(unittest.TestCase):
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,title='TvShow 1',season=0,episode=0,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
 		self.assertEqual(tvShow['status'],0)
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
-		self.assertEqual(tvShow['status'],90)
+		self.assertEqual(tvShow['status'],90)"""
 		
 	@httpretty.activate
 	def test_update_10_to_20(self): # not broadcasted to waiting for torrent availability

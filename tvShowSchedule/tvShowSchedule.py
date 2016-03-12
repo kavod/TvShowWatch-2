@@ -24,16 +24,16 @@ def tvShowScheduleFromMyTvDB(tvShow, verbosity=False):
 		raise TypeError("Incorrect argument: {0} ({1})".format(unicode(tvShow).encode('utf8'),type(tvShow)))
 	next = tvShow.nextAired()
 	if next is None:
-		season = 0
-		episode = 0
-		status = 90
-		nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(days=7)
+		season = 1
+		episode = 1
+		status = 0
+		nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2)
 		downloader_id = ""
 	else:
 		season = int(next['seasonnumber'])
 		episode = int(next['episodenumber'])
 		status = 10
-		nextUpdate = datetime.strptime(next['firstaired'],'%Y-%m-%d')
+		nextUpdate = min(tzlocal.get_localzone().localize(datetime.datetime.strptime(next['firstaired'],'%Y-%m-%d')),datetime.datetime.now(tzlocal.get_localzone())+datetime.timedelta(days=7))
 		downloader_id = ""
 	return tvShowSchedule(
 				seriesid=tvShow['id'],
@@ -70,6 +70,19 @@ class tvShowSchedule(JSAG3.JSAG3):
 		)
 		
 		self.seriesid = int(seriesid)
+		if season*episode<1 and status != 90:
+			t = myTvDB.myTvDB()
+			next = t[self.seriesid].nextAired()
+			if next is None:
+				season = 1
+				episode = 1
+				status = 0
+			else:
+				season = int(next['seasonnumber'])
+				episode = int(next['episodenumber'])
+				status = 10
+				nextUpdate = min(tzlocal.get_localzone().localize(datetime.datetime.strptime(next['firstaired'],'%Y-%m-%d')),datetime.datetime.now(tzlocal.get_localzone())+datetime.timedelta(days=7))
+			
 		if nextUpdate is None:
 			nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2)
 		self._set(seriesid=int(seriesid),title=unicode(title), season=season, episode=episode,status=status, nextUpdate=nextUpdate,downloader_id=downloader_id)
@@ -172,7 +185,9 @@ class tvShowSchedule(JSAG3.JSAG3):
 					next = tvShow.nextAired()
 					# No next episode. TV show is achieved
 					if next is None:
-						self._setAchieved()
+						#self._setAchieved()
+						self._set(status=0,season=1,episode=1)
+						self.update(force=True)
 					else:
 						# Next episode now identified. Let's wait for it.
 						self._setNotYetAired(next)

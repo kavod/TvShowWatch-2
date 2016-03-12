@@ -10,6 +10,7 @@ import JSAG3
 import Downloader
 import torrentSearch
 import Transferer
+import tvShowList
 
 
 class Root(object):
@@ -55,6 +56,11 @@ if __name__ == '__main__':
 	root = transferer.getRoot(root)
 	conf = transferer.getConf(conf)
 	root.update.transferer = updateData(transferer)
+	
+	tvshowlist = tvShowList.tvShowList("tvShowList",dataFile=curPath+"/series.json")
+	root = tvshowlist.getRoot(root)
+	conf = tvshowlist.getConf(conf)
+	root.update.tvshowlist = updateData(tvshowlist)
 	
 	cherrypy.quickstart(root,"/".encode('utf8'),conf)
 

@@ -41,9 +41,12 @@ class torrentProvider:
 			self.provider = check_provider(trackerID)
 		except Exception as e:
 			raise Exception(e)
+		logging.debug("[torrentProvider] Provider {0} is known".format(trackerID))
 
 		# Populating paramerters
+		logging.debug("[torrentProvider] Populating paramerters")
 		for param in self.provider['param']:
+			logging.debug("[torrentProvider] Parameter {0} required".format(param.encode('utf8')))
 			if param in param_data.keys():
 				self.param[param] = param_data[param]
 			else:

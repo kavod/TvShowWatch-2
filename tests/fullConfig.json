@@ -1,0 +1,1 @@
+{"downloader": {"transConf": {"username": "niouf", "maxSlots": 5, "address": "localhost", "password": "niorf", "port": 9091, "cleanMethod": "oldest"}, "client": "transmission" },"transferer":{},"torrentSearch":{"keywords": ["720p"], "providers": [{"provider_type":"kat"},{"provider_type":"t411","authentification":{"username":"your_username","password":"your_password"}}]}}

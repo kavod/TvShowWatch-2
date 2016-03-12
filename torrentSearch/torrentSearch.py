@@ -71,7 +71,7 @@ class torrentSearch(JSAG3.JSAG3):
 		provider = [provider for provider in self.data['providers'] if unicode(provider['provider_type']) == provID][0]
 		logging.info( "[torrentSearch] provider: ".format(unicode(self.data['providers'])))
 		if provID not in self.providers.keys():
-			self.providers[provID] = torrentProvider.torrentProvider(provID,provider['config'] if 'config' in provider.keys() else None)
+			self.providers[provID] = torrentProvider.torrentProvider(provID,provider['authentification'] if 'authentification' in provider.keys() else None)
 		
 	def download(self,tor):
 		availProviders = [prov['id'] for prov in torrentProvider.TRACKER_CONF]
