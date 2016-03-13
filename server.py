@@ -57,7 +57,7 @@ if __name__ == '__main__':
 	conf = transferer.getConf(conf)
 	root.update.transferer = updateData(transferer)
 	
-	tvshowlist = tvShowList.tvShowList("tvShowList",dataFile=curPath+"/series.json")
+	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json")
 	root = tvshowlist.getRoot(root)
 	conf = tvshowlist.getConf(conf)
 	root.update.tvshowlist = updateData(tvshowlist)

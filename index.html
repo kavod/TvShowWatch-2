@@ -18,7 +18,10 @@
 				</ul>
 				<div class="tab-content">
 					<div class="tab-pane active" id="home">Home</div>
-					<div class="tab-pane" id="tvshow">Tv Show</div>
+					<div class="tab-pane" id="tvshow">
+						<h1>Add Tv Show</h1><br />
+						<div id="search_tvshow"></div>
+					</div>
 					<div class="tab-pane container-fluid" id="conf">
 						<div class="row">
 							<ul id="tabs-conf" class="nav nav-pills nav-stacked col-sm-4" data-tabs="tabs">
@@ -43,6 +46,31 @@
                 $("#torrent-search").alpaca(alpacaForm("torrentSearch"));
                 $("#downloader").alpaca(alpacaForm("downloader"));
                 $("#transfer").alpaca(alpacaForm("transferer"));
+                $("#tvshow").alpaca({
+                	"dataSource":"/data/tvShowList/",
+					"schemaSource": "/schema/tvShowList/",
+					"options":{
+						"type":"table",
+						"items":{
+							"fields":{
+								"status":{
+									"view":"bootstrap-display"
+								}
+							},
+							"legendStyle":"hidden"
+						}
+					},
+					"view":"bootstrap-display"
+                });
+                $("#search_tvshow").alpaca({
+					"schema": {
+						"type": "string"
+					},
+					"options": {
+						"type": "search",
+						"placeholder":"Type your favorite TV Show name"
+					}
+				});
             });
         </script>
     </body>

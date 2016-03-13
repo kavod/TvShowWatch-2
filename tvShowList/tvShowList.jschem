@@ -7,7 +7,7 @@
 		"type":"object",
 		"properties":
 		{
-			"id":
+			"seriesid":
 			{
 				"title":"TV Show ID",
 				"type":"integer",

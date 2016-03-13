@@ -12,7 +12,7 @@ import torrentSearch
 import tvShowSchedule
 
 class tvShowList(JSAG3.JSAG3):
-	def __init__(self, tvShows=None,verbosity=False):
+	def __init__(self, id="tvShowList",tvShows=None,verbosity=False):
 		self.tvdb = None
 		if tvShows is None:
 			tvShows = []
@@ -33,7 +33,7 @@ class tvShowList(JSAG3.JSAG3):
 			
 		self.verbosity = verbosity
 		JSAG3.JSAG3.__init__(self,
-			id="tvShowList",
+			id=id,
 			schemaFile=None,
 			optionsFile=None,
 			dataFile=None,

@@ -197,7 +197,7 @@ class TestTvShowList(unittest.TestCase):
                               ])
 		
 		self.loadFullConfig()
-		myList = tvShowList.tvShowList('tests/tvShowList2.json')
+		myList = tvShowList.tvShowList(tvShows='tests/tvShowList2.json',verbosity=DEBUG)
 		self.assertEqual(myList[0]['status'],0)
 		self.assertEqual(myList[1]['status'],0)
 		self.assertEqual(myList[2]['status'],0)
