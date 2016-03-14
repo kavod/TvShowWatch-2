@@ -10,23 +10,26 @@ import dateutil.parser
 import tempfile
 import httpretty
 import myTvDB
+import torrentProvider
 import Downloader
 import Transferer
 import torrentSearch
 import tvShowSchedule
 import tvShowList
 	
+T411_URL = (item for item in torrentProvider.TRACKER_CONF if item["id"] == "t411").next()['url']
+
 httpretty_urls = [
 	("http://thetvdb.com/api/GetSeries.php",'tests/httpretty_myTvDB1.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/123/en.xml",'tests/httpretty_myTvDB2.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/123/all/en.xml",'tests/httpretty_myTvDB3.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/321/en.xml",'tests/httpretty_myTvDB4.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",'tests/httpretty_myTvDB5.xml'),
-	("https://api.t411.in/auth",'tests/httpretty_t411_auth.json'),
-	("https://api.t411.in/users/profile/12345678",'tests/httpretty_t411_auth.json'),
-	("https://api.t411.in/torrents/search/home",'tests/httpretty_t411_search_home.json'),
-	("https://api.t411.in/torrents/search/TvShow%201%20S01E01%20720p",'tests/httpretty_t411_search_not_found.json'),
-	("https://api.t411.in/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
+	(T411_URL + "/auth",'tests/httpretty_t411_auth.json'),
+	(T411_URL + "/users/profile/12345678",'tests/httpretty_t411_auth.json'),
+	(T411_URL + "/torrents/search/home",'tests/httpretty_t411_search_home.json'),
+	(T411_URL + "/torrents/search/TvShow%201%20S01E01%20720p",'tests/httpretty_t411_search_not_found.json'),
+	(T411_URL + "/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
 	("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",'tests/httpretty_kat_download_home.magnet'),
 				]
 DEBUG=False

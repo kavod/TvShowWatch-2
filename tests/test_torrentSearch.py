@@ -6,17 +6,20 @@ import os
 import unittest
 import tempfile
 import json
+import torrentProvider
 import torrentSearch
 import logging
 import httpretty
 
 DEBUG=False
 
+T411_URL = (item for item in torrentProvider.TRACKER_CONF if item["id"] == "t411").next()['url']
+
 httpretty_urls = [
-	("https://api.t411.in/auth",'tests/httpretty_t411_auth.json'),
-	("https://api.t411.in/users/profile/12345678",'tests/httpretty_t411_auth.json'),
-	("https://api.t411.in/torrents/search/home%20720p",'tests/httpretty_t411_search_home.json'),
-	("https://api.t411.in/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
+	(T411_URL + "/auth",'tests/httpretty_t411_auth.json'),
+	(T411_URL + "/users/profile/12345678",'tests/httpretty_t411_auth.json'),
+	(T411_URL + "/torrents/search/home%20720p",'tests/httpretty_t411_search_home.json'),
+	(T411_URL + "/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
 	("https://kat.cr/json.php",'tests/httpretty_kat_search_home.json'),
 	("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",'tests/httpretty_kat_download_home.magnet'),
 	]

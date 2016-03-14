@@ -12,11 +12,13 @@ torrentProvider.loadProviders()
 
 DEBUG=False
 
+T411_URL = (item for item in torrentProvider.TRACKER_CONF if item["id"] == "t411").next()['url']
+
 httpretty_urls = [
-	("https://api.t411.in/auth",'tests/httpretty_t411_auth.json'),
-	("https://api.t411.in/users/profile/12345678",'tests/httpretty_t411_auth.json'),
-	("https://api.t411.in/torrents/search/home",'tests/httpretty_t411_search_home.json'),
-	("https://api.t411.in/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
+	(T411_URL + "/auth",'tests/httpretty_t411_auth.json'),
+	(T411_URL + "/users/profile/12345678",'tests/httpretty_t411_auth.json'),
+	(T411_URL + "/torrents/search/home",'tests/httpretty_t411_search_home.json'),
+	(T411_URL + "/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
 	]
 
 	
