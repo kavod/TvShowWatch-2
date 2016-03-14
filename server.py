@@ -11,10 +11,29 @@ import Downloader
 import torrentSearch
 import Transferer
 import tvShowList
+import myTvDB
 
 
 class Root(object):
 	pass
+	
+class LiveSearch(object):
+	@cherrypy.expose
+	def index(self):
+		return ""
+		
+	@cherrypy.expose
+	def result(self,result):
+		return result
+		
+	def _cp_dispatch(self,vpath):
+		if len(vpath) == 1:
+			t = myTvDB.myTvDB()
+			print("niouf")
+			cherrypy.request.params['result'] = json.dumps(t.livesearch(vpath.pop()))
+			return self.result
+		else:
+			return self.index
 
 class updateData(object):
 	def __init__(self,config):
@@ -35,10 +54,14 @@ if __name__ == '__main__':
 			'tools.staticdir.root':local_dir,
 			'tools.staticdir.dir': './',
 			'tools.staticdir.index': 'index.html',
+		},
+		"/livesearch".encode('utf8') : {
+			
 		}
 	}
 	root = Root()
 	root.update = Root()
+	root.livesearch = LiveSearch()
 	cherrypy.config["tools.encode.on"] = True
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
 

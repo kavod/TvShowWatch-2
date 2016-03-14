@@ -4,12 +4,15 @@ from __future__ import unicode_literals
 
 import sys
 import os
-import tvdb_api
 import json
 import argparse
 import string
 import logging
+import requests
+import re
+import urllib
 from datetime import datetime
+import tvdb_api
 
 class myTvDB(tvdb_api.Tvdb):
 	def __init__(self,
@@ -64,6 +67,12 @@ class myTvDB(tvdb_api.Tvdb):
 		if ep not in self.shows[sid][seas]:
 			self.shows[sid][seas][ep] = myEpisode(season = self.shows[sid][seas])
 		self.shows[sid][seas][ep][attrib] = value
+		
+	def livesearch(self, pattern):
+		result = self._loadUrl('http://thetvdb.com/livesearch.php?q={0}'.format(urllib.quote(pattern.encode('utf8'), safe='')))
+		result = re.sub('\s*([{,:])\s*(\w+)\s*([},:])\s*','\\1\"\\2\"\\3',result) # Add double quotes
+		result = re.sub('\s*,\s*([},:\]])\s*','\\1',result) # remove extra comma
+		return json.loads(result)['results']
 
 class myShow(tvdb_api.Show):
 	def lastAired(self):
