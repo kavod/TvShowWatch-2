@@ -1,11 +1,13 @@
 <html>
     <head>
         <link type="text/css" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" />
-        <link type="text/css" href="//code.cloudcms.com/alpaca/1.5.15/bootstrap/alpaca.min.css" rel="stylesheet" />
+        <link type="text/css" href="//code.cloudcms.com/alpaca/1.5.17/bootstrap/alpaca.min.css" rel="stylesheet" />
+        <link type="text/css" href="css/TSW.css" rel="stylesheet" />
         <script type="text/javascript" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
         <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
-        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/3.0.3/handlebars.js"></script>
-        <script type="text/javascript" src="//code.cloudcms.com/alpaca/1.5.15/bootstrap/alpaca.min.js"></script>
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.js"></script>
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
+        <script type="text/javascript" src="//code.cloudcms.com/alpaca/1.5.17/bootstrap/alpaca.min.js"></script>
         <script type="text/javascript" src="js/alpacaForm.js"></script>
     </head>
     <body>
@@ -53,24 +55,94 @@
 						"type":"table",
 						"items":{
 							"fields":{
+								"seriesid":{
+									/*"view":"bootstrap-display",*/
+									"validate":false
+								},
 								"status":{
-									"view":"bootstrap-display"
+									/*"view":"bootstrap-display",*/
+									"validate":false
+								},
+								"season":{
+									/*"view":"bootstrap-display",*/
+									"validate":false
+								},
+								"episode":{
+									/*"view":"bootstrap-display",*/
+									"validate":false
+								},
+								"downloader_id": {
+									"hidden":true
 								}
 							},
-							"legendStyle":"hidden"
-						}
+							/*"legendStyle":"hidden"*/
+						},
+						"hideInitValidationError":false
 					},
 					"view":"bootstrap-display"
                 });
+				
+				// constructs the suggestion engine
+				var states = new Bloodhound({
+				  datumTokenizer: Bloodhound.tokenizers.whitespace,
+				  queryTokenizer: Bloodhound.tokenizers.whitespace,
+				  // `states` is an array of state names defined in "The Basics"
+				  remote : {
+				  	url:'/livesearch/%QUERY',
+				  	wildcard: '%QUERY'
+				  },
+				});
+				
                 $("#search_tvshow").alpaca({
 					"schema": {
-						"type": "string"
+						"type":"object",
+						"properties": {
+							"search": {
+								"type": "string"
+							}
+						}
 					},
 					"options": {
-						"type": "search",
-						"placeholder":"Type your favorite TV Show name"
+						"fields": {
+							"search": {
+								"type": "search",
+								"placeholder":"Type your favorite TV Show name",
+								"events": {
+									"keydown": function(e) {
+										if (e.keyCode == '13')
+										{
+											$.ajax({
+											  type: "POST",
+											  url: "tvshowlist/add",
+											  data: { "search": this.getValue() },
+											});
+										}
+									}
+								},
+								"typeahead" : {
+									"config": {
+									  hint: true,
+									  highlight: true,
+									  minLength: 3
+									},
+									"datasets": {
+									  name: 'states',
+									  source: states.ttAdapter(),
+									  displayKey: 'value',
+									  limit: 9,
+									  templates: {
+									  	"suggestion":function(data) {
+									  		return '<p>' + data.value + '<br />'
+									  			 + '<small>' + data.info + '</small></p>';
+									  	}
+									  }
+									}
+								}
+							}
+						}
 					}
 				});
+				
             });
         </script>
     </body>

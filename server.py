@@ -29,11 +29,35 @@ class LiveSearch(object):
 	def _cp_dispatch(self,vpath):
 		if len(vpath) == 1:
 			t = myTvDB.myTvDB()
-			print("niouf")
 			cherrypy.request.params['result'] = json.dumps(t.livesearch(vpath.pop()))
 			return self.result
 		else:
 			return self.index
+			
+class serv_TvShowList(object):
+	@cherrypy.expose
+	def index(self):
+		return ""
+		
+	def _add(self,tvShowID):
+		print(str(int(tvShowID)))
+		tvshowlist.add(int(tvShowID))
+		tvshowlist.save()
+		return "TvShow {0} added".format(tvShowID)
+	
+	@cherrypy.expose
+	def add(self,search=""):
+		seriesname = search
+		t = myTvDB.myTvDB()
+		try:
+			tvShow = t[seriesname]
+		except:
+			return self.index()
+		if tvShow.data['seriesname'] == seriesname:
+			cherrypy.request.params['tvShowID'] = tvShow.data['id']
+			print(search+"\nID:"+str(tvShow.data['id']))
+			return self._add(tvShow.data['id'])
+		return self.index()
 
 class updateData(object):
 	def __init__(self,config):
@@ -54,14 +78,19 @@ if __name__ == '__main__':
 			'tools.staticdir.root':local_dir,
 			'tools.staticdir.dir': './',
 			'tools.staticdir.index': 'index.html',
+			'tools.trailing_slash.on' : False
 		},
 		"/livesearch".encode('utf8') : {
+			
+		},
+		"/tvshowlist".encode('utf8') : {
 			
 		}
 	}
 	root = Root()
 	root.update = Root()
 	root.livesearch = LiveSearch()
+	root.tvshowlist = serv_TvShowList()
 	cherrypy.config["tools.encode.on"] = True
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
 

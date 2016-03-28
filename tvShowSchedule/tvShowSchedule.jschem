@@ -11,12 +11,12 @@
 		},
 		"title":
 		{
-			"title":"TV Show title",
+			"title":"Title",
 			"type":"string"
 		},
 		"status":
 		{
-			"title":"TV Show status",
+			"title":"Status",
 			"type":"integer",
 			"min":0,
 			"max":99,
@@ -31,14 +31,14 @@
 		},
 		"season":
 		{
-			"title":"Season",
+			"title":"Season no",
 			"type":"integer",
 			"min":1,
 			"max":99
 		},
 		"episode":
 		{
-			"title":"Episode number",
+			"title":"Episode no",
 			"type":"integer",
 			"min":1,
 			"max":99
