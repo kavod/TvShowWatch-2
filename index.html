@@ -21,7 +21,7 @@
 				<div class="tab-content">
 					<div class="tab-pane active" id="home">Home</div>
 					<div class="tab-pane" id="tvshow">
-						<h1>Add Tv Show</h1><br />
+						<h2>Add Tv Show</h2><br />
 						<div id="search_tvshow"></div>
 					</div>
 					<div class="tab-pane container-fluid" id="conf">
@@ -81,6 +81,52 @@
 					},
 					"view":"bootstrap-display"
                 });
+                
+                $("#tvshow")
+                	.append($("<h2>")
+                		.text("Tv Show list")
+                	)
+                	.append($("<div>")
+                		.addClass("panel-group")
+                		.attr("id","accordion")
+                		.attr("aria-multiselectable",true)
+                	);
+                
+                $.ajax({
+				  type: "GET",
+				  url: "/data/tvShowList/",
+				  accept: "application/json"
+				})
+					.done(function(data) {
+						//result = JSON.parse(data);
+						for (serie in data)
+						{
+							$("#accordion").append($("<div>")
+								.addClass("panel")
+								.addClass("panel-default")
+								.append($("<div>")
+									.addClass("panel-heading")
+									.append($("<a>")
+										.attr("data-target","#tvShow" + data[serie].seriesid)
+										.attr("data-toggle","collapse")
+										.attr("aria-expanded",true)
+										.attr("aria-controls","tvShow" + data[serie].seriesid)
+										.attr("data-parent","#accordion")
+										.text(data[serie].title)
+									)
+									.append($("<span>")
+										.text("S"+ data[serie].season + "E" + data[serie].episode)
+									)
+								)
+								.append($("<div>")
+									.addClass("collapse")
+									.attr("id","tvShow" + data[serie].seriesid)
+									.text(data[serie].title)
+								)
+							);
+						}
+					}
+				);
 				
 				// constructs the suggestion engine
 				var states = new Bloodhound({
