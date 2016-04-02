@@ -119,6 +119,13 @@ class tvShowList(JSAG3.JSAG3):
 		else:
 			raise Exception("Add from {0} type is not yet implemented".format(type(tvShow)))
 			
+	def delete(self,tvShow):
+		if isinstance(tvShow,int):
+			index = next(index for (index, d) in enumerate(self.data) if d["seriesid"] == tvShow)
+			del(self.data[index])
+		else:
+			raise Exception("Delete from {0} type is not yet implemented".format(type(tvShow)))
+			
 	def inList(self,tvShow):
 		if isinstance(tvShow,myTvDB.myShow):
 			id = int(tvShow.data['id'])

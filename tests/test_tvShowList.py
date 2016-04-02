@@ -172,6 +172,23 @@ class TestTvShowList(unittest.TestCase):
 		self.assertFalse(self.l1.inList(self.tvShow2))
 		
 	@httpretty.activate
+	def test_delete(self):
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+		self.creation()
+		self.l1.add(self.tvShow1)
+		self.l1.add(self.tvShow2)
+		self.assertTrue(self.l1.inList(self.id1))
+		self.assertTrue(self.l1.inList(self.id2))
+		self.l1.delete(self.id2)
+		self.assertTrue(self.l1.inList(self.id1))
+		self.assertFalse(self.l1.inList(self.id2))
+		self.l1.add(self.tvShow2)
+		self.l1.delete(self.id1)
+		self.assertFalse(self.l1.inList(self.id1))
+		self.assertTrue(self.l1.inList(self.id2))
+		
+	@httpretty.activate
 	def test_update(self):
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
