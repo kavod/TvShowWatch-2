@@ -89,7 +89,7 @@ class tvShowList(JSAG3.JSAG3):
 					season = int(nextAired.get(u'seasonnumber', 0))
 					epno = int(nextAired.get(u'episodenumber', 0))
 		if self.inList(id):
-			raise Exception("{0} is already in the TvShow list")
+			raise Exception("{0} is already in the TvShow list".format(title))
 			
 		self._create_tvdb_api()
 		try:
