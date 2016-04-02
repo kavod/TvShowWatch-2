@@ -2,13 +2,17 @@
     <head>
         <link type="text/css" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" />
         <link type="text/css" href="//code.cloudcms.com/alpaca/1.5.17/bootstrap/alpaca.min.css" rel="stylesheet" />
+        <link type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/pnotify/3.0.0/pnotify.min.css" rel="stylesheet" />
         <link type="text/css" href="css/TSW.css" rel="stylesheet" />
         <script type="text/javascript" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
         <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
         <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.js"></script>
         <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/pnotify/3.0.0/pnotify.min.js"></script>
         <script type="text/javascript" src="//code.cloudcms.com/alpaca/1.5.17/bootstrap/alpaca.min.js"></script>
         <script type="text/javascript" src="js/alpacaForm.js"></script>
+        <script type="text/javascript" src="js/functions.js"></script>
+        <script type="text/javascript" src="js/TSW.js"></script>
     </head>
     <body>
     	<div class="container">
@@ -19,10 +23,12 @@
 					<li><a href="#conf" data-toggle="tab">Configuration</a></li>
 				</ul>
 				<div class="tab-content">
-					<div class="tab-pane active" id="home">Home</div>
+					<div class="tab-pane active" id="home"><input type="button" value="test" id="test" /></div>
 					<div class="tab-pane" id="tvshow">
 						<h2>Add Tv Show</h2><br />
 						<div id="search_tvshow"></div>
+						<h2>Tv Show List</h2>
+						<div class="panel-group" id="accordion" aria-multiselectable="true"></div>
 					</div>
 					<div class="tab-pane container-fluid" id="conf">
 						<div class="row">
@@ -34,162 +40,12 @@
 							<div class="tab-content col-sm-8">
 								<div class="tab-pane active" id="torrent-search"></div>
 								<div class="tab-pane" id="downloader"></div>
-								<div class="tab-pane" id="transfer">Transfer</div>
+								<div class="tab-pane" id="transfer"></div>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 	    </div>
-        <script type="text/javascript">
-            $(document).ready(function() {
-				$("#tabs").tab();
-				$("#tabs-conf").tab();
-                $("#torrent-search").alpaca(alpacaForm("torrentSearch"));
-                $("#downloader").alpaca(alpacaForm("downloader"));
-                $("#transfer").alpaca(alpacaForm("transferer"));
-                $("#tvshow").alpaca({
-                	"dataSource":"/data/tvShowList/",
-					"schemaSource": "/schema/tvShowList/",
-					"options":{
-						"type":"table",
-						"items":{
-							"fields":{
-								"seriesid":{
-									/*"view":"bootstrap-display",*/
-									"validate":false
-								},
-								"status":{
-									/*"view":"bootstrap-display",*/
-									"validate":false
-								},
-								"season":{
-									/*"view":"bootstrap-display",*/
-									"validate":false
-								},
-								"episode":{
-									/*"view":"bootstrap-display",*/
-									"validate":false
-								},
-								"downloader_id": {
-									"hidden":true
-								}
-							},
-							/*"legendStyle":"hidden"*/
-						},
-						"hideInitValidationError":false
-					},
-					"view":"bootstrap-display"
-                });
-                
-                $("#tvshow")
-                	.append($("<h2>")
-                		.text("Tv Show list")
-                	)
-                	.append($("<div>")
-                		.addClass("panel-group")
-                		.attr("id","accordion")
-                		.attr("aria-multiselectable",true)
-                	);
-                
-                $.ajax({
-				  type: "GET",
-				  url: "/data/tvShowList/",
-				  accept: "application/json"
-				})
-					.done(function(data) {
-						//result = JSON.parse(data);
-						for (serie in data)
-						{
-							$("#accordion").append($("<div>")
-								.addClass("panel")
-								.addClass("panel-default")
-								.append($("<div>")
-									.addClass("panel-heading")
-									.append($("<a>")
-										.attr("data-target","#tvShow" + data[serie].seriesid)
-										.attr("data-toggle","collapse")
-										.attr("aria-expanded",true)
-										.attr("aria-controls","tvShow" + data[serie].seriesid)
-										.attr("data-parent","#accordion")
-										.text(data[serie].title)
-									)
-									.append($("<span>")
-										.text("S"+ data[serie].season + "E" + data[serie].episode)
-									)
-								)
-								.append($("<div>")
-									.addClass("collapse")
-									.attr("id","tvShow" + data[serie].seriesid)
-									.text(data[serie].title)
-								)
-							);
-						}
-					}
-				);
-				
-				// constructs the suggestion engine
-				var states = new Bloodhound({
-				  datumTokenizer: Bloodhound.tokenizers.whitespace,
-				  queryTokenizer: Bloodhound.tokenizers.whitespace,
-				  // `states` is an array of state names defined in "The Basics"
-				  remote : {
-				  	url:'/livesearch/%QUERY',
-				  	wildcard: '%QUERY'
-				  },
-				});
-				
-                $("#search_tvshow").alpaca({
-					"schema": {
-						"type":"object",
-						"properties": {
-							"search": {
-								"type": "string"
-							}
-						}
-					},
-					"options": {
-						"fields": {
-							"search": {
-								"type": "search",
-								"placeholder":"Type your favorite TV Show name",
-								"events": {
-									"keydown": function(e) {
-										if (e.keyCode == '13')
-										{
-											$.ajax({
-											  type: "POST",
-											  url: "tvshowlist/add",
-											  data: { "search": this.getValue() },
-											});
-										}
-									}
-								},
-								"typeahead" : {
-									"config": {
-									  hint: true,
-									  highlight: true,
-									  minLength: 3
-									},
-									"datasets": {
-									  name: 'states',
-									  source: states.ttAdapter(),
-									  displayKey: 'value',
-									  limit: 9,
-									  templates: {
-									  	"suggestion":function(data) {
-									  		return '<p>' + data.value + '<br />'
-									  			 + '<small>' + data.info + '</small></p>';
-									  	}
-									  }
-									}
-								}
-							}
-						}
-					}
-				});
-				
-            });
-        </script>
     </body>
 </html>

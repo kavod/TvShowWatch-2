@@ -187,6 +187,7 @@ class TestTvShowList(unittest.TestCase):
 		self.l1.delete(self.id1)
 		self.assertFalse(self.l1.inList(self.id1))
 		self.assertTrue(self.l1.inList(self.id2))
+		self.assertRaises(Exception,self.l1.delete,999)
 		
 	@httpretty.activate
 	def test_update(self):

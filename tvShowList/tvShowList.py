@@ -121,7 +121,10 @@ class tvShowList(JSAG3.JSAG3):
 			
 	def delete(self,tvShow):
 		if isinstance(tvShow,int):
-			index = next(index for (index, d) in enumerate(self.data) if d["seriesid"] == tvShow)
+			try:
+				index = next(index for (index, d) in enumerate(self.data) if d["seriesid"] == tvShow)
+			except StopIteration:
+				raise Exception("TvShow {0} not scheduled".format(unicode(tvShow).encode("utf8")))
 			del(self.data[index])
 		else:
 			raise Exception("Delete from {0} type is not yet implemented".format(type(tvShow)))

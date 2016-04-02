@@ -2,6 +2,25 @@ table {
 	font-size: 14px;
 }
 
+.right_float {
+	float:right;
+}
+
+.tvShowTitle {
+	display: inline-block;
+	width:250px;
+}
+
+.tvShowEpisode {
+	display: inline-block;
+	width:70px;
+}
+
+.tvShowStatus {
+	display: inline-block;
+	width:150px;
+}
+
 .tt-menu,
 .gist {
   text-align: left;

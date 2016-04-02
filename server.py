@@ -6,12 +6,15 @@ import os
 import json
 import cherrypy
 from cherrypy.lib import auth_digest
+import threading
+import time
 import JSAG3
 import Downloader
 import torrentSearch
 import Transferer
 import tvShowList
 import myTvDB
+import TSWmachine
 
 
 class Root(object):
@@ -36,28 +39,44 @@ class LiveSearch(object):
 			
 class serv_TvShowList(object):
 	@cherrypy.expose
+	@cherrypy.tools.json_out()
 	def index(self):
-		return ""
+		return {"status":400,"error":""}
 		
-	def _add(self,tvShowID):
-		print(str(int(tvShowID)))
-		tvshowlist.add(int(tvShowID))
-		tvshowlist.save()
-		return "TvShow {0} added".format(tvShowID)
+	def _error(self,errorNo,errorDesc):
+		return {"status":errorNo,"error":errorDesc.encode("utf8")}
+		
+	def _add(self,tvShowID,tvShowName):
+		try:
+			tvshowlist.add(int(tvShowID))
+			tvshowlist.save()
+		except Exception as e:
+			return self._error(400,e[0])
+		return {"status":200,"error":"TvShow {0} added".format(tvShowName)}
 	
 	@cherrypy.expose
+	@cherrypy.tools.json_out()
 	def add(self,search=""):
 		seriesname = search
 		t = myTvDB.myTvDB()
 		try:
 			tvShow = t[seriesname]
-		except:
-			return self.index()
-		if tvShow.data['seriesname'] == seriesname:
+		except Exception as e:
+			return self._error(400,e[0])
+		if tvShow.data['seriesname'].lower() == seriesname.lower():
 			cherrypy.request.params['tvShowID'] = tvShow.data['id']
-			print(search+"\nID:"+str(tvShow.data['id']))
-			return self._add(tvShow.data['id'])
-		return self.index()
+			return self._add(tvShow.data['id'],tvShow.data['seriesname'])
+		return {"status":401,"error":"Unknown TvShow: '{0}'".format(seriesname)}
+		
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
+	def delete(self,tvShowID=-1):
+		try:
+			tvshowlist.delete(int(tvShowID))
+			tvshowlist.save()
+			return {"status":200,"error":"TvShow {0} deleted".format(tvShowID)}
+		except Exception as e:
+			return self._error(400,e[0])
 
 class updateData(object):
 	def __init__(self,config):
@@ -68,6 +87,22 @@ class updateData(object):
 	def index(self,**params):
 		self.config.updateData(json.loads(params['data'.encode('utf8')]))
 		return {"id":params['id'.encode('utf8')],"data":json.loads(params['data'.encode('utf8')])}
+		
+class streamGetSeries(object):
+	@cherrypy.expose
+	def index(self):
+		cherrypy.response.headers["Content-Type"] = "text/event-stream"
+		cherrypy.response.headers['Cache-Control'] = 'no-cache'
+		cherrypy.response.headers['Connection'] = 'keep-alive'
+		def content():
+			yield "retry: 5000\r\n"
+			while True:
+				data = "Event: server-time\r\ndata: 4" + time.ctime(os.path.getmtime(curPath+"/series.json")) + "\n\n"
+				yield data
+				time.sleep(5)
+				
+		return content()
+	index._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'} 
 
 if __name__ == '__main__':
 	curPath = os.path.dirname(os.path.realpath(__file__))
@@ -85,12 +120,20 @@ if __name__ == '__main__':
 		},
 		"/tvshowlist".encode('utf8') : {
 			
+		},
+		"/streamGetSeries".encode('utf8') : {
+		},
+		"/status.json".encode('utf8'): {
+			"tools.staticfile.on": True,
+			"tools.staticfile.filename": local_dir + "/tvShowSchedule/status.json"
 		}
 	}
 	root = Root()
 	root.update = Root()
 	root.livesearch = LiveSearch()
 	root.tvshowlist = serv_TvShowList()
+	root.streamGetSeries = streamGetSeries()
+	
 	cherrypy.config["tools.encode.on"] = True
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
 
@@ -113,6 +156,11 @@ if __name__ == '__main__':
 	root = tvshowlist.getRoot(root)
 	conf = tvshowlist.getConf(conf)
 	root.update.tvshowlist = updateData(tvshowlist)
+	
+	stopFlag = threading.Event()
+	thread = TSWmachine.MyThread(stopFlag)
+	thread.daemon = True
+	thread.start()
 	
 	cherrypy.quickstart(root,"/".encode('utf8'),conf)
 
