@@ -57,7 +57,7 @@ class Transferer(JSAG3.JSAG3):
 			verbosity=verbosity
 		)
 		
-	def get_uri(self,endpoint="source",filename="."):
+	def get_uri(self,endpoint="source",filename=".",showPassword=False):
 		self.checkUsable()
 		if not isinstance(endpoint,basestring) or unicode(endpoint) not in ['source','destination']:
 			raise Exception("You must choose 'endpoint' parameter among 'source'/'destination'")
@@ -66,7 +66,7 @@ class Transferer(JSAG3.JSAG3):
 		uri = URI_PATTERNS[data['protocol']].format(
 			filename,
 			return_if_filled('user',data),
-			return_if_filled('password',data),
+			return_if_filled('password',data) if showPassword else '*****',
 			return_if_filled('host',data),
 			(':'+return_if_filled('port',data)) if return_if_filled('port',data) !='' else '',
 			return_if_filled('path',data),
@@ -85,8 +85,8 @@ class Transferer(JSAG3.JSAG3):
 		tmpfile = unicode(tempfile.mkstemp()[1])
 		os.remove(tmpfile)
 		logging.info('[Transferer] Transfering file from {0} to {1}'.format(self.get_uri("source",filename),self.get_uri("destination",filename)))
-		source_file = storage.get_storage(self.get_uri("source",filename))
-		dest_file = storage.get_storage(self.get_uri("destination",filename))
+		source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
+		dest_file = storage.get_storage(self.get_uri("destination",filename,showPassword=True))
 		source_file.save_to_filename(tmpfile)
 		dest_file.load_from_filename(tmpfile)
 		os.remove(tmpfile)

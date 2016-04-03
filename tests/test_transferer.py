@@ -41,13 +41,35 @@ class TestTransferer(unittest.TestCase):
 		trans = self.creation(id="test4",data=self.data4)
 		self.assertEquals(trans.get_uri(endpoint="source",filename="test"),"file://"+self.tmpdirs[0]+"/test")
 		
+	def test_get_uri_ftp_with_password(self):
+		trans = self.creation(id="test4",data=self.data4)
+		self.assertEquals(
+			trans.get_uri(
+				endpoint="destination",
+				filename="awesome-file.txt",
+				showPassword=True
+			),
+			"ftp://username:password@my-ftp-server:12345/foo/bar/awesome-file.txt"
+		)
+		
+	def test_get_uri_ftps_with_password(self):
+		trans = self.creation(id="test3",data=self.data3)
+		self.assertEquals(
+			trans.get_uri(
+				endpoint="destination",
+				filename="awesome-file.txt",
+				showPassword=True
+			),
+			"ftps://username:password@my-ftp-server:12345/foo/bar/awesome-file.txt"
+		)
+		
 	def test_get_uri_ftp(self):
 		trans = self.creation(id="test4",data=self.data4)
-		self.assertEquals(trans.get_uri(endpoint="destination",filename="awesome-file.txt"),"ftp://username:password@my-ftp-server:12345/foo/bar/awesome-file.txt")
+		self.assertEquals(trans.get_uri(endpoint="destination",filename="awesome-file.txt"),"ftp://username:*****@my-ftp-server:12345/foo/bar/awesome-file.txt")
 		
 	def test_get_uri_ftps(self):
 		trans = self.creation(id="test3",data=self.data3)
-		self.assertEquals(trans.get_uri(endpoint="destination",filename="awesome-file.txt"),"ftps://username:password@my-ftp-server:12345/foo/bar/awesome-file.txt")
+		self.assertEquals(trans.get_uri(endpoint="destination",filename="awesome-file.txt"),"ftps://username:*****@my-ftp-server:12345/foo/bar/awesome-file.txt")
 		
 	def test_transfer_file_to_file(self):
 		trans = self.creation(id="test1",data=self.data1)
