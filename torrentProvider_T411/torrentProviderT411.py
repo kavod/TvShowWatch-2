@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import requests
 import json
+import re
 import torrentProvider
 import logging
 import tempfile
@@ -46,6 +47,7 @@ def search_t411(self, search):
 	if not self.test():
 		self.connect()
 	try:
+		search = re.sub(r'(S\d{2}E\d{2})',r'*\1*',search) # Fix search by episode issue on T411
 		result = requests.post(self.provider['url']+"/torrents/search/" + search,headers={"Authorization": self.token}, verify=False, timeout=5)
 		result = result.json()
 	except JSONDecodeError:
