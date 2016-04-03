@@ -210,7 +210,8 @@ class tvShowSchedule(JSAG3.JSAG3):
 				if tor is not None:
 					tmpFile = self.searcher.download(tor)
 					downloader_id=self.downloader.add_torrent(tmpFile)
-					self._set(status=30,downloader_id=downloader_id)
+					if downloader_id > 0:
+						self._set(status=30,downloader_id=downloader_id)
 				# In all case (torrent found or not) wait for 15min.
 				nextUpdate = now+datetime.timedelta(minutes=15)
 				self._set(nextUpdate=nextUpdate)

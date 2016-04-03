@@ -8,6 +8,7 @@ import datetime
 import json
 import tempfile
 import httpretty
+import LogTestCase
 import myTvDB
 import torrentProvider
 import tvShowSchedule
@@ -33,7 +34,7 @@ httpretty_urls = [
 				]
 DEBUG=False
 
-class TestTvShowSchedule(unittest.TestCase):
+class TestTvShowSchedule(LogTestCase.LogTestCase):
 	def setUp(self):
 		self.downloader = Downloader.Downloader(verbosity=DEBUG)
 		self.transferer = Transferer.Transferer(id="transferer",verbosity=DEBUG)
@@ -178,6 +179,28 @@ class TestTvShowSchedule(unittest.TestCase):
 		
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],30)
+		
+	@httpretty.activate
+	def test_update_20_to_20_file_corrput(self): # Waiting for torrent availability to itself caused by corrupted file
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
+		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
+		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
+		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent_corrupt.json','r').read()),
+                            ])
+		if not self.testTransmission:
+			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
+		self.downloader.loadConfig(self.configFileTransmission)
+		
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		tvShow._set(status=20)
+		with self.assertLogs(level='ERROR'):
+			tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		self.assertEqual(tvShow['status'],20)
 		
 	@httpretty.activate
 	def test_update_20_to_30(self): # Waiting for torrent availability to Download in progress

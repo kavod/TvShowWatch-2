@@ -28,7 +28,19 @@ class Downloader(JSAG3.JSAG3):
 		if self.data['client'] == 'transmission':
 			if not self._transAvailableSlot():
 				self._transClean()
-			result = self.transmission.add_torrent('file://{0}'.format(tor),paused=False)
+			try:
+				result = self.transmission.add_torrent('file://{0}'.format(tor),paused=False)
+			except transmissionrpc.TransmissionError as e:
+				logging.error("[Downloader] Error when adding torrent: {0}".format(e.message))
+				if delTorrent:
+					os.remove(tor)
+				return -1
+			except Exception as e:
+				logging.error("[Downloader] Error when adding torrent: {0}".format(e.args))
+				if delTorrent:
+					os.remove(tor)
+				return -1
+				
 			if isinstance(result,transmissionrpc.Torrent):
 				if delTorrent:
 					os.remove(tor)

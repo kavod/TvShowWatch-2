@@ -10,6 +10,7 @@ import json
 import Downloader
 import httpretty
 import logging
+import LogTestCase
 
 DEBUG=False
 
@@ -17,7 +18,7 @@ httpretty_urls = [
 	("http://localhost:9091/transmission/rpc",'tests/httpretty_transmission_add_torrent.json'),
 	]
 
-class TestDownloader(unittest.TestCase):
+class TestDownloader(LogTestCase.LogTestCase):
 	def setUp(self):
 		self.configFile1 = "tests/downloader1.json"
 		self.conf1 = {"client":"transmission","transConf":{"address":"localhost","port":9091}}
@@ -88,6 +89,30 @@ class TestDownloader(unittest.TestCase):
 			
 				id = self.d.add_torrent(tmpfile,delTorrent=True)
 				self.assertEqual(id,"3")
+				self.assertFalse(os.path.isfile(tmpfile))
+				return id
+
+	@httpretty.activate
+	def test_add_torrent_transmission_corrupt(self):
+		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent_corrupt.json','r').read()),
+                            ])
+		if self.testTransmission:
+			self.d = Downloader.Downloader(verbosity=DEBUG)
+			self.d.loadConfig(self.configFileTransmission)
+			logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
+			if self.d.getValue()['client'] is not None:
+				filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+			
+				tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+				os.remove(tmpfile)
+				shutil.copyfile(filename, tmpfile)
+				
+				with self.assertLogs(level='ERROR'):
+					id = self.d.add_torrent(tmpfile,delTorrent=True)
+				self.assertEqual(id,-1)
 				self.assertFalse(os.path.isfile(tmpfile))
 				return id
 			
