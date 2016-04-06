@@ -90,6 +90,14 @@ class TestTransferer(unittest.TestCase):
 		self.assertFalse(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
 		self.assertTrue(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
 		
+	def test_delete(self):
+		trans = self.creation(id="test1",data=self.data1)
+		tmpfile = unicode(tempfile.mkstemp('.txt',dir=self.tmpdirs[0])[1])
+		tmpfile = os.path.basename(tmpfile)
+		self.assertTrue(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
+		trans.delete(tmpfile)
+		self.assertFalse(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
+		
 	@mock.patch("ftplib.FTP", autospec=True)
 	def test_transfer_file_to_ftp(self, mock_ftp_class):
 		mock_ftp = mock_ftp_class.return_value

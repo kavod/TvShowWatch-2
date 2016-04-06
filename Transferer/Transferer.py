@@ -92,6 +92,11 @@ class Transferer(JSAG3.JSAG3):
 		os.remove(tmpfile)
 		if delete_after:
 			source_file.delete()
+		
+	def delete(self,filename):
+		logging.info('[Transferer] Deleting file {0}'.format(self.get_uri("source",filename)))
+		source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
+		source_file.delete()
 			
 	def checkUsable(self):
 		if 'source' not in self.data.keys() or self.data['source'] is None:

@@ -272,7 +272,12 @@ class tvShowSchedule(JSAG3.JSAG3):
 							logging.debug("[tvShowSchedule] Transferer: {0}".format(self.transferer))
 							files = self.downloader.get_files(self['downloader_id'])
 							for myFile in files:
-								self.transferer.transfer(myFile,delete_after=True)
+								self.transferer.transfer(myFile,delete_after=False)
+							if self.transferer['delete_after']:
+								#try:
+								self.downloader.delete_torrent(self['downloader_id'])
+								#except:
+								#	logging.error("[tvShowSchedule] Unable to delete source file {0}. Ignoring".format(myFile))
 								
 							# Schedule next episode
 							tvShow = t[self['seriesid']][self['season']][self['episode']]

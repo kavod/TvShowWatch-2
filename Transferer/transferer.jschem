@@ -9,6 +9,11 @@
 		"destination": {
 			"title": "Destination",
 			"$ref": "#/definitions/endpoint"
+		},
+		"delete_after": {
+			"title": "Delete after transfer",
+			"type": "boolean",
+			"default": false
 		}
 	},
 	"definitions": {

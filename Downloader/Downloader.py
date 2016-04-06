@@ -121,6 +121,12 @@ class Downloader(JSAG3.JSAG3):
 		if len(torrents)<1:
 			raise Exception("No eligible torrent for cleaning")
 		id = torrents[0].id
-		logging.info('[Downloader] Removing {0}'.format(torrents[0]))
-		self.transmission.remove_torrent(id, delete_data=True)
-		return id
+		return self.delete_torrent(id,delete_data=True)
+		
+	def delete_torrent(self,id,delete_data=True):
+		if self.data['client'] == 'transmission':
+			logging.info('[Downloader] Removing files from slot #{0}'.format(unicode(id)))
+			self.transmission.remove_torrent(id, delete_data=delete_data)
+			return id
+		else:
+			return id

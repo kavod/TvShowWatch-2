@@ -44,7 +44,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		
 		self.tmpdir1 = unicode(tempfile.mkdtemp())
 		self.tmpdir2 = unicode(tempfile.mkdtemp())
-		self.transfererData = {"source": {"path": self.tmpdir1, "protocol": "file"}, "destination": {"path": self.tmpdir2, "protocol": "file"}}
+		self.transfererData = {"source": {"path": self.tmpdir1, "protocol": "file"}, "destination": {"path": self.tmpdir2, "protocol": "file"}, "delete_after":False}
 		
 		self.ts = torrentSearch.torrentSearch(id="torrentSearch",dataFile="tests/torrentSearch2.json",verbosity=DEBUG)
 		self.t = myTvDB.myTvDB(debug=DEBUG,cache=not DEBUG)
@@ -224,7 +224,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.assertEqual(tvShow['status'],30)
 		
 	@httpretty.activate
-	def test_update_30_to_10(self):
+	def test_update_30_to_10(self): # Download in progress to Added
 		files = ['file1.txt','file2.tgz','foo/file4.txt']
 	
 		for mock_url in httpretty_urls:
@@ -254,12 +254,51 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			self.assertFalse(os.path.isfile(self.tmpdir2+"/"+myFile))	
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		for myFile in files:
-			self.assertFalse(os.path.isfile(self.tmpdir1+"/"+myFile))
+			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
+			os.remove(self.tmpdir1+"/"+myFile)
 			self.assertTrue(os.path.isfile(self.tmpdir2+"/"+myFile))
 		self.assertEqual(tvShow['status'],10)
 		
 	@httpretty.activate
-	def test_update_30_to_90(self):
+	def test_update_30_to_10_with_delete_after(self): # Download in progress to Added
+		files = ['file1.txt','file2.tgz','foo/file4.txt']
+	
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
+		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
+		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
+		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+                            ])
+		if not self.testTransmission:
+			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
+
+		os.makedirs(self.tmpdir1+"/foo")
+		for myFile in files:
+			with open(self.tmpdir1+"/"+myFile, 'a'):
+				os.utime(self.tmpdir1+"/"+myFile, None)
+		self.downloader.loadConfig(self.configFileTransmission)
+		self.transferer.addData(self.configFileTvShowSchedule)
+		transfererData = dict(self.transfererData)
+		transfererData['delete_after'] = True
+		self.transferer.setValue(transfererData)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		tvShow._set(status=30,downloader_id = 3)	
+		for myFile in files:
+			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
+			self.assertFalse(os.path.isfile(self.tmpdir2+"/"+myFile))	
+		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		for myFile in files:
+			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
+			os.remove(self.tmpdir1+"/"+myFile)
+			self.assertTrue(os.path.isfile(self.tmpdir2+"/"+myFile))
+		self.assertEqual(tvShow['status'],10)
+		
+	@httpretty.activate
+	def test_update_30_to_90(self): # Download in progress to Achieved
 		files = ['file1.txt','file2.tgz','foo/file4.txt']
 	
 		for mock_url in httpretty_urls:
@@ -289,7 +328,8 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			self.assertFalse(os.path.isfile(self.tmpdir2+"/"+myFile))	
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		for myFile in files:
-			self.assertFalse(os.path.isfile(self.tmpdir1+"/"+myFile))
+			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
+			os.remove(self.tmpdir1+"/"+myFile)
 			self.assertTrue(os.path.isfile(self.tmpdir2+"/"+myFile))
 		self.assertEqual(tvShow['status'],90)
 	

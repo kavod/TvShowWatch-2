@@ -1,4 +1,9 @@
 {
+	"fields": {
+		"delete_after": {
+			"rightLabel": "Delete files immediatly after transfer?"
+		}
+	},
 	"definitions":{
 		"endpoint":{
 			"fields":{
