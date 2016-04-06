@@ -7,6 +7,7 @@ import json
 import cherrypy
 from cherrypy.lib import auth_digest
 import threading
+import tempfile
 import time
 import JSAG3
 import Downloader
@@ -14,8 +15,14 @@ import torrentSearch
 import Transferer
 import tvShowList
 import myTvDB
-import TSWmachine
+import daemon
 
+from cherrypy.process.plugins import Daemonizer
+from cherrypy.process.plugins import PIDFile
+
+"""d = Daemonizer(cherrypy.engine)
+d.subscribe()"""
+PIDFile(cherrypy.engine, tempfile.gettempdir() + '/TSW2.PID').subscribe()
 
 class Root(object):
 	pass
@@ -104,9 +111,11 @@ class streamGetSeries(object):
 		return content()
 	index._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'} 
 
-if __name__ == '__main__':
-	curPath = os.path.dirname(os.path.realpath(__file__))
-	local_dir = os.path.abspath(os.getcwd())
+curPath = os.path.dirname(os.path.realpath(__file__))
+local_dir = os.path.abspath(os.getcwd())
+
+#if __name__ == '__main__':
+def main():
 	conf = {
 		"/".encode('utf8') : {
 			'tools.staticdir.on': True,
@@ -137,10 +146,10 @@ if __name__ == '__main__':
 	cherrypy.config["tools.encode.on"] = True
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
 
-	torrentSearch = torrentSearch.torrentSearch("torrentSearch",dataFile=curPath+"/config.json")
-	root = torrentSearch.getRoot(root)
-	conf = torrentSearch.getConf(conf)
-	root.update.torrentSearch = updateData(torrentSearch)
+	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=curPath+"/config.json")
+	root = torrentsearch.getRoot(root)
+	conf = torrentsearch.getConf(conf)
+	root.update.torrentSearch = updateData(torrentsearch)
 	
 	downloader = Downloader.Downloader("downloader",dataFile=curPath+"/config.json")
 	root = downloader.getRoot(root)
@@ -157,10 +166,15 @@ if __name__ == '__main__':
 	conf = tvshowlist.getConf(conf)
 	root.update.tvshowlist = updateData(tvshowlist)
 	
-	stopFlag = threading.Event()
+	"""stopFlag = threading.Event()
 	thread = TSWmachine.MyThread(stopFlag)
 	thread.daemon = True
-	thread.start()
+	thread.start()"""
+	"""t = threading.Thread(None, daemon.daemon)
+	t.daemon = True
+	t.start()"""
+	wd = cherrypy.process.plugins.BackgroundTask(1, daemon.daemon)
+	wd.start()
 	
 	cherrypy.quickstart(root,"/".encode('utf8'),conf)
 
