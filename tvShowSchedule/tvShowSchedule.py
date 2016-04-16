@@ -93,6 +93,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 				
 		# Banner management
 		if dl_banner:
+			self.downloadedBanner = True
 			if banner is None:
 				if 'banner' in t[self.seriesid].data.keys():
 					banner = t[self.seriesid].data['banner']
@@ -100,9 +101,9 @@ class tvShowSchedule(JSAG3.JSAG3):
 				banner = re.sub(r'^(http:\/\/thetvdb\.com\/banners\/)(graphical\/[\w-]+\.\w+)$',r'\1_cache/\2',banner)
 				extension = re.match(r'^http(s){0,1}:\/\/.*\.(\w+)$',banner)
 				if extension is not None:
+					update_file = True
 					localfile = "{0}/banner_{1}.{2}".format(banner_dir,unicode(self.seriesid),extension.group(2))
 					#Check if file is not outdated
-					update_file = True
 					if os.path.isfile(localfile):
 						now = datetime.datetime.now()
 						last_mod = datetime.datetime.fromtimestamp(os.path.getmtime(localfile))
@@ -116,6 +117,8 @@ class tvShowSchedule(JSAG3.JSAG3):
 							f.write(urllib2.urlopen(banner).read())
 							f.close()
 					banner = localfile
+		else:
+			self.downloadedBanner = False
 					
 					
 		if nextUpdate is None:
@@ -359,3 +362,9 @@ class tvShowSchedule(JSAG3.JSAG3):
 			raise Exception("Season & episode are not set")
 		pass
 	
+	def deleteBanner(self):
+		if self.downloadedBanner:
+			if self.data is not None and 'info' in self.data.keys() and 'banner_url' in self.data['info'].keys():
+				if not re.match(r'^http(s){0,1}:\/\/.*\.(\w+)$',self.data['info']['banner_url']):
+					os.remove(self.data['info']['banner_url'])
+					del(self.data['info']['banner_url'])

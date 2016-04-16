@@ -12,7 +12,7 @@ import torrentSearch
 import tvShowSchedule
 
 class tvShowList(JSAG3.JSAG3):
-	def __init__(self, id="tvShowList",tvShows=None,verbosity=False):
+	def __init__(self, id="tvShowList",banner_dir=".",tvShows=None,verbosity=False):
 		self.tvdb = None
 		if tvShows is None:
 			tvShows = []
@@ -46,6 +46,9 @@ class tvShowList(JSAG3.JSAG3):
 					"items":schema
 				}
 		self.addSchema(schema)
+		
+		self.banner_dir = banner_dir
+		
 		if isinstance(tvShows,basestring):
 			self.addData(tvShows)
 		else:
@@ -105,6 +108,8 @@ class tvShowList(JSAG3.JSAG3):
 			status=0, 
 			nextUpdate=None, 
 			downloader_id = "", 
+			banner_dir = self.banner_dir,
+			dl_banner=True,
 			verbosity=False).getValue()
 		)
 	
@@ -125,6 +130,18 @@ class tvShowList(JSAG3.JSAG3):
 				index = next(index for (index, d) in enumerate(self.data) if d["seriesid"] == tvShow)
 			except StopIteration:
 				raise Exception("TvShow {0} not scheduled".format(unicode(tvShow).encode("utf8")))
+			tvShow = tvShowSchedule.tvShowSchedule(
+				self.data[index]['seriesid'], 
+				self.data[index]['title'], 
+				self.data[index]['season'], 
+				self.data[index]['episode'],
+				self.data[index]['status'], 
+				self.data[index]['nextUpdate'], 
+				self.data[index]['downloader_id'],
+				banner=self.data[index]['info']['banner_url'] if 'info' in self.data[index].keys() and 'banner_url' in self.data[index]['info'].keys() else None,
+				dl_banner=True,
+				verbosity=self.verbosity)
+			tvShow.deleteBanner()
 			del(self.data[index])
 		else:
 			raise Exception("Delete from {0} type is not yet implemented".format(type(tvShow)))
@@ -185,6 +202,7 @@ class tvShowList(JSAG3.JSAG3):
 				item['status'], 
 				item['nextUpdate'], 
 				item['downloader_id'], 
+				banner=item['info']['banner_url'] if 'info' in item.keys() and 'banner_url' in item['info'].keys() else None,
 				verbosity=self.verbosity)
 			tvShow.update(downloader=self.downloader,searcher=self.searcher,transferer=self.transferer,force=force)
 			self.data[key] = tvShow.getValue()

@@ -1,3 +1,5 @@
+var serie_time = "0";
+
 function compare(a,b) {
 	if (a.title < b.title)
 		return -1;
@@ -77,6 +79,11 @@ function build_tvShowList() {
 			data.sort(compare);
 			for (serie in data)
 			{
+				if (typeof data[serie].info === 'undefined' || data[serie].info.banner_url === 'undefined') {
+					bannerNode = $('<div>')
+				} else {
+					bannerNode = $('<img>').attr('src',data[serie].info.banner_url)
+				}
 				$("#accordion").append($("<div>")
 					.addClass("panel")
 					.addClass("panel-default")
@@ -133,7 +140,10 @@ function build_tvShowList() {
 					.append($("<div>")
 						.addClass("collapse")
 						.attr("id","tvShow" + data[serie].seriesid)
-						.text(data[serie].title)
+						.append($('<h3>')
+							.text(data[serie].title)
+						)
+						.append(bannerNode)
 					)
 				);
 			}

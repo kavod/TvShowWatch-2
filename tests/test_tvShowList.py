@@ -8,7 +8,9 @@ import json
 import datetime
 import dateutil.parser
 import tempfile
+import shutil
 import httpretty
+import logging
 import myTvDB
 import torrentProvider
 import Downloader
@@ -25,6 +27,8 @@ httpretty_urls = [
 	("http://thetvdb.com/api/A2894E6CB335E443/series/123/all/en.xml",'tests/httpretty_myTvDB3.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/321/en.xml",'tests/httpretty_myTvDB4.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",'tests/httpretty_myTvDB5.xml'),
+	("http://thetvdb.com/banners/_cache/graphical/123-g4.jpg",'tests/image.jpg'),
+	("http://thetvdb.com/banners/_cache/graphical/321-g4.jpg",'tests/image.jpg'),
 	(T411_URL + "/auth",'tests/httpretty_t411_auth.json'),
 	(T411_URL + "/users/profile/12345678",'tests/httpretty_t411_auth.json'),
 	(T411_URL + "/torrents/search/home",'tests/httpretty_t411_search_home.json'),
@@ -49,21 +53,27 @@ class TestTvShowList(unittest.TestCase):
 		self.d1 = [{"seriesid":self.id1,"title":self.title1,"status":0}]
 		self.tvShowSchedule1 = tvShowSchedule.tvShowSchedule(self.id1, self.title1, verbosity=DEBUG)
 		self.tvShowSchedule2 = tvShowSchedule.tvShowSchedule(self.id2, self.title2, verbosity=DEBUG)
+		self.tmpdir1 = unicode(tempfile.mkdtemp())
+		self.tmpdir2 = unicode(tempfile.mkdtemp())
+		self.tmpdirBanner = unicode(tempfile.mkdtemp())
+		
+	def tearDown(self):
+		shutil.rmtree(self.tmpdir1)
+		shutil.rmtree(self.tmpdir2)
+		shutil.rmtree(self.tmpdirBanner)
 		
 	def loadFullConfig(self):
 		self.confFilename = "tests/fullConfig.json"
 		self.downloader = Downloader.Downloader(verbosity=DEBUG)
 		self.downloader.loadConfig(self.confFilename)
 		self.transferer = Transferer.Transferer(id="transferer",verbosity=DEBUG)
-		self.tmpdir1 = unicode(tempfile.mkdtemp())
-		self.tmpdir2 = unicode(tempfile.mkdtemp())
 		self.transfererData = {"source": {"path": self.tmpdir1, "protocol": "file"}, "destination": {"path": self.tmpdir2, "protocol": "file"}}
 		self.transferer.addData(self.confFilename)
 		self.transferer.setValue(self.transfererData)
 		self.torrentSearch = torrentSearch.torrentSearch(id="torrentSearch",dataFile=self.confFilename,verbosity=DEBUG)
 		
 	def creation(self):
-		self.l1 = tvShowList.tvShowList(verbosity=DEBUG)
+		self.l1 = tvShowList.tvShowList(banner_dir=self.tmpdirBanner,verbosity=DEBUG)
 		
 	def test_creation(self):
 		self.creation()
@@ -89,7 +99,21 @@ class TestTvShowList(unittest.TestCase):
 		self.assertTrue('nextUpdate' in data['tvShowList'][0].keys())
 		self.assertTrue(isinstance(dateutil.parser.parse(data['tvShowList'][0]['nextUpdate']),datetime.datetime))
 		del(data['tvShowList'][0]['nextUpdate'])
-		self.assertEqual({'tvShowList':[{'seriesid':self.id1,'title':self.title1,'status':0,'season':1,'episode':1,'downloader_id':'','info':{}}]},data),
+		self.assertEqual({
+			'tvShowList':[
+				{
+					'seriesid':self.id1,
+					'title':self.title1,
+					'status':0,
+					'season':1,
+					'episode':1,
+					'downloader_id':'',
+					'info':{
+						'banner_url': '{0}/banner_123.jpg'.format(self.tmpdirBanner)
+					}
+				}
+			]
+		},data),
 		os.remove(tmpfile)
 		
 	@httpretty.activate
@@ -180,7 +204,11 @@ class TestTvShowList(unittest.TestCase):
 		self.l1.add(self.tvShow2)
 		self.assertTrue(self.l1.inList(self.id1))
 		self.assertTrue(self.l1.inList(self.id2))
+		self.assertTrue(os.path.isfile('{0}/banner_{1}.jpg'.format(self.tmpdirBanner,self.id1)))
+		self.assertTrue(os.path.isfile('{0}/banner_{1}.jpg'.format(self.tmpdirBanner,self.id2)))
 		self.l1.delete(self.id2)
+		self.assertTrue(os.path.isfile('{0}/banner_{1}.jpg'.format(self.tmpdirBanner,self.id1)))
+		self.assertFalse(os.path.isfile('{0}/banner_{1}.jpg'.format(self.tmpdirBanner,self.id2)))
 		self.assertTrue(self.l1.inList(self.id1))
 		self.assertFalse(self.l1.inList(self.id2))
 		self.l1.add(self.tvShow2)

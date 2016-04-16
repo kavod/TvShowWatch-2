@@ -45,6 +45,9 @@ class LiveSearch(object):
 			return self.index
 			
 class serv_TvShowList(object):
+	def __init__(self,tvshowlist):
+		self.tvshowlist = tvshowlist
+
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def index(self):
@@ -55,8 +58,8 @@ class serv_TvShowList(object):
 		
 	def _add(self,tvShowID,tvShowName):
 		try:
-			tvshowlist.add(int(tvShowID))
-			tvshowlist.save()
+			self.tvshowlist.add(int(tvShowID))
+			self.tvshowlist.save()
 		except Exception as e:
 			return self._error(400,e[0])
 		return {"status":200,"error":"TvShow {0} added".format(tvShowName)}
@@ -78,12 +81,12 @@ class serv_TvShowList(object):
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def delete(self,tvShowID=-1):
-		try:
-			tvshowlist.delete(int(tvShowID))
-			tvshowlist.save()
-			return {"status":200,"error":"TvShow {0} deleted".format(tvShowID)}
-		except Exception as e:
-			return self._error(400,e[0])
+		#try:
+		self.tvshowlist.delete(int(tvShowID))
+		self.tvshowlist.save()
+		return {"status":200,"error":"TvShow {0} deleted".format(tvShowID)}
+		#except Exception as e:
+		#	return self._error(400,e[0])
 
 class updateData(object):
 	def __init__(self,config):
@@ -135,44 +138,46 @@ def main():
 		"/status.json".encode('utf8'): {
 			"tools.staticfile.on": True,
 			"tools.staticfile.filename": local_dir + "/tvShowSchedule/status.json"
+		},
+		"/static".encode('utf8'): {
+			"tools.staticdir.on": True,
+			"tools.staticdir.dir": "static"
 		}
 	}
+
+	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=curPath+"/config.json")
+	
+	downloader = Downloader.Downloader("downloader",dataFile=curPath+"/config.json")
+	
+	transferer = Transferer.Transferer("transferer",dataFile=curPath+"/config.json")
+	
+	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="static")
+	
 	root = Root()
 	root.update = Root()
 	root.livesearch = LiveSearch()
-	root.tvshowlist = serv_TvShowList()
+	root.tvshowlist = serv_TvShowList(tvshowlist=tvshowlist)
 	root.streamGetSeries = streamGetSeries()
 	
 	cherrypy.config["tools.encode.on"] = True
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
-
-	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=curPath+"/config.json")
+	
 	root = torrentsearch.getRoot(root)
 	conf = torrentsearch.getConf(conf)
 	root.update.torrentSearch = updateData(torrentsearch)
 	
-	downloader = Downloader.Downloader("downloader",dataFile=curPath+"/config.json")
 	root = downloader.getRoot(root)
 	conf = downloader.getConf(conf)
 	root.update.downloader = updateData(downloader)
 	
-	transferer = Transferer.Transferer("transferer",dataFile=curPath+"/config.json")
 	root = transferer.getRoot(root)
 	conf = transferer.getConf(conf)
 	root.update.transferer = updateData(transferer)
 	
-	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json")
 	root = tvshowlist.getRoot(root)
 	conf = tvshowlist.getConf(conf)
 	root.update.tvshowlist = updateData(tvshowlist)
 	
-	"""stopFlag = threading.Event()
-	thread = TSWmachine.MyThread(stopFlag)
-	thread.daemon = True
-	thread.start()"""
-	"""t = threading.Thread(None, daemon.daemon)
-	t.daemon = True
-	t.start()"""
 	wd = cherrypy.process.plugins.BackgroundTask(1, daemon.daemon)
 	wd.start()
 	

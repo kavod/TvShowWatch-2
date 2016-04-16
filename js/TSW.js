@@ -1,6 +1,5 @@
 $(document).ready(function() {
 	PNotify.prototype.options.styling = "bootstrap3";
-	var serie_time = "0";
 		
 	$("#test").click(function() {
 		alert_error({"status":400,"error":"My bad"});
