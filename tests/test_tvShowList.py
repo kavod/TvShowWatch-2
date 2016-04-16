@@ -89,7 +89,7 @@ class TestTvShowList(unittest.TestCase):
 		self.assertTrue('nextUpdate' in data['tvShowList'][0].keys())
 		self.assertTrue(isinstance(dateutil.parser.parse(data['tvShowList'][0]['nextUpdate']),datetime.datetime))
 		del(data['tvShowList'][0]['nextUpdate'])
-		self.assertEqual({'tvShowList':[{'seriesid':self.id1,'title':self.title1,'status':0,'season':1,'episode':1,'downloader_id':''}]},data),
+		self.assertEqual({'tvShowList':[{'seriesid':self.id1,'title':self.title1,'status':0,'season':1,'episode':1,'downloader_id':'','info':{}}]},data),
 		os.remove(tmpfile)
 		
 	@httpretty.activate

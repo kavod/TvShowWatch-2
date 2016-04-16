@@ -6,4 +6,4 @@ tzlocal>=1.2
 jsonschema>=2.5.1
 object_storage>=0.6.2
 httpretty>=0.8.14
-
+mock>=1.0.1

@@ -3,10 +3,13 @@
 from __future__ import unicode_literals
 
 import os
+import time
 import datetime
 import tzlocal
 import json
 import logging
+import re
+import urllib2
 import myTvDB
 import Downloader
 import torrentSearch
@@ -59,7 +62,7 @@ def fakeTvDB(tvDB):
 	t=tvDB
 
 class tvShowSchedule(JSAG3.JSAG3):
-	def __init__(self, seriesid, title, season=0, episode=0,status=0, nextUpdate=None, downloader_id = "", verbosity=False):
+	def __init__(self, seriesid, title, season=0, episode=0,status=0, nextUpdate=None, downloader_id = "", banner=None, banner_dir=".", dl_banner=False, verbosity=False):
 		curPath = os.path.dirname(os.path.realpath(__file__))
 		JSAG3.JSAG3.__init__(self,
 			id="tvShow"+unicode(seriesid),
@@ -70,8 +73,10 @@ class tvShowSchedule(JSAG3.JSAG3):
 		)
 		
 		self.seriesid = int(seriesid)
+		t = myTvDB.myTvDB()
+		
+		# Determine episode, status & nextUpdate
 		if season*episode<1 and status != 90:
-			t = myTvDB.myTvDB()
 			next = t[self.seriesid].nextAired()
 			if next is None:
 				season = 1
@@ -81,15 +86,45 @@ class tvShowSchedule(JSAG3.JSAG3):
 				season = int(next['seasonnumber'])
 				episode = int(next['episodenumber'])
 				status = 10
-				nextUpdate = min(tzlocal.get_localzone().localize(datetime.datetime.strptime(next['firstaired'],'%Y-%m-%d')),datetime.datetime.now(tzlocal.get_localzone())+datetime.timedelta(days=7))
-			
+				nextUpdate = min(
+					tzlocal.get_localzone().localize(datetime.datetime.strptime(next['firstaired'],'%Y-%m-%d')),
+					datetime.datetime.now(tzlocal.get_localzone())+datetime.timedelta(days=7)
+				)
+				
+		# Banner management
+		if dl_banner:
+			if banner is None:
+				if 'banner' in t[self.seriesid].data.keys():
+					banner = t[self.seriesid].data['banner']
+			if banner is not None:
+				banner = re.sub(r'^(http:\/\/thetvdb\.com\/banners\/)(graphical\/[\w-]+\.\w+)$',r'\1_cache/\2',banner)
+				extension = re.match(r'^http(s){0,1}:\/\/.*\.(\w+)$',banner)
+				if extension is not None:
+					localfile = "{0}/banner_{1}.{2}".format(banner_dir,unicode(self.seriesid),extension.group(2))
+					#Check if file is not outdated
+					update_file = True
+					if os.path.isfile(localfile):
+						now = datetime.datetime.now()
+						last_mod = datetime.datetime.fromtimestamp(os.path.getmtime(localfile))
+						refresh_rate = datetime.timedelta(days=30)
+						if now - last_mod > refresh_rate:
+							logging.debug("Banner is outdated. Download it again")
+						else:
+							update_file = False
+					if update_file:
+						with open(localfile,'wb') as f:
+							f.write(urllib2.urlopen(banner).read())
+							f.close()
+					banner = localfile
+					
+					
 		if nextUpdate is None:
 			nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2)
-		self._set(seriesid=int(seriesid),title=unicode(title), season=season, episode=episode,status=status, nextUpdate=nextUpdate,downloader_id=downloader_id)
+		self._set(seriesid=int(seriesid),title=unicode(title), season=season, episode=episode,status=status, nextUpdate=nextUpdate,downloader_id=downloader_id,banner=banner)
 		self.downloader = None
 		self.searcher = None
 		
-	def _set(self,seriesid=None,title=None,season=None,episode=None,status=None,nextUpdate=None, downloader_id = None):
+	def _set(self,seriesid=None,title=None,season=None,episode=None,status=None,nextUpdate=None, downloader_id = None,banner=None):
 		logging.debug("[tvShowSchedule] TvShow will be updated. Old value:\n {0}".format(unicode(self.data)))
 		value = {}
 		value['seriesid'] = int(seriesid) if seriesid is not None else self.data['seriesid']
@@ -120,6 +155,17 @@ class tvShowSchedule(JSAG3.JSAG3):
 			value['downloader_id'] = unicode(downloader_id)
 		else:
 			value['downloader_id'] = self.data['downloader_id']
+		
+		# Banner
+		if 'info' not in value.keys():
+			value['info'] = dict()
+		
+		if isinstance(banner,basestring):
+			value['info']['banner_url'] = unicode(banner)
+		else:
+			if self.data is not None and 'info' in self.data.keys() and 'banner_url' in self.data['info']:
+				value['info']['banner_url'] = self.data['info']['banner_url']
+			
 		self.data = JSAG3.updateData(self.data,value,self.schema)
 		logging.debug("[tvShowSchedule] TvShow has been updated. New value:\n {0}".format(unicode(self.data)))
 			

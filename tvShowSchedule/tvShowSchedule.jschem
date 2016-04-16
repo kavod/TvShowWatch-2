@@ -47,6 +47,16 @@
 		{
 			"title":"Downloader identifier",
 			"type":"string"
+		},
+		"info": {
+			"type":"object",
+			"title": "TV Show data",
+			"properties": {
+				"banner_url": {
+					"title": "Banner URL",
+					"type": "string"
+				}
+			}
 		}
 	},
 	"required":["seriesid","title","status","nextUpdate","season","episode","downloader_id"]

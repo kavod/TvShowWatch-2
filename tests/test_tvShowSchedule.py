@@ -4,10 +4,13 @@ from __future__ import unicode_literals
 
 import os
 import unittest
+import time
 import datetime
 import json
 import tempfile
+import shutil
 import httpretty
+import mock
 import LogTestCase
 import myTvDB
 import torrentProvider
@@ -17,6 +20,8 @@ import torrentSearch
 import Transferer
 import shutil
 
+httpretty.HTTPretty.allow_net_connect = False
+
 T411_URL = (item for item in torrentProvider.TRACKER_CONF if item["id"] == "t411").next()['url']
 
 httpretty_urls = [
@@ -25,6 +30,7 @@ httpretty_urls = [
 	("http://thetvdb.com/api/A2894E6CB335E443/series/123/all/en.xml",'tests/httpretty_myTvDB3.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/321/en.xml",'tests/httpretty_myTvDB4.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",'tests/httpretty_myTvDB5.xml'),
+	("http://thetvdb.com/banners/_cache/graphical/73739-g4.jpg",'tests/image.jpg'),
 	(T411_URL + "/auth",'tests/httpretty_t411_auth.json'),
 	(T411_URL + "/users/profile/12345678",'tests/httpretty_t411_auth.json'),
 	(T411_URL + "/torrents/search/home",'tests/httpretty_t411_search_home.json'),
@@ -57,6 +63,93 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=73739,title='Lost',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
 		self.assertEqual(tvShow['status'],0)
+	
+	def test_creation_with_banner(self):
+		tmpfile = unicode(tempfile.mkstemp('.jpg')[1])
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=73739,title='Lost',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),banner= tmpfile,verbosity=DEBUG)
+		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
+		self.assertEqual(tvShow['info']['banner_url'],tmpfile)
+		os.remove(tmpfile)
+	
+	@httpretty.activate
+	def test_creation_with_new_banner_dl(self):
+		os.path.getmtime = mock.MagicMock(return_value=time.mktime((datetime.datetime.now() - datetime.timedelta(days=45)).timetuple()))
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+		tmpdir = unicode(tempfile.mkdtemp())
+		tmpfile = '{0}/banner_73739.jpg'.format(tmpdir)
+		tvShow = tvShowSchedule.tvShowSchedule(
+			seriesid=73739,
+			title='Lost',
+			season=1,
+			episode=1,
+			status=0,
+			nextUpdate=datetime.datetime.now(),
+			banner_dir=tmpdir,
+			dl_banner= True,
+			verbosity=DEBUG
+		)
+		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
+		self.assertEqual(tvShow['info']['banner_url'],tmpfile)
+		self.assertTrue(os.path.isfile(tmpfile))
+		self.assertEqual(LogTestCase.md5(tmpfile),LogTestCase.md5('tests/image.jpg'))
+		self.assertTrue(httpretty.has_request())
+		os.remove(tmpfile)
+		shutil.rmtree(tmpdir)
+		
+	@httpretty.activate
+	def test_creation_with_fresh_banner(self):
+		#os.path.getmtime = mock.MagicMock(return_value=time.mktime((datetime.datetime.now() - datetime.timedelta(days=45)).timetuple()))
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+		tmpdir = unicode(tempfile.mkdtemp())
+		tmpfile = '{0}/banner_73739.jpg'.format(tmpdir)
+		shutil.copyfile('tests/image1.jpg',tmpfile)
+		tvShow = tvShowSchedule.tvShowSchedule(
+			seriesid=73739,
+			title='Lost',
+			season=1,
+			episode=1,
+			status=0,
+			nextUpdate=datetime.datetime.now(),
+			banner_dir=tmpdir,
+			dl_banner= True,
+			verbosity=DEBUG
+		)
+		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
+		self.assertEqual(tvShow['info']['banner_url'],tmpfile)
+		self.assertTrue(os.path.isfile(tmpfile))
+		self.assertEqual(LogTestCase.md5(tmpfile),LogTestCase.md5('tests/image1.jpg'))
+		self.assertFalse(httpretty.has_request())
+		os.remove(tmpfile)
+		shutil.rmtree(tmpdir)
+		
+	@httpretty.activate
+	def test_creation_with_outdated_banner(self):
+		os.path.getmtime = mock.MagicMock(return_value=time.mktime((datetime.datetime.now() - datetime.timedelta(days=45)).timetuple()))
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+		tmpdir = unicode(tempfile.mkdtemp())
+		tmpfile = '{0}/banner_73739.jpg'.format(tmpdir)
+		shutil.copyfile('tests/image1.jpg',tmpfile)
+		tvShow = tvShowSchedule.tvShowSchedule(
+			seriesid=73739,
+			title='Lost',
+			season=1,
+			episode=1,
+			status=0,
+			nextUpdate=datetime.datetime.now(),
+			banner_dir=tmpdir,
+			dl_banner= True,
+			verbosity=DEBUG
+		)
+		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
+		self.assertEqual(tvShow['info']['banner_url'],tmpfile)
+		self.assertTrue(os.path.isfile(tmpfile))
+		self.assertEqual(LogTestCase.md5(tmpfile),LogTestCase.md5('tests/image.jpg'))
+		self.assertTrue(httpretty.has_request())
+		os.remove(tmpfile)
+		shutil.rmtree(tmpdir)
 		
 	@httpretty.activate
 	def test_creation_from_MyTvDB(self):
