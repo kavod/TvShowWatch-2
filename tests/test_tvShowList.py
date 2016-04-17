@@ -109,7 +109,9 @@ class TestTvShowList(unittest.TestCase):
 					'episode':1,
 					'downloader_id':'',
 					'info':{
-						'banner_url': '{0}/banner_123.jpg'.format(self.tmpdirBanner)
+						'banner_url': '{0}/banner_123.jpg'.format(self.tmpdirBanner),
+						'firstaired': '2004-09-22T00:00:00',
+						'overview': 'This is the description of the TvShow number 1 used by myTvDB class tests.'
 					}
 				}
 			]
@@ -194,6 +196,15 @@ class TestTvShowList(unittest.TestCase):
 		self.assertTrue(self.l1.inList(self.id1))
 		self.assertTrue(self.l1.inList(self.tvShow1))
 		self.assertFalse(self.l1.inList(self.tvShow2))
+		
+	@httpretty.activate
+	def test_getTvShow(self):
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+		self.creation()
+		self.l1.add(self.tvShow1)
+		self.assertEqual(self.l1.getTvShow(self.id1)['seriesid'],self.id1)
+		self.assertIsNone(self.l1.getTvShow(self.id2))
 		
 	@httpretty.activate
 	def test_delete(self):

@@ -156,6 +156,12 @@ class tvShowList(JSAG3.JSAG3):
 		if self.data is None:
 			return []
 		return id in [show['seriesid'] for show in self.getValue()]
+		
+	def getTvShow(self,key):
+		if self.inList(key):
+			return (item for item in self.getValue() if item['seriesid'] == key).next()
+		else:
+			return None
 			
 	def _create_tvdb_api(self):
 		if self.tvdb is None:
