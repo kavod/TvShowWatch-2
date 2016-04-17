@@ -12,7 +12,9 @@ httpretty_urls = [
 	("http://thetvdb.com/api/A2894E6CB335E443/series/123/en.xml",'tests/httpretty_myTvDB2.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/123/all/en.xml",'tests/httpretty_myTvDB3.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/321/en.xml",'tests/httpretty_myTvDB4.xml'),
-	("http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",'tests/httpretty_myTvDB5.xml')
+	("http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",'tests/httpretty_myTvDB5.xml'),
+	("http://thetvdb.com/api/A2894E6CB335E443/series/456/en.xml",'tests/httpretty_myTvDB4.xml'),
+	("http://thetvdb.com/api/A2894E6CB335E443/series/456/all/en.xml",'tests/httpretty_myTvDB7.xml')
 				]
 DEBUG=True
 
@@ -50,6 +52,13 @@ class TestMyTvDB(unittest.TestCase):
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.nextAired = self.t['TvShow1'].nextAired()
+		self.assertIsNone(self.nextAired)
+		
+	@httpretty.activate
+	def test_nextAired_with_empty_season(self):
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+		self.nextAired = self.t[456].nextAired()
 		self.assertIsNone(self.nextAired)
 		
 	@httpretty.activate

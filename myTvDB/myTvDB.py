@@ -103,10 +103,12 @@ class myShow(tvdb_api.Show):
 		for key,season in self.items():
 			if str(key)=="0":
 				continue
-			for episode in season.values():
+			for episode in season.values():	
+				if episode['firstaired'] is None:
+					continue				
 				ep_firstaired = datetime.strptime(episode['firstaired'],'%Y-%m-%d')
 				cur_firstaired = datetime.strptime(current['firstaired'],'%Y-%m-%d')
-				if ep_firstaired==None:
+				if ep_firstaired is None:
 					continue
 				if ep_firstaired >= today:
 					if cur_firstaired > ep_firstaired:
