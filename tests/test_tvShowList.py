@@ -18,6 +18,8 @@ import Transferer
 import torrentSearch
 import tvShowSchedule
 import tvShowList
+
+httpretty.HTTPretty.allow_net_connect = False
 	
 T411_URL = (item for item in torrentProvider.TRACKER_CONF if item["id"] == "t411").next()['url']
 
@@ -78,12 +80,18 @@ class TestTvShowList(unittest.TestCase):
 	def test_creation(self):
 		self.creation()
 		self.assertIsInstance(self.l1,tvShowList.tvShowList)
-		self.assertEqual(self.l1.getValue(),[])
+		self.assertEqual(self.l1,[])
 		
 	def test_loadFile(self):
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		os.remove(tmpfile)
+		shutil.copyfile('tests/tvShowList1.json',tmpfile)
+		
 		self.creation()
-		self.l1.addData('tests/tvShowList1.json')
+		self.l1.addData(tmpfile)
 		self.assertEqual(len(self.l1),3)
+		
+		os.remove(tmpfile)
 	
 	@httpretty.activate
 	def test_save(self):
@@ -110,7 +118,7 @@ class TestTvShowList(unittest.TestCase):
 					'downloader_id':'',
 					'info':{
 						'banner_url': '{0}/banner_123.jpg'.format(self.tmpdirBanner),
-						'firstaired': '2004-09-22T00:00:00',
+						'firstaired': '2004-09-22',
 						'overview': 'This is the description of the TvShow number 1 used by myTvDB class tests.'
 					}
 				}
@@ -256,8 +264,12 @@ class TestTvShowList(unittest.TestCase):
                                httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
                               ])
 		
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		os.remove(tmpfile)
+		shutil.copyfile('tests/tvShowList2.json',tmpfile)
+		
 		self.loadFullConfig()
-		myList = tvShowList.tvShowList(tvShows='tests/tvShowList2.json',verbosity=DEBUG)
+		myList = tvShowList.tvShowList(tvShows=tmpfile,verbosity=DEBUG)
 		self.assertEqual(myList[0]['status'],0)
 		self.assertEqual(myList[1]['status'],0)
 		self.assertEqual(myList[2]['status'],0)
@@ -269,3 +281,5 @@ class TestTvShowList(unittest.TestCase):
 		self.assertEqual(myList[2]['status'],30)
 		self.assertEqual(myList[3]['status'],20)
 		self.assertEqual(myList[4]['status'],30)
+		
+		os.remove(tmpfile)

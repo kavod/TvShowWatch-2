@@ -3,15 +3,17 @@
 from __future__ import unicode_literals
 
 import json
+import datetime
 import myTvDB
 import logging
-import JSAG3
+import os
+import cherrypy
 import Downloader
 import Transferer
 import torrentSearch
 import tvShowSchedule
 
-class tvShowList(JSAG3.JSAG3):
+class tvShowList(list):
 	def __init__(self, id="tvShowList",banner_dir=".",tvShows=None,verbosity=False):
 		self.tvdb = None
 		if tvShows is None:
@@ -31,44 +33,60 @@ class tvShowList(JSAG3.JSAG3):
 		):
 			raise Exception("tvShows parameter must be a basestring (for filename) or a list of myShow, myEpisode, tvShowSchedule or int values")
 			
+		self.id = unicode(id)
+		self.filename = None
 		self.verbosity = verbosity
-		JSAG3.JSAG3.__init__(self,
-			id=id,
-			schemaFile=None,
-			optionsFile=None,
-			dataFile=None,
-			verbosity=verbosity
-		)
-		with open("tvShowSchedule/tvShowSchedule.jschem") as schema_file:    
-			schema = json.load(schema_file)
-		schema = {
-					"type":"array",
-					"items":schema
-				}
-		self.addSchema(schema)
+		self.banner_dir = unicode(banner_dir)
+		self.root = Root()
+		self.root.schema = Root()
+		self.root.options = Root()
+		self.root.data = Root()
 		
-		self.banner_dir = banner_dir
-		
+		list.__init__(self,[])
 		if isinstance(tvShows,basestring):
-			self.addData(tvShows)
+			self.addData(unicode(tvShows))
 		else:
 			for item in tvShows:
 				self.add(item)
-		#self.setValue(tvShows)
+				
 		self.downloader=None
 		self.transferer=None
 		self.searcher=None
+
+	# Check if filename is defined
+	def checkCompleted(self):
+		if self.filename is None:
+			raise Exception("[tvShowList] Datafile has not been provided")
+			
+	# Control if file exists and is parsable with self.id key
+	def isDataInitialized(self,dataFile):
+		return isDataInitialized(self.id,dataFile)
+	
+	# Initialize file with empty array
+	def initDataFile(self):
+		self.checkCompleted()
+		initDataFile(self.id,self.filename)
 		
-	def loadFile(self,filename,path=[]):
-		self.addData(filename)
-		logging.warning("[tvShowList] loadFile method is depreciate. Please use addData method")
-		if path != []:
-			logging.error("[tvShowList] loadFile method does not take path parameter anymore (JSAG3 limitation)")
+	# Load data from file	
+	def addData(self,dataFile):
+		logging.debug("[tvShowList] Add data {0}".format(unicode(dataFile)))
+		self.filename = unicode(dataFile)
+		if self.isDataInitialized(self.filename):
+			with open(self.filename) as data_file:
+				for item in json.load(data_file)[self.id]:
+					tvShow = tvShowSchedule.tvShowScheduleFromId(item['seriesid'])
+					value = tvShow.getValue(hidePassword=False)
+					value.update(item)
+					tvShow.setValue(value)
+					self.add(tvShow)
+		else:
+			self.initDataFile()
+		setattr(self.root.data,self.id.encode('utf8'),staticJsonFile(self.filename,self.id))
 			
 	def _add_from_tvShowSchedule(self,tvShow):
 		if not isinstance(tvShow,tvShowSchedule.tvShowSchedule):
 			raise TypeError("argument must be a tvShowSchedule instance")
-		self.append(tvShow.getValue())
+		self.append(tvShow)
 			
 	def _add_from_myTvDB(self,tvShow,season=None,epno=None):
 		if not isinstance(tvShow,myTvDB.myShow) and not isinstance(tvShow,myTvDB.myEpisode):
@@ -110,8 +128,20 @@ class tvShowList(JSAG3.JSAG3):
 			downloader_id = "", 
 			banner_dir = self.banner_dir,
 			dl_banner=True,
-			verbosity=False).getValue()
+			verbosity=False)
 		)
+		
+	def save(self,filename=None):
+		if filename is not None:
+			self.filename = unicode(filename).encode('utf8')
+		self.checkCompleted()
+		content = getExistingData(self.filename)
+		content[self.id] = []
+		for tvShow in self:
+			tvShow.isValid()
+			content[self.id].append(tvShow.getValue(hidePassword=False))
+		with open(self.filename, 'w') as outfile:
+			json.dump(content, outfile,default=json_serial)
 	
 	def add(self,tvShow,season=None,epno=None):
 		if isinstance(tvShow,myTvDB.myShow) or isinstance(tvShow,myTvDB.myEpisode):
@@ -127,22 +157,12 @@ class tvShowList(JSAG3.JSAG3):
 	def delete(self,tvShow):
 		if isinstance(tvShow,int):
 			try:
-				index = next(index for (index, d) in enumerate(self.data) if d["seriesid"] == tvShow)
+				index = next(index for (index, d) in enumerate(self) if d["seriesid"] == tvShow)
 			except StopIteration:
 				raise Exception("TvShow {0} not scheduled".format(unicode(tvShow).encode("utf8")))
-			tvShow = tvShowSchedule.tvShowSchedule(
-				self.data[index]['seriesid'], 
-				self.data[index]['title'], 
-				self.data[index]['season'], 
-				self.data[index]['episode'],
-				self.data[index]['status'], 
-				self.data[index]['nextUpdate'], 
-				self.data[index]['downloader_id'],
-				banner=self.data[index]['info']['banner_url'] if 'info' in self.data[index].keys() and 'banner_url' in self.data[index]['info'].keys() else None,
-				dl_banner=True,
-				verbosity=self.verbosity)
+			tvShow = self[index]
 			tvShow.deleteBanner()
-			del(self.data[index])
+			del(self[index])
 		else:
 			raise Exception("Delete from {0} type is not yet implemented".format(type(tvShow)))
 			
@@ -153,13 +173,13 @@ class tvShowList(JSAG3.JSAG3):
 			id = tvShow
 		else:
 			raise Exception("Not yet implemented")
-		if self.data is None:
+		if self is None:
 			return []
-		return id in [show['seriesid'] for show in self.getValue()]
+		return id in [show['seriesid'] for show in self]
 		
 	def getTvShow(self,key):
 		if self.inList(key):
-			return (item for item in self.getValue() if item['seriesid'] == key).next()
+			return (item for item in self if item['seriesid'] == key).next()
 		else:
 			return None
 			
@@ -198,18 +218,84 @@ class tvShowList(JSAG3.JSAG3):
 		if not isinstance(self.transferer,Transferer.Transferer):
 			raise Exception("No transferer provided")
 		
-		for key,item in enumerate(self.data):
+		for key,tvShow in enumerate(self):
 			logging.info("[tvShowList] ******* UPDATE *******\nTvShow {0}".format(unicode(key)))
-			tvShow = tvShowSchedule.tvShowSchedule(
-				item['seriesid'], 
-				item['title'], 
-				item['season'], 
-				item['episode'],
-				item['status'], 
-				item['nextUpdate'], 
-				item['downloader_id'], 
-				banner=item['info']['banner_url'] if 'info' in item.keys() and 'banner_url' in item['info'].keys() else None,
-				verbosity=self.verbosity)
 			tvShow.update(downloader=self.downloader,searcher=self.searcher,transferer=self.transferer,force=force)
-			self.data[key] = tvShow.getValue()
 			
+	# Depreciate
+	def loadFile(self,filename,path=[]):
+		self.addData(filename)
+		logging.warning("[tvShowList] loadFile method is depreciate. Please use addData method")
+		if path != []:
+			logging.error("[tvShowList] loadFile method no longer takes path parameter anymore (JSAG3 limitation)")
+
+def getExistingData(filename):
+	filename = unicode(filename).encode('utf8')
+	if os.path.isfile(filename):
+		with open(filename) as fd:
+			try:
+				existingData = json.load(fd)
+			except:
+				raise Exception("Cannot parse {0}".format(filename))
+		logging.debug("[tvShowList] Existing data:\n{0}".format(existingData))
+		return existingData
+	else:
+		return dict()
+
+def initDataFile(id,filename):
+	id = unicode(id)
+	filename = unicode(filename)
+	logging.debug("[tvShowList] Initialize data '{0}' in {1}.".format(id,filename))
+	newData = getExistingData(filename)
+	newData[id] = []
+		
+	with open(filename, 'w') as outfile:
+		json.dump(newData, outfile)
+
+def isDataInitialized(id,dataFile):
+	id = unicode(id)
+	if os.path.isfile(dataFile):
+		existingData = getExistingData(dataFile)
+		if id in existingData.keys():
+			logging.debug("[tvShowList] data file {0} already contains data.".format(unicode(dataFile)))
+			return True
+		else:
+			logging.debug("[tvShowList] data file {0} does not contain data '{1}'. Existing data: {2}".format(unicode(dataFile),id,existingData.keys()))
+			return False
+	else:
+		logging.debug("[tvShowList] data file {0} does not exist.".format(unicode(dataFile)))
+		return False	
+		
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, datetime.datetime):
+        serial = obj.isoformat()
+        return serial
+    raise TypeError ("Type not serializable")		
+
+# Cherrypy classes
+class Root(object):
+	pass
+
+class staticJsonFile(object):
+	def __init__(self,filename,key=None):
+		self.key = key
+		self.filename = filename
+		self.update()
+			
+	def update(self):
+		if not hasattr(self,"lastModified") or os.path.getmtime(self.filename) != self.lastModified:
+			with open(self.filename) as data_file:  
+				self.data = json.load(data_file) 
+				if self.key is not None: 
+					self.data = self.data[self.key]
+			self.lastModified = os.path.getmtime(self.filename)
+			
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
+	def index(self):
+		self.update()
+		cherrypy.response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+		cherrypy.response.headers['Pragma'] = 'no-cache'
+		cherrypy.lib.caching.expires(secs=0)
+		return self.data
