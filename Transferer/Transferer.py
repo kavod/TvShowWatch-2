@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import os
 import logging
 import tempfile
+import shutil
 import storage
 import JSAG3
 
@@ -82,14 +83,30 @@ class Transferer(JSAG3.JSAG3):
 		return uri
 		
 	def transfer(self,filename,delete_after=False):
-		tmpfile = unicode(tempfile.mkstemp()[1])
-		os.remove(tmpfile)
 		logging.info('[Transferer] Transfering file from {0} to {1}'.format(self.get_uri("source",filename),self.get_uri("destination",filename)))
+		
 		source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
 		dest_file = storage.get_storage(self.get_uri("destination",filename,showPassword=True))
-		source_file.save_to_filename(tmpfile)
-		dest_file.load_from_filename(tmpfile)
-		os.remove(tmpfile)
+		
+		if self.data['source']['protocol'] == 'file' and self.data['destination']['protocol'] == 'file':
+			destination = "{0}/{1}".format(self.data['destination']['path'],filename)
+			if not os.path.exists(os.path.dirname(destination)):
+				os.mkdir(os.path.dirname(destination))
+			shutil.copyfile("{0}/{1}".format(self.data['source']['path'],filename),destination)
+		else:
+			if self.data['source']['protocol'] == 'file':
+				dest_file.load_from_filename("{0}/{1}".format(self.data['source']['path'],filename))
+			elif self.data['destination']['protocol'] == 'file':
+				destination = "{0}/{1}".format(self.data['destination']['path'],filename)
+				if not os.path.exists(os.path.dirname(destination)):
+					os.mkdir(os.path.dirname(destination))
+				source_file.save_to_filename(destination)
+			else:
+				tmpfile = unicode(tempfile.mkstemp()[1])
+				os.remove(tmpfile)
+				source_file.save_to_filename(tmpfile)
+				dest_file.load_from_filename(tmpfile)
+				os.remove(tmpfile)
 		if delete_after:
 			source_file.delete()
 		
