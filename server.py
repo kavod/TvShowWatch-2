@@ -7,6 +7,7 @@ import json
 import cherrypy
 from cherrypy.lib import auth_digest
 import threading
+import datetime
 import tempfile
 import time
 import JSAG3
@@ -60,33 +61,45 @@ class serv_TvShowList(object):
 		try:
 			self.tvshowlist.add(int(tvShowID))
 			self.tvshowlist.save()
+			tvShow = self.tvshowlist.getTvShow(int(tvShowID))
 		except Exception as e:
 			return self._error(400,e[0])
-		return {"status":200,"error":"TvShow {0} added".format(tvShowName)}
+		return {"status":200,"error":"TvShow {0} added".format(tvShowName),"data":json.loads(json.dumps(tvShow,default=json_serial))}
 	
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
-	def add(self,search=""):
-		seriesname = search
+	def add(self, **kwargs):
+		if 'title' in kwargs.keys():
+			seriesname = kwargs['title']
+			if 'seriesid' in kwargs.keys():
+				serie = int(kwargs['seriesid'])
+			else:
+				serie = seriesname
+		else:
+			serie = unicode(kwargs)
+			seriesname = serie
 		t = myTvDB.myTvDB()
 		try:
-			tvShow = t[seriesname]
+			tvShow = t[serie]
 		except Exception as e:
-			return self._error(400,e[0])
+			return self._error(400,e[0]+unicode(serie)+unicode(seriesname.lower()))
 		if tvShow.data['seriesname'].lower() == seriesname.lower():
-			cherrypy.request.params['tvShowID'] = tvShow.data['id']
+			#cherrypy.request.params['tvShowID'] = tvShow.data['id']
 			return self._add(tvShow.data['id'],tvShow.data['seriesname'])
 		return {"status":401,"error":"Unknown TvShow: '{0}'".format(seriesname)}
 		
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def delete(self,tvShowID=-1):
-		#try:
-		self.tvshowlist.delete(int(tvShowID))
-		self.tvshowlist.save()
-		return {"status":200,"error":"TvShow {0} deleted".format(tvShowID)}
-		#except Exception as e:
-		#	return self._error(400,e[0])
+		try:
+			tvShowID = int(tvShowID)
+			t = myTvDB.myTvDB()
+			tvShow = t[tvShowID]
+			self.tvshowlist.delete(tvShowID)
+			self.tvshowlist.save()
+			return {"status":200,"error":"TvShow {0} deleted".format(tvShow['seriesname'])}
+		except Exception as e:
+			return self._error(400,e[0])
 
 class updateData(object):
 	def __init__(self,config):
@@ -123,7 +136,14 @@ def main():
 		"/".encode('utf8') : {
 			'tools.staticdir.on': True,
 			'tools.staticdir.root':local_dir,
-			'tools.staticdir.dir': './',
+			'tools.staticdir.dir': './web',
+			'tools.staticdir.index': 'index.html',
+			'tools.trailing_slash.on' : False
+		},
+		"/web".encode('utf8') : {
+			'tools.staticdir.on': True,
+			'tools.staticdir.root':local_dir,
+			'tools.staticdir.dir': './web',
 			'tools.staticdir.index': 'index.html',
 			'tools.trailing_slash.on' : False
 		},
@@ -138,10 +158,6 @@ def main():
 		"/status.json".encode('utf8'): {
 			"tools.staticfile.on": True,
 			"tools.staticfile.filename": local_dir + "/tvShowSchedule/status.json"
-		},
-		"/static".encode('utf8'): {
-			"tools.staticdir.on": True,
-			"tools.staticdir.dir": "static"
 		}
 	}
 
@@ -151,7 +167,7 @@ def main():
 	
 	transferer = Transferer.Transferer("transferer",dataFile=curPath+"/config.json")
 	
-	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="static")
+	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="web/static")
 	
 	root = Root()
 	root.update = Root()
@@ -183,3 +199,10 @@ def main():
 	
 	cherrypy.quickstart(root,"/".encode('utf8'),conf)
 
+# By jgbarah from http://stackoverflow.com/questions/11875770/how-to-overcome-datetime-datetime-not-json-serializable-in-python
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, datetime.datetime):
+        serial = obj.isoformat()
+        return serial
+    raise TypeError ("Type not serializable")

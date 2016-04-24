@@ -8,3 +8,4 @@ tests/downloaderTransmission.json
 config.json
 copyJSAG3.sh
 series.json
+web/static/*.jpg

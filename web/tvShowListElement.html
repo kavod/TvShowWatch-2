@@ -1,0 +1,25 @@
+<uib-accordion-group is-disabled="tvshow.isDisable === true">
+      <uib-accordion-heading>
+			<div class="tvShowTitle">{{tvshow.title}}</div>
+			<div class="tvShowEpisode">S{{tvshow.season | numberFixedLen:2}}E{{tvshow.episode | numberFixedLen:2}}</div>
+			{{tvshow.status | statusLabel}}
+      </uib-accordion-heading>
+	<div>
+		<img ng-src="{{tvshow.info.banner_url}}" />
+		<button class="btn btn-default pull-right" aria-label="Delete" ng-click="tvshowlist.delete(tvshow.seriesid)">
+			<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+		</button>
+	</div>
+	<p> {{ tvshow.info.overview }}</p>
+	<p> S{{ tvshow.season | numberFixedLen:2 }}E{{ tvshow.episode | numberFixedLen:2 }} </p>
+		<label for="season">Watching episode:</label>
+	<div class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6">
+		<span class="input-group-addon">S</span>
+		<input type="number" class="form-control" aria-label="Season" ng-value="{{ tvshow.season | numberFixedLen:2 }}" min="1" max="99">
+		<span class="input-group-addon">E</span>
+		<input type="number" class="form-control" aria-label="Episode" ng-value="{{ tvshow.episode | numberFixedLen:2 }}" min="1" max="99">
+		<span class="input-group-btn">
+			<button class="btn btn-default" type="submit">Change!</button>
+		</span>
+	</div>
+</uib-accordion-group>

@@ -16,7 +16,7 @@ def daemon():
 			pass
 		time.sleep(3)"""
 		
-		t = threading.Timer(3.0,TSWmachine.run)
+		t = threading.Timer(60.0,TSWmachine.run)
 		t.daemon = True
 		t.start()
 		while t.isAlive():

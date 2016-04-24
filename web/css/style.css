@@ -1,0 +1,26 @@
+.ng-not-empty.ng-invalid.ng-dirty {
+	border-color:#FA787E;
+}
+
+.ng-valid.ng-dirty {
+	border-color:#78FA89;
+}
+
+.tvShowTitle {
+	display: inline-block;
+	width:250px;
+}
+
+.tvShowEpisode {
+	display: inline-block;
+	width:70px;
+}
+
+.tvShowStatus {
+	display: inline-block;
+	width:150px;
+}
+
+.panel-heading a {
+	text-decoration: none;
+}

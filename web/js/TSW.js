@@ -9,41 +9,8 @@ $(document).ready(function() {
     $("#torrent-search").alpaca(alpacaForm("torrentSearch"));
     $("#downloader").alpaca(alpacaForm("downloader"));
     $("#transfer").alpaca(alpacaForm("transferer"));
-    $("#tvshow").alpaca({
-    	"dataSource":"/data/tvShowList/",
-		"schemaSource": "/schema/tvShowList/",
-		"options":{
-			"type":"table",
-			"items":{
-				"fields":{
-					"seriesid":{
-						/*"view":"bootstrap-display",*/
-						"validate":false
-					},
-					"status":{
-						/*"view":"bootstrap-display",*/
-						"validate":false
-					},
-					"season":{
-						/*"view":"bootstrap-display",*/
-						"validate":false
-					},
-					"episode":{
-						/*"view":"bootstrap-display",*/
-						"validate":false
-					},
-					"downloader_id": {
-						"hidden":true
-					}
-				},
-				/*"legendStyle":"hidden"*/
-			},
-			"hideInitValidationError":false
-		},
-		"view":"bootstrap-display"
-    });
     
-    build_tvShowList();
+    //build_tvShowList();
 	
 	// constructs the suggestion engine
 	var states = new Bloodhound({
@@ -74,7 +41,8 @@ $(document).ready(function() {
 						"keydown": function(e) {
 							if (e.keyCode == '13')
 							{
-								tvShowList_add(this);
+								tvShows.tvShowAdd(this);
+								//tvShowList_add(this);
 							}
 						}
 					},

@@ -62,7 +62,21 @@ def fakeTvDB(tvDB):
 	t=tvDB
 
 class tvShowSchedule(JSAG3.JSAG3):
-	def __init__(self, seriesid, title, season=0, episode=0,status=0, nextUpdate=None, downloader_id = "", banner=None, banner_dir=".", dl_banner=False, verbosity=False):
+	def __init__(
+			self, 
+			seriesid, 
+			title, 
+			season=0, 
+			episode=0,
+			status=0, 
+			nextUpdate=None, 
+			downloader_id = "", 
+			banner=None, 
+			banner_dir=".", 
+			dl_banner=False, 
+			overview=None,
+			verbosity=False
+		):
 		curPath = os.path.dirname(os.path.realpath(__file__))
 		JSAG3.JSAG3.__init__(self,
 			id="tvShow"+unicode(seriesid),
@@ -90,7 +104,13 @@ class tvShowSchedule(JSAG3.JSAG3):
 					tzlocal.get_localzone().localize(datetime.datetime.strptime(next['firstaired'],'%Y-%m-%d')),
 					datetime.datetime.now(tzlocal.get_localzone())+datetime.timedelta(days=7)
 				)
-				
+		
+		# Description
+		if overview is None:
+			overview = t[self.seriesid].data['overview']
+		if overview is None:
+			overview = ""
+		
 		# Banner management
 		if dl_banner:
 			self.downloadedBanner = True
@@ -117,27 +137,46 @@ class tvShowSchedule(JSAG3.JSAG3):
 							f.write(urllib2.urlopen(banner).read())
 							f.close()
 					banner = localfile
+			else:
+				self.downloadedBanner = False
 		else:
 			self.downloadedBanner = False
 					
 					
 		if nextUpdate is None:
 			nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2)
-		self._set(seriesid=int(seriesid),title=unicode(title), season=season, episode=episode,status=status, nextUpdate=nextUpdate,downloader_id=downloader_id,banner=banner)
+		self._set(
+			seriesid=int(seriesid),
+			title=unicode(title), 
+			season=season, 
+			episode=episode,
+			status=status, 
+			nextUpdate=nextUpdate,
+			downloader_id=downloader_id,
+			banner=banner,
+			overview=overview
+		)
 		self.downloader = None
 		self.searcher = None
 		
-	def _set(self,seriesid=None,title=None,season=None,episode=None,status=None,nextUpdate=None, downloader_id = None,banner=None):
+	def _set(self,seriesid=None,title=None,season=None,episode=None,status=None,nextUpdate=None, downloader_id = None,banner=None,overview=None):
+		t = myTvDB.myTvDB()
 		logging.debug("[tvShowSchedule] TvShow will be updated. Old value:\n {0}".format(unicode(self.data)))
-		value = {}
+		value = {'info':dict()}
 		value['seriesid'] = int(seriesid) if seriesid is not None else self.data['seriesid']
 		value['title'] = unicode(title) if title is not None else self.data['title']
+		value['info']['overview'] = unicode(overview) if overview is not None else self.data['info']['overview']
 		if season is None or episode is None or (int(season) > 0) != (int(episode) > 0):
 			value['season'] = self.data['season']
 			value['episode'] = self.data['episode']
+			value['info']['firstaired'] = self.data['info']['firstaired']
 		else:
 			value['season'] = int(season)
 			value['episode'] = int(episode)
+			if int(season) * int(episode) > 0:
+				value['info']['firstaired'] = t[value['seriesid']][int(season)][int(episode)]['firstaired']
+			else:
+				value['info']['firstaired'] = None
 			
 		if status is not None:
 			if int(status) not in STATUS.keys():
@@ -159,10 +198,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		else:
 			value['downloader_id'] = self.data['downloader_id']
 		
-		# Banner
-		if 'info' not in value.keys():
-			value['info'] = dict()
-		
+		# Banner		
 		if isinstance(banner,basestring):
 			value['info']['banner_url'] = unicode(banner)
 		else:
@@ -366,5 +402,8 @@ class tvShowSchedule(JSAG3.JSAG3):
 		if self.downloadedBanner:
 			if self.data is not None and 'info' in self.data.keys() and 'banner_url' in self.data['info'].keys():
 				if not re.match(r'^http(s){0,1}:\/\/.*\.(\w+)$',self.data['info']['banner_url']):
-					os.remove(self.data['info']['banner_url'])
+					try:
+						os.remove(self.data['info']['banner_url'])
+					except:
+						pass
 					del(self.data['info']['banner_url'])

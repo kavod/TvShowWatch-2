@@ -44,7 +44,7 @@ function tvShowList_add(searchField) {
 	  	if (data.status == 200) {
 	  		searchField.setValue("");
 	  		alert_success(data);
-	  		build_tvShowList();
+	  		//build_tvShowList();
 	  	} else {
 	  		alert_error(data);
 	  	}
@@ -66,7 +66,7 @@ function statusLabel(status) {
 }
 
 function build_tvShowList() {
-	console.log("build_tvShowList");
+	/*console.log("build_tvShowList");
 	$.ajax({
 	  type: "GET",
 	  url: "/data/tvShowList/",
@@ -79,11 +79,20 @@ function build_tvShowList() {
 			data.sort(compare);
 			for (serie in data)
 			{
-				if (typeof data[serie].info === 'undefined' || data[serie].info.banner_url === 'undefined') {
+				if (typeof data[serie].info === 'undefined')
+					data[serie].info = {}
+				if (data[serie].info.banner_url === 'undefined') {
 					bannerNode = $('<div>')
 				} else {
 					bannerNode = $('<img>').attr('src',data[serie].info.banner_url)
 				}
+				
+				formatedEpisode = format_episode(data[serie].season,data[serie].episode)
+				
+				var d = new Date(data[serie].info.firstaired);
+				dateString = d.getDate() + '/' + d.getMonth() + '/' + d.getFullYear();
+				nextBroadcast = "Broadcast date of " + formatedEpisode + ": " + dateString;
+				
 				$("#accordion").append($("<div>")
 					.addClass("panel")
 					.addClass("panel-default")
@@ -104,7 +113,7 @@ function build_tvShowList() {
 						)
 						.append($("<div>")
 							.addClass("tvShowEpisode")
-							.text(format_episode(data[serie].season,data[serie].episode))
+							.text(formatedEpisode)
 						)
 						.append($("<div>")
 							.addClass("tvShowStatus")
@@ -144,11 +153,17 @@ function build_tvShowList() {
 							.text(data[serie].title)
 						)
 						.append(bannerNode)
+						.append($("<p>")
+							.text(data[serie].info.overview)
+						)
+						.append($("<p>")
+							.text(nextBroadcast)
+						)
 					)
 				);
 			}
 		}
-	);
+	);*/
 }
 
 function check_update(event)
@@ -160,6 +175,6 @@ function check_update(event)
 	if (serie_time != event.data)
 	{
 		serie_time = event.data;
-		build_tvShowList();
+		//build_tvShowList();
 	}
 }

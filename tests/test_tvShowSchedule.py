@@ -30,6 +30,8 @@ httpretty_urls = [
 	("http://thetvdb.com/api/A2894E6CB335E443/series/123/all/en.xml",'tests/httpretty_myTvDB3.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/321/en.xml",'tests/httpretty_myTvDB4.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",'tests/httpretty_myTvDB5.xml'),
+	("http://thetvdb.com/api/A2894E6CB335E443/series/111/en.xml",'tests/httpretty_myTvDB8.xml'),
+	("http://thetvdb.com/api/A2894E6CB335E443/series/111/all/en.xml",'tests/httpretty_myTvDB9.xml'),
 	("http://thetvdb.com/banners/_cache/graphical/123-g4.jpg",'tests/image.jpg'),
 	(T411_URL + "/auth",'tests/httpretty_t411_auth.json'),
 	(T411_URL + "/users/profile/12345678",'tests/httpretty_t411_auth.json'),
@@ -53,7 +55,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.transfererData = {"source": {"path": self.tmpdir1, "protocol": "file"}, "destination": {"path": self.tmpdir2, "protocol": "file"}, "delete_after":False}
 		
 		self.ts = torrentSearch.torrentSearch(id="torrentSearch",dataFile="tests/torrentSearch2.json",verbosity=DEBUG)
-		self.t = myTvDB.myTvDB(debug=DEBUG,cache=not DEBUG)
+		self.t = myTvDB.myTvDB(debug=DEBUG,cache=False)
 		
 	def tearDown(self):
 		shutil.rmtree(self.tmpdir1)
@@ -66,6 +68,14 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,title='Lost',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
 		self.assertEqual(tvShow['status'],0)
+		
+	@httpretty.activate
+	def test_creation_without_overview_and_banner(self):
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=111,title='About Face',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
+		self.assertEqual(tvShow['info']['overview'],"")
 	
 	@httpretty.activate
 	def test_creation_with_banner(self):

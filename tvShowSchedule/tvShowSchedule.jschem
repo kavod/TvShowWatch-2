@@ -55,6 +55,15 @@
 				"banner_url": {
 					"title": "Banner URL",
 					"type": "string"
+				},
+				"overview": {
+					"title": "Overview description",
+					"type": "string"
+				},
+				"firstaired": {
+					"title": "Broadcast date for current episode",
+					"type": "string",
+					"format": "datetime"
 				}
 			}
 		}
