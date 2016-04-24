@@ -8,6 +8,7 @@ import cherrypy
 from cherrypy.lib import auth_digest
 import threading
 import datetime
+import tzlocal
 import tempfile
 import time
 import JSAG3
@@ -48,6 +49,7 @@ class LiveSearch(object):
 class serv_TvShowList(object):
 	def __init__(self,tvshowlist):
 		self.tvshowlist = tvshowlist
+		self.checkModification()
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
@@ -58,17 +60,19 @@ class serv_TvShowList(object):
 		return {"status":errorNo,"error":errorDesc.encode("utf8")}
 		
 	def _add(self,tvShowID,tvShowName):
+		self.checkModification()
 		try:
 			self.tvshowlist.add(int(tvShowID))
 			self.tvshowlist.save()
 			tvShow = self.tvshowlist.getTvShow(int(tvShowID))
 		except Exception as e:
 			return self._error(400,e[0])
-		return {"status":200,"error":"TvShow {0} added".format(tvShowName),"data":json.loads(json.dumps(tvShow,default=json_serial))}
+		return {"status":200,"error":"TvShow {0} added".format(tvShowName),"data":json.loads(json.dumps(tvShow.getValue(),default=json_serial))}
 	
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def add(self, **kwargs):
+		self.checkModification()
 		if 'title' in kwargs.keys():
 			seriesname = kwargs['title']
 			if 'seriesid' in kwargs.keys():
@@ -90,7 +94,43 @@ class serv_TvShowList(object):
 		
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
+	def update(self, **kwargs):
+		if 'tvShowID' in kwargs.keys():
+			tvShowID = int(kwargs['tvShowID'])
+			nextUpdate=None
+			status = None
+			season = None
+			episode=None
+			pattern=None
+			if 'season' in kwargs.keys() and 'episode' in kwargs.keys():
+				season = int(kwargs['season'])
+				episode = int(kwargs['episode'])
+				t = myTvDB.myTvDB()
+				try:
+					t[tvShowID]
+				except:
+					return {"status":400,"error":"TvShow {0} does not exist".format(unicode(tvShowID))}
+				try:
+					t[tvShowID][season][episode]
+				except:
+					return {"status":400,"error":"No episode S{1:02}E{2:02} for TV show {0}".format(t[tvShowID].data['seriesname'],unicode(season),unicode(episode))}
+				nextUpdate = datetime.datetime.now(tzlocal.get_localzone())
+				status = 0
+			if 'pattern' in kwargs.keys():
+				pattern = unicode(kwargs['pattern'])
+			self.checkModification()
+			tvShow = self.tvshowlist.getTvShow(tvShowID)
+			tvShow._set(status=status,season=season,episode=episode,nextUpdate=nextUpdate,pattern=pattern)
+			self.tvshowlist.save()
+			return {"status":200,"error":"TvShow {0} updated".format(tvShow['title'])}
+		else:
+			return self._error(400,"Unknown TV Show")
+			
+		
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
 	def delete(self,tvShowID=-1):
+		self.checkModification()
 		try:
 			tvShowID = int(tvShowID)
 			t = myTvDB.myTvDB()
@@ -100,6 +140,17 @@ class serv_TvShowList(object):
 			return {"status":200,"error":"TvShow {0} deleted".format(tvShow['seriesname'])}
 		except Exception as e:
 			return self._error(400,e[0])
+			
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
+	def list(self):
+		self.checkModification()
+		return {"status":200,"error":"TvShow list retrieved in `data`","data":json.loads(json.dumps(self.tvshowlist.getValue(hidePassword=True),default=json_serial))}
+		
+	def checkModification(self):
+		if not hasattr(self,"lastModified") or os.path.getmtime(self.tvshowlist.filename) != self.lastModified:
+			self.tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="web/static")
+			self.lastModified = os.path.getmtime(self.tvshowlist.filename)
 
 class updateData(object):
 	def __init__(self,config):
@@ -162,11 +213,8 @@ def main():
 	}
 
 	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=curPath+"/config.json")
-	
 	downloader = Downloader.Downloader("downloader",dataFile=curPath+"/config.json")
-	
 	transferer = Transferer.Transferer("transferer",dataFile=curPath+"/config.json")
-	
 	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="web/static")
 	
 	root = Root()
@@ -190,9 +238,9 @@ def main():
 	conf = transferer.getConf(conf)
 	root.update.transferer = updateData(transferer)
 	
-	root = tvshowlist.getRoot(root)
-	conf = tvshowlist.getConf(conf)
-	root.update.tvshowlist = updateData(tvshowlist)
+	#root = tvshowlist.getRoot(root)
+	#conf = tvshowlist.getConf(conf)
+	#root.update.tvshowlist = updateData(tvshowlist)
 	
 	wd = cherrypy.process.plugins.BackgroundTask(1, daemon.daemon)
 	wd.start()
@@ -205,4 +253,4 @@ def json_serial(obj):
     if isinstance(obj, datetime.datetime):
         serial = obj.isoformat()
         return serial
-    raise TypeError ("Type not serializable")
+    raise TypeError ("Type {0} not serializable".format(type(obj)))

@@ -41,6 +41,11 @@ class tvShowList(list):
 		self.root.schema = Root()
 		self.root.options = Root()
 		self.root.data = Root()
+		self.conf = {
+			"/data".encode('utf8'): {
+				'tools.caching.on': False
+			}
+		}
 		
 		list.__init__(self,[])
 		if isinstance(tvShows,basestring):
@@ -82,6 +87,12 @@ class tvShowList(list):
 		else:
 			self.initDataFile()
 		setattr(self.root.data,self.id.encode('utf8'),staticJsonFile(self.filename,self.id))
+		
+	def getValue(self,hidePassword=True):
+		result = []
+		for tvShow in self:
+			result.append(tvShow.getValue(hidePassword))
+		return result
 			
 	def _add_from_tvShowSchedule(self,tvShow):
 		if not isinstance(tvShow,tvShowSchedule.tvShowSchedule):
@@ -221,6 +232,28 @@ class tvShowList(list):
 		for key,tvShow in enumerate(self):
 			logging.info("[tvShowList] ******* UPDATE *******\nTvShow {0}".format(unicode(key)))
 			tvShow.update(downloader=self.downloader,searcher=self.searcher,transferer=self.transferer,force=force)
+		
+	def getRoot(self,root=None):
+		self.checkCompleted()
+		if root is None:
+			root = self.root
+		else:
+			if not hasattr(root, 'schema'):
+				root.schema = Root()
+			if not hasattr(root, 'options'):
+				root.options = Root()
+			if not hasattr(root, 'data'):
+				root.data = Root()
+			setattr(root.schema,self.id.encode('utf8'),getattr(self.root.schema,self.id.encode('utf8')))
+			setattr(root.options,self.id.encode('utf8'),getattr(self.root.options,self.id.encode('utf8')))
+			setattr(root.data,self.id.encode('utf8'),getattr(self.root.data,self.id.encode('utf8')))		
+		return root
+			
+	def getConf(self,conf={}):
+		self.checkCompleted()
+		x = conf.copy()
+		x.update(self.conf)
+		return x
 			
 	# Depreciate
 	def loadFile(self,filename,path=[]):

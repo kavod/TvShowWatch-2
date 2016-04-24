@@ -1,16 +1,37 @@
 (function(){
 	var app = angular.module('appTsw.TvShow', [ 'ngAnimate', 'ui.bootstrap' ]);
-	
+		
 	app.controller('TvShowListController', [ '$http', '$scope', function($http,$scope){
 		$scope.oneAtATime = true;
 		
+		var serie_time = "0";
 		var tvshowlist = this;
-		tvshowlist.list = [];
-		$http.get('/data/tvShowList')
-			.success(function(data) {
-				tvshowlist.list = data;
-			});
-			
+		this.list = [];
+		
+		this.build_tvShowList = function() {
+			tvshowlist.list = [];
+			$http.get('/tvshowlist/list')
+				.success(function(data) {
+					tvshowlist.list = data.data;
+				});
+		};
+		build_tvShowList = this.build_tvShowList;
+		this.build_tvShowList();
+		
+		this.check_update = function(event){
+			if ( serie_time == "0" )
+			{
+				serie_time = event.data;
+			}
+			if (serie_time != event.data)
+			{
+				serie_time = event.data;
+				build_tvShowList();
+			}
+		};
+		this.source = new EventSource("streamGetSeries");
+		this.source.onmessage = this.check_update;
+		
 		this.delete = function(seriesid) {
 			$http({
 				method: 'POST',
@@ -26,7 +47,6 @@
 				
 			});
 			var seriesidx = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; });
-			//seriesidx = tvshowlist.list.indexOf(seriesid);
 			if (seriesidx.length == 0) {
 				$('#notification').scope().alert_error({"status":400,"error":"Unable to find the TV Show (" + seriesid.toString() + ")"});
 			} else {
@@ -37,16 +57,55 @@
 				});
 			}
 		};
+		
+		this.updateEpisode = function(seriesid) {
+			var newvalue = {};
+			newvalue = {tvShowID:parseInt(seriesid)};
+			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
+			newvalue.season = parseInt(tvshow.season);
+			newvalue.episode = parseInt(tvshow.episode);
+			$http({
+				method: 'POST',
+				url: '/tvshowlist/update',
+				data: $.param(newvalue),
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			})
+			.then(function(data) {
+			  	if (data.data.status == 200)
+			  		$('#notification').scope().alert_success(data.data);
+			  	else
+			  		$('#notification').scope().alert_error(data.data);
+				
+			});
+		};
+		
+		this.updatePattern = function(seriesid) {
+			var newvalue = {};
+			newvalue = {tvShowID:parseInt(seriesid)};
+			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
+			newvalue.pattern = tvshow.pattern;
+			$http({
+				method: 'POST',
+				url: '/tvshowlist/update',
+				data: $.param(newvalue),
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			})
+			.then(function(data) {
+			  	if (data.data.status == 200)
+			  		$('#notification').scope().alert_success(data.data);
+			  	else
+			  		$('#notification').scope().alert_error(data.data);
+				
+			});
+		};
 	}]);
 	
 	app.controller('NewTvShowController', [ '$http', '$scope',function($http,$scope){
-		//this.tvshow = {'value':''};
 		this.addTvShow = function(tvShowList) {
 			this.tvshow.season = 0;
 			this.tvshow.episode = 0;
 			var index = tvShowList.push(this.tvshow);
 			tvShowList[index-1]['isDisable'] = true;
-			//this.tvshow = {'value':''};
 			var postData = $.param(this.tvshow);
 			delete this.tvshow;
 			$http({
@@ -59,7 +118,6 @@
 				if (data['status'] == 200)
 				{
 					tvShowList[index-1] = data['data'];
-					//$scope.$apply();
 					$('#notification').scope().alert_success(data);
 				} else {
 					tvShowList.splice(index-1,1);

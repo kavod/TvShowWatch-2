@@ -116,6 +116,7 @@ class TestTvShowList(unittest.TestCase):
 					'season':1,
 					'episode':1,
 					'downloader_id':'',
+					'pattern':self.title1,
 					'info':{
 						'banner_url': '{0}/banner_123.jpg'.format(self.tmpdirBanner),
 						'firstaired': '2004-09-22',
@@ -283,3 +284,14 @@ class TestTvShowList(unittest.TestCase):
 		self.assertEqual(myList[4]['status'],30)
 		
 		os.remove(tmpfile)
+		
+	@httpretty.activate
+	def test_getValue(self):
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+		self.creation()
+		self.l1.add(self.tvShow1)
+		self.l1.add(self.tvShow2)
+		self.assertEquals(self.l1.getValue()[0]['seriesid'],123)
+		self.assertEquals(self.l1.getValue()[1]['seriesid'],321)
+		

@@ -75,6 +75,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			banner_dir=".", 
 			dl_banner=False, 
 			overview=None,
+			pattern=None,
 			verbosity=False
 		):
 		curPath = os.path.dirname(os.path.realpath(__file__))
@@ -87,6 +88,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		)
 		
 		self.seriesid = int(seriesid)
+		title=unicode(title)
 		t = myTvDB.myTvDB()
 		
 		# Determine episode, status & nextUpdate
@@ -104,6 +106,9 @@ class tvShowSchedule(JSAG3.JSAG3):
 					tzlocal.get_localzone().localize(datetime.datetime.strptime(next['firstaired'],'%Y-%m-%d')),
 					datetime.datetime.now(tzlocal.get_localzone())+datetime.timedelta(days=7)
 				)
+		
+		if pattern is None:
+			pattern = title
 		
 		# Description
 		if overview is None:
@@ -147,24 +152,34 @@ class tvShowSchedule(JSAG3.JSAG3):
 			nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2)
 		self._set(
 			seriesid=int(seriesid),
-			title=unicode(title), 
+			title=title, 
 			season=season, 
 			episode=episode,
 			status=status, 
 			nextUpdate=nextUpdate,
 			downloader_id=downloader_id,
 			banner=banner,
-			overview=overview
+			overview=overview,
+			pattern=pattern
 		)
 		self.downloader = None
 		self.searcher = None
 		
-	def _set(self,seriesid=None,title=None,season=None,episode=None,status=None,nextUpdate=None, downloader_id = None,banner=None,overview=None):
+	def _set(self,seriesid=None,title=None,season=None,episode=None,status=None,nextUpdate=None, downloader_id = None,banner=None,overview=None,pattern=None):
 		t = myTvDB.myTvDB()
 		logging.debug("[tvShowSchedule] TvShow will be updated. Old value:\n {0}".format(unicode(self.data)))
 		value = {'info':dict()}
 		value['seriesid'] = int(seriesid) if seriesid is not None else self.data['seriesid']
 		value['title'] = unicode(title) if title is not None else self.data['title']
+		
+		# Pattern
+		if pattern is not None:
+			value['pattern'] = unicode(pattern)
+		else:
+			if 'pattern' not in self.data.keys():
+				self.data['pattern'] = value['title']
+			value['pattern'] = self.data['pattern']
+				
 		value['info']['overview'] = unicode(overview) if overview is not None else self.data['info']['overview']
 		if season is None or episode is None or (int(season) > 0) != (int(episode) > 0):
 			value['season'] = self.data['season']
@@ -250,6 +265,10 @@ class tvShowSchedule(JSAG3.JSAG3):
 			raise Exception("No transferer provided")
 			
 		logging.debug("[tvShowSchedule] Next status scheduled on {0} ({2}). It is {1} ({3})".format(unicode(self['nextUpdate']),unicode(now),type(self['nextUpdate']),type(now)))
+		try:
+			self['nextUpdate'] < now
+		except:
+			raise Exception(self)
 		if force or self['nextUpdate'] < now:
 			logging.debug("[tvShowSchedule] Former status: {0}".format(self['status']))
 			# Added

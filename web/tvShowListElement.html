@@ -11,15 +11,21 @@
 		</button>
 	</div>
 	<p> {{ tvshow.info.overview }}</p>
-	<p> S{{ tvshow.season | numberFixedLen:2 }}E{{ tvshow.episode | numberFixedLen:2 }} </p>
 		<label for="season">Watching episode:</label>
-	<div class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6">
+	<form class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6" ng-submit="tvshowlist.updateEpisode(tvshow.seriesid)">
 		<span class="input-group-addon">S</span>
-		<input type="number" class="form-control" aria-label="Season" ng-value="{{ tvshow.season | numberFixedLen:2 }}" min="1" max="99">
+		<input type="number" class="form-control" aria-label="Season" ng-model="tvshow.season" min="1" max="99">
 		<span class="input-group-addon">E</span>
-		<input type="number" class="form-control" aria-label="Episode" ng-value="{{ tvshow.episode | numberFixedLen:2 }}" min="1" max="99">
+		<input type="number" class="form-control" aria-label="Episode" ng-model="tvshow.episode" min="1" max="99">
 		<span class="input-group-btn">
 			<button class="btn btn-default" type="submit">Change!</button>
 		</span>
-	</div>
+	</form>
+	<label for="pattern">Search pattern:</label>
+	<form class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6" ng-submit="tvshowlist.updatePattern(tvshow.seriesid)">
+		<input type="text" class="form-control" aria-label="pattern" ng-model="tvshow.pattern" />
+		<span class="input-group-btn">
+			<button class="btn btn-default" type="submit">Change!</button>
+		</span>
+	</form>
 </uib-accordion-group>

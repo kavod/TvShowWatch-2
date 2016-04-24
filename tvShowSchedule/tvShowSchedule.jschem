@@ -14,6 +14,12 @@
 			"title":"Title",
 			"type":"string"
 		},
+		"pattern":
+		{
+			"title":"Pattern",
+			"description":"String used for torrent search",
+			"type":"string"
+		},
 		"status":
 		{
 			"title":"Status",
