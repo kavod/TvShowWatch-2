@@ -130,6 +130,20 @@ class myShow(tvdb_api.Show):
 			result.append(str(key))
 		return result
 		
+	def getEpisodesList(self):
+		result = {}
+		episodes = self.getEpisodes()
+		for episode in episodes:
+			seasonno = int(episode.get('seasonnumber'))
+			episodeno = int(episode.get('episodenumber')) 
+			if seasonno * episodeno >0:
+				if seasonno in result.keys():
+					result[seasonno] = max(result[seasonno],episodeno)
+				else:
+					result[seasonno] = episodeno
+		return result
+		
+		
 class myEpisode(tvdb_api.Episode):
 	def next(self):
 		epno = int(self.get(u'episodenumber', 0))

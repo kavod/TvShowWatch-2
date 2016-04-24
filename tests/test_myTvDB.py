@@ -67,3 +67,10 @@ class TestMyTvDB(unittest.TestCase):
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.assertIsNone(self.t['TvShow1'][1][2].next())
 		self.assertIsInstance(self.t['TvShow1'][1][1].next(),myTvDB.myEpisode)
+			
+	@httpretty.activate
+	def test_getEpisodesList(self):
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+		self.assertEquals(self.t[123].getEpisodesList(),{1:2})
+		self.assertEquals(self.t[456].getEpisodesList(),{1:2,2:1})
