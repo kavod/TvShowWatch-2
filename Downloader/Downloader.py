@@ -82,6 +82,20 @@ class Downloader(JSAG3.JSAG3):
 			else:
 				logging.error("[Downloader] Incorrect identifier: {0}".format(unicode(id)))
 				raise Exception("Incorrect identifier: {0}".format(id))
+				
+	def get_progression(self,id):
+		if self.data['client'] == 'transmission':
+			logging.debug("[Downloader] retrieving progression of slot #{0}".format(unicode(id)))
+			if ( isinstance(id,basestring) ) and id.isdigit():
+				id = int(id)
+			if isinstance(id,int):
+				if self.transmission is None:
+					self._transConnect()
+				tor = self.transmission.get_torrent(id)
+				progression = int(tor.percentDone*100)
+				logging.debug("[Downloader] Progression of slot #{0} is {1}".format(unicode(id),unicode(progression)))
+				return progression
+		
 		
 	#TransmissionRPC
 	def _transConnect(self):

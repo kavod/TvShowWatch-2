@@ -211,6 +211,28 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.assertEqual(tvShow['status'],0)
 		
 	@httpretty.activate
+	def test_get_progression(self): 	
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
+		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
+		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
+		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+                            ])
+		if not self.testTransmission:
+			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
+		
+		self.downloader.loadConfig(self.configFileTransmission)
+		self.transferer.addData(self.configFileTvShowSchedule)
+		self.transferer.setValue(self.transfererData)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		tvShow._set(status=30,downloader_id = 3)
+		self.assertEqual(tvShow.get_progression(downloader=self.downloader),75)
+		
+	@httpretty.activate
 	def test_update_0_to_10(self):
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())

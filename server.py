@@ -47,8 +47,9 @@ class LiveSearch(object):
 			return self.index
 			
 class serv_TvShowList(object):
-	def __init__(self,tvshowlist):
+	def __init__(self,tvshowlist,downloader):
 		self.tvshowlist = tvshowlist
+		self.downloader=downloader
 		self.checkModification()
 
 	@cherrypy.expose
@@ -151,6 +152,28 @@ class serv_TvShowList(object):
 		if not hasattr(self,"lastModified") or os.path.getmtime(self.tvshowlist.filename) != self.lastModified:
 			self.tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="web/static")
 			self.lastModified = os.path.getmtime(self.tvshowlist.filename)
+			
+	@cherrypy.expose
+	def progression(self,tvShowID=-1):
+		
+		tvShowID = int(tvShowID)
+		tvShow = self.tvshowlist.getTvShow(tvShowID)
+		if tvShow is None:
+			cherrypy.response.headers["Content-Type"] = "application/json"
+			return self._error(400,"Unknown TV Show")
+		
+		cherrypy.response.headers["Content-Type"] = "text/event-stream"
+		cherrypy.response.headers['Cache-Control'] = 'no-cache'
+		cherrypy.response.headers['Connection'] = 'keep-alive'
+		def content():
+			yield "retry: 5000\r\n"
+			while True:
+				data = "Event: progression\r\ndata: " + unicode(tvShow.get_progression(self.downloader)) + "\n\n"
+				yield data
+				time.sleep(5)
+				
+		return content()
+	progression._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'}
 
 class updateData(object):
 	def __init__(self,config):
@@ -220,7 +243,7 @@ def main():
 	root = Root()
 	root.update = Root()
 	root.livesearch = LiveSearch()
-	root.tvshowlist = serv_TvShowList(tvshowlist=tvshowlist)
+	root.tvshowlist = serv_TvShowList(tvshowlist=tvshowlist,downloader=downloader)
 	root.streamGetSeries = streamGetSeries()
 	
 	cherrypy.config["tools.encode.on"] = True

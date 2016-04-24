@@ -7,12 +7,31 @@
 		var serie_time = "0";
 		var tvshowlist = this;
 		this.list = [];
+		this.source1 = {};
+		
+		this.check_progression = function(event){
+			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
+			tvshow.progress = event.data;
+		};
+		var check_progression = this.check_progression;
 		
 		this.build_tvShowList = function() {
 			tvshowlist.list = [];
 			$http.get('/tvshowlist/list')
 				.success(function(data) {
 					tvshowlist.list = data.data;
+					for (var i = 0 ; i< tvshowlist.list.length ; i++)
+					{
+						if ([30,35].indexOf(tvshowlist.list[i]['status']) != -1)
+						{
+							seriesid = tvshowlist.list[i]['seriesid'];
+							this.source1 = new EventSource("/tvshowlist/progression?tvShowID="+seriesid.toString());
+							this.source1.onmessage = function(event){
+								var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
+								tvshow.progress = event.data;
+							};
+						}
+					}
 				});
 		};
 		build_tvShowList = this.build_tvShowList;

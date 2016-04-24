@@ -246,6 +246,32 @@ class tvShowSchedule(JSAG3.JSAG3):
 		nextUpdate = min(tzlocal.get_localzone().localize(datetime.datetime.strptime(episode['firstaired'],'%Y-%m-%d')),datetime.datetime.now(tzlocal.get_localzone())+datetime.timedelta(days=7))
 		self._set(season=int(episode['seasonnumber']),episode=int(episode['episodenumber']),status=10,nextUpdate=nextUpdate)
 		
+	def get_progression(self,downloader=None):
+		if downloader is not None:
+			self._setDownloader(downloader)
+		if not isinstance(self.downloader,Downloader.Downloader):
+			raise Exception("No downloader provided")
+			
+		if self['status'] not in [30,35]:
+			return 0
+		
+		if self['downloader_id'] is None:
+			# Incorrect or missing downloader identifier.
+			logging.warning("Unable to determine slot. Push the status to 20")
+		else:
+			try:
+				logging.debug("[tvShowSchedule] Downloader: {0}".format(self.downloader))
+				progression = self.downloader.get_progression(self['downloader_id'])
+				logging.debug("[tvShowSchedule] Get new progression: {0}".format(unicode(progression)))
+				return progression
+			except:
+				logging.warning("[tvShowSchedule] Unable to retrieve progression for: {0}".format(unicode(self['downloader_id'])))
+			
+			# Something went wrong... Let's restart download
+			self._set(status=20)
+			self.update(force=True)
+			
+		
 	def update(self,downloader=None,searcher=None,transferer=None,force=False):
 		now = datetime.datetime.now(tzlocal.get_localzone())
 		t = myTvDB.myTvDB()
@@ -349,6 +375,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 						self.update(force=True)
 				else:
 					# Incorrect or missing downloader identifier. Let's watch torrent again.
+					logging.error("Unable to determine slot. Push the status to 20")
 					self._set(status=20)
 					self.update(force=True)
 					
