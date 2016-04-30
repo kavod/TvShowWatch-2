@@ -6,8 +6,7 @@
 		"client":
 		{
 			"title":"Downloader client",
-			"type":"string",
-			"default":"none"
+			"type":"string"
 		}, 
 		"transConf":
 		{

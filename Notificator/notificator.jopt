@@ -1,0 +1,49 @@
+{
+	"items": {
+		"fields": {
+			"method":{
+				"label": "Notification method",
+				"type": "select",
+				"dataSource": [
+					{
+						"value": "email",
+						"text" : "Email"
+					}
+				],
+				"removeDefaultNone": true,
+				"order":1
+			},
+			"emailConf":{
+				"fields":{
+					"server":{
+						"order":1
+					},
+					"port":{
+						"order":2
+					},
+					"username":{
+						"order":3
+					},
+					"password":{
+						"order":4
+					},
+					"ssltls":{
+						"order":5
+					},
+					"senderName":{
+						"order":6
+					},
+					"senderEmail":{
+						"order":7
+					}
+				},
+				"label": "Email configuration",
+				"order":2,
+				"collapsible":false,
+				"dependencies": {
+					"method": ["email"]
+				}
+			}
+		}
+	}
+}

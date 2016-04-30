@@ -15,6 +15,7 @@ import JSAG3
 import Downloader
 import torrentSearch
 import Transferer
+import Notificator
 import tvShowList
 import myTvDB
 import daemon
@@ -239,6 +240,7 @@ def main():
 	downloader = Downloader.Downloader("downloader",dataFile=curPath+"/config.json")
 	transferer = Transferer.Transferer("transferer",dataFile=curPath+"/config.json")
 	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="web/static")
+	notificator = Notificator.Notificator(id="notificator",dataFile=curPath+"/config.json",verbosity=False)
 	
 	root = Root()
 	root.update = Root()
@@ -260,6 +262,10 @@ def main():
 	root = transferer.getRoot(root)
 	conf = transferer.getConf(conf)
 	root.update.transferer = updateData(transferer)
+	
+	root = notificator.getRoot(root)
+	conf = notificator.getConf(conf)
+	root.update.notificator = updateData(notificator)
 	
 	#root = tvshowlist.getRoot(root)
 	#conf = tvshowlist.getConf(conf)

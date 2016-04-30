@@ -12,4 +12,8 @@
 	app.controller('TransferController', [ '$element', function($element){
 		$element.alpaca(alpacaForm("transferer"));
 	}]);
+	
+	app.controller('NotificatorController', [ '$element', function($element){
+		$element.alpaca(alpacaForm("notificator"));
+	}]);
 })();

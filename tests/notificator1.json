@@ -1,0 +1,1 @@
+{"notificator":[{"method":"email","emailConf":{"server":"localhost","port":9091,"username":"sender@tvshowwatch.net","password":"niouf", "ssltls":true, "senderName": "TvShowWatch Script", "senderEmail":"sender@tvshowwatch.net"}}]}
