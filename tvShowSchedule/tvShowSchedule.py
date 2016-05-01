@@ -14,6 +14,7 @@ import myTvDB
 import Downloader
 import torrentSearch
 import Transferer
+import Notificator
 import JSAG3
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -76,6 +77,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			dl_banner=False, 
 			overview=None,
 			pattern=None,
+			emails=None,
 			verbosity=False
 		):
 		curPath = os.path.dirname(os.path.realpath(__file__))
@@ -109,6 +111,9 @@ class tvShowSchedule(JSAG3.JSAG3):
 		
 		if pattern is None:
 			pattern = title
+		
+		if emails is None:
+			emails = []
 		
 		# Description
 		if overview is None:
@@ -160,12 +165,14 @@ class tvShowSchedule(JSAG3.JSAG3):
 			downloader_id=downloader_id,
 			banner=banner,
 			overview=overview,
-			pattern=pattern
+			pattern=pattern,
+			emails=emails
 		)
 		self.downloader = None
+		self.notificator = None
 		self.searcher = None
 		
-	def _set(self,seriesid=None,title=None,season=None,episode=None,status=None,nextUpdate=None, downloader_id = None,banner=None,overview=None,pattern=None):
+	def _set(self,seriesid=None,title=None,season=None,episode=None,status=None,nextUpdate=None, downloader_id = None,banner=None,overview=None,pattern=None,emails=None):
 		t = myTvDB.myTvDB()
 		logging.debug("[tvShowSchedule] TvShow will be updated. Old value:\n {0}".format(unicode(self.data)))
 		value = {'info':dict()}
@@ -179,6 +186,14 @@ class tvShowSchedule(JSAG3.JSAG3):
 			if 'pattern' not in self.data.keys():
 				self.data['pattern'] = value['title']
 			value['pattern'] = self.data['pattern']
+			
+		#emails
+		if emails is not None:
+			value['emails'] = emails
+		else:
+			if 'emails' not in self.data.keys():
+				self.data['emails'] = []
+			value['emails'] = self.data['emails']
 				
 		value['info']['overview'] = unicode(overview) if overview is not None else self.data['info']['overview']
 		if season is None or episode is None or (int(season) > 0) != (int(episode) > 0):
@@ -228,6 +243,11 @@ class tvShowSchedule(JSAG3.JSAG3):
 			raise TypeError("parameter is not Downloader instance")
 		self.downloader=downloader
 		
+	def _setNotificator(self,notificator):
+		if not isinstance(notificator,Notificator.Notificator):
+			raise TypeError("parameter is not Notificator instance")
+		self.notificator=notificator
+		
 	def _setTransferer(self,transferer):
 		if not isinstance(transferer,Transferer.Transferer):
 			raise TypeError("parameter is not Transferer instance")
@@ -272,13 +292,16 @@ class tvShowSchedule(JSAG3.JSAG3):
 			self.update(force=True)
 			
 		
-	def update(self,downloader=None,searcher=None,transferer=None,force=False):
+	def update(self,downloader=None,searcher=None,transferer=None,notificator=None,force=False):
 		now = datetime.datetime.now(tzlocal.get_localzone())
 		t = myTvDB.myTvDB()
 		if downloader is not None:
 			self._setDownloader(downloader)
 		if not isinstance(self.downloader,Downloader.Downloader):
 			raise Exception("No downloader provided")
+			
+		if notificator is not None:
+			self._setNotificator(notificator)
 			
 		if searcher is not None:
 			self._setTorrentSearch(searcher)
@@ -405,11 +428,13 @@ class tvShowSchedule(JSAG3.JSAG3):
 							for myFile in files:
 								self.transferer.transfer(myFile,delete_after=False)
 							if self.transferer['delete_after']:
-								#try:
-								self.downloader.delete_torrent(self['downloader_id'])
-								#except:
-								#	logging.error("[tvShowSchedule] Unable to delete source file {0}. Ignoring".format(myFile))
-								
+								try:
+									self.downloader.delete_torrent(self['downloader_id'])
+								except:
+									logging.error("[tvShowSchedule] Unable to delete source file {0}. Ignoring".format(myFile))
+							
+							notifContent = "{0} S{1:02}E{2:02} has been downloaded.\n".format(self['title'],self['season'],self['episode'])
+							
 							# Schedule next episode
 							tvShow = t[self['seriesid']][self['season']][self['episode']]
 							logging.debug("[tvShowSchedule] Current episode: {0}".format(unicode(tvShow)))
@@ -417,9 +442,13 @@ class tvShowSchedule(JSAG3.JSAG3):
 							logging.debug("[tvShowSchedule] Next episode: {0}".format(unicode(next)))
 							if next is None:
 								self._setAchieved()
+								notifContent += "Unfortunatly, for moment, it is the last episode scheduled for this TV show :("
 							else:
 								self._set(season=next['seasonnumber'],episode=next['episodenumber'],status=0)
 								self.update(force=True)
+								notifContent += "The next episode (S{0:02}E{1:02}) is expected on {2}".format(self['season'],self['episode'],self['info']['firstaired'])
+							if self.notificator is not None:
+								self.notificator.send("Download completed!",notifContent,self['emails'])
 					else:
 						# Incorrect or missing torrent. Let's watch torrent again.
 						self._set(status=20)

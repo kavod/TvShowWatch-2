@@ -72,6 +72,16 @@
 					"format": "datetime"
 				}
 			}
+		},
+		"emails": {
+			"title":"Emails",
+			"description": "Destination emails for notifications",
+			"type":"array",
+			"items":{
+				"type":"string",
+				"format":"email"
+			},
+			"default":[]
 		}
 	},
 	"required":["seriesid","title","status","nextUpdate","season","episode","downloader_id"]

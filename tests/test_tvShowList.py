@@ -121,7 +121,8 @@ class TestTvShowList(unittest.TestCase):
 						'banner_url': '{0}/banner_123.jpg'.format(self.tmpdirBanner),
 						'firstaired': '2004-09-22',
 						'overview': 'This is the description of the TvShow number 1 used by myTvDB class tests.'
-					}
+					},
+					'emails':[]
 				}
 			]
 		},data),

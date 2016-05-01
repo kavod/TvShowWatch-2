@@ -12,6 +12,8 @@ import httpretty
 import logging
 import LogTestCase
 
+httpretty.HTTPretty.allow_net_connect = False
+
 DEBUG=False
 
 httpretty_urls = [
