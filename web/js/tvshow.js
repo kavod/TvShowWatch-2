@@ -37,6 +37,30 @@
 		build_tvShowList = this.build_tvShowList;
 		this.build_tvShowList();
 		
+		this.tvShowChanged = function(newTvShow){
+			for (var i = 0 ; i < tvshowlist.list.length ; i++) {
+				if (tvshowlist.list[i].seriesid == newTvShow.seriesid){
+					if (!(tvshowlist.list[i].season == newTvShow.season &&
+							tvshowlist.list[i].episode == newTvShow.episode &&
+							tvshowlist.list[i].pattern == newTvShow.pattern)){
+						tvshowlist.list[i] = newTvShow;
+					}
+				}
+			}
+		}
+		tvShowChanged = this.tvShowChanged;
+		
+		this.update_tvShowList = function(){
+			$http.get('/tvshowlist/list')
+				.success(function(data) {
+					for (var i = 0; i<data.data.length ; i++)
+					{
+						tvShowChanged(data.data[i]);
+					}
+				});
+		};
+		update_tvShowList = this.update_tvShowList;
+		
 		this.check_update = function(event){
 			if ( serie_time == "0" )
 			{
@@ -45,7 +69,7 @@
 			if (serie_time != event.data)
 			{
 				serie_time = event.data;
-				build_tvShowList();
+				update_tvShowList();
 			}
 		};
 		this.source = new EventSource("streamGetSeries");
