@@ -4,7 +4,7 @@ tests/loginT411.json
 torrentSearch/torrentSearch.json
 JSAG
 JSAG3
-tests/downloaderTransmission.json
+#tests/downloaderTransmission.json
 config.json
 copyJSAG3.sh
 series.json
