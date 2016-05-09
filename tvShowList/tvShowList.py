@@ -15,7 +15,6 @@ import Notificator
 import Transferer
 import torrentSearch
 import tvShowSchedule
-import Thread2
 
 class tvShowList(list):
 	def __init__(self, id="tvShowList",banner_dir=".",tvShows=None,verbosity=False):
