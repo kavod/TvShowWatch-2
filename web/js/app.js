@@ -3,6 +3,12 @@
 	
 	var app = angular.module('appTsw', [ 'appTsw.TvShow', 'appTsw.Config', 'ui.bootstrap' ]);
 	
+	app.run(function($rootScope, $templateCache) {
+	   $rootScope.$on('$viewContentLoaded', function() {
+		  $templateCache.removeAll();
+	   });
+	});
+	
 	app.controller('TabsController', function(){
 		this.tab = 'tvShows';
 		this.selectTab = function(setTab) {
@@ -45,7 +51,6 @@
 		$scope.getLivesearch = function(val) {
 			return $http.get('/livesearch/' + val)
 				.then(function(response){
-					console.log(response.data);
 					return response.data.map(function(item) {
 						return {
 							"seriesid":item.id,

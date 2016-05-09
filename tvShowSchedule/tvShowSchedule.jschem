@@ -9,16 +9,12 @@
 			"min":0,
 			"max":999999
 		},
-		"title":
-		{
-			"title":"Title",
-			"type":"string"
-		},
 		"pattern":
 		{
 			"title":"Pattern",
 			"description":"String used for torrent search",
-			"type":"string"
+			"type":"string",
+			"minlength":1
 		},
 		"status":
 		{
@@ -58,9 +54,14 @@
 			"type":"object",
 			"title": "TV Show data",
 			"properties": {
-				"banner_url": {
-					"title": "Banner URL",
+				"seriesname": {
+					"title": "Title",
 					"type": "string"
+				},
+				"banner": {
+					"title": "Is banner available?",
+					"type": "boolean",
+					"default":false
 				},
 				"overview": {
 					"title": "Overview description",
@@ -68,6 +69,15 @@
 				},
 				"firstaired": {
 					"title": "Broadcast date for current episode",
+					"type": "string",
+					"format": "datetime"
+				},
+				"episodesList": {
+					"title": "Episodes list",
+					"type": "array"
+				},
+				"infoUpdate": {
+					"title": "Date of last into updates",
 					"type": "string",
 					"format": "datetime"
 				}
@@ -82,7 +92,17 @@
 				"format":"email"
 			},
 			"default":[]
+		},
+		"keywords": {
+			"title":"keywords",
+			"description": "Specific keyword for TV Show",
+			"type":"array",
+			"items":{
+				"title":"keyword",
+				"type":"string"
+			},
+			"default":[]
 		}
 	},
-	"required":["seriesid","title","status","nextUpdate","season","episode","downloader_id"]
+	"required":["seriesid","status","nextUpdate","season","episode","downloader_id","pattern"]
 }

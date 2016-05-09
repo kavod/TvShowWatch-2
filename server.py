@@ -2,6 +2,7 @@
 #encoding:utf-8
 from __future__ import unicode_literals
 
+import sys
 import os
 import json
 import cherrypy
@@ -42,14 +43,19 @@ class LiveSearch(object):
 	def _cp_dispatch(self,vpath):
 		if len(vpath) == 1:
 			t = myTvDB.myTvDB()
-			cherrypy.request.params['result'] = json.dumps(t.livesearch(vpath.pop()))
+			try:
+				cherrypy.request.params['result'] = json.dumps(t.livesearch(vpath.pop()))
+			except:
+				return self.index
 			return self.result
 		else:
 			return self.index
 			
 class serv_TvShowList(object):
 	def __init__(self,tvshowlist,downloader):
+		print("constructor1:"+unicode(id(tvshowlist)))
 		self.tvshowlist = tvshowlist
+		print("attribute:"+unicode(id(self.tvshowlist)))
 		self.downloader=downloader
 		self.checkModification()
 
@@ -62,6 +68,7 @@ class serv_TvShowList(object):
 		return {"status":errorNo,"error":errorDesc.encode("utf8")}
 		
 	def _add(self,tvShowID,tvShowName):
+		print("_add:"+unicode(id(self.tvshowlist)))
 		self.checkModification()
 		try:
 			self.tvshowlist.add(int(tvShowID))
@@ -74,6 +81,7 @@ class serv_TvShowList(object):
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def add(self, **kwargs):
+		print("add:"+unicode(id(self.tvshowlist)))
 		self.checkModification()
 		if 'title' in kwargs.keys():
 			seriesname = kwargs['title']
@@ -104,6 +112,8 @@ class serv_TvShowList(object):
 			season = None
 			episode=None
 			pattern=None
+			emails=None
+			keywords=None
 			if 'season' in kwargs.keys() and 'episode' in kwargs.keys():
 				season = int(kwargs['season'])
 				episode = int(kwargs['episode'])
@@ -120,19 +130,73 @@ class serv_TvShowList(object):
 				status = 0
 			if 'pattern' in kwargs.keys():
 				pattern = unicode(kwargs['pattern'])
-			self.checkModification()
+			if 'emails[]' in kwargs.keys():
+				if isinstance(kwargs['emails[]'],basestring):
+					emails = [kwargs['emails[]']]
+				else:
+					emails = kwargs['emails[]']
+			if 'keywords[]' in kwargs.keys():
+				if isinstance(kwargs['keywords[]'],basestring):
+					keywords = [kwargs['keywords[]']]
+				else:
+					keywords = kwargs['keywords[]']
 			tvShow = self.tvshowlist.getTvShow(tvShowID)
-			tvShow._set(status=status,season=season,episode=episode,nextUpdate=nextUpdate,pattern=pattern)
-			self.tvshowlist.save()
-			return {"status":200,"error":"TvShow {0} updated".format(tvShow['title'])}
+			if tvShow is None:
+				raise Exception("{0} not found in {1}".format(tvShowID,list(self.tvshowlist)))
+			fname = ""
+			self.tvshowlist.lock.acquire()
+			try:
+				self.checkModification()
+				tvShow.set(
+					status=status,
+					season=season,
+					episode=episode,
+					nextUpdate=nextUpdate,
+					pattern=pattern,
+					emails=emails,
+					keywords=keywords
+				)
+				self.tvshowlist.save()
+			except Exception as e:
+				exc_type, exc_obj, exc_tb = sys.exc_info()
+				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+			finally:
+				self.tvshowlist.lock.release()
+			if fname == "":
+				return {"status":200,"error":"TvShow {0} updated".format(tvShow['info']['seriesname'])}
+			else:
+				return self._error(400,"{0} - {1}:{2}".format(e[0],fname,exc_tb.tb_lineno))
 		else:
 			return self._error(400,"Unknown TV Show")
 			
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
+	def pushTorrent(self, **kwargs):
+		if 'tvShowID' in kwargs.keys() and self.tvshowlist.inList(int(kwargs['tvShowID'])):
+			tvShowID = int(kwargs['tvShowID'])
+			if 'torrentFile' in kwargs.keys():
+				raise Exception(kwargs)
+				if kwargs['torrentFile'].file:
+					tvShow = self.tvshowlist.getTvShow(int(tvShowID))
+					fn = os.path.basename(params['torrentFile'].file.name)
+					try:
+						tvShow.pushTorrent(filename=fn,downloader=self.downloader)
+						return {"status":200,"error":"TvShow {0} updated".format(tvShow['info']['seriesname'])}
+					except Exception as e:
+						return self._error(400,e[0])
+				else:
+					return self._error(400,"Unable to upload file")
+			else:
+				return self._error(400,"No file provided")
+		else:
+			return self._error(400,"Unknown TV Show")
 		
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def delete(self,tvShowID=-1):
+		print("delete1:"+unicode(id(self.tvshowlist)))
 		self.checkModification()
+		print("delete2:"+unicode(id(self.tvshowlist)))
 		try:
 			tvShowID = int(tvShowID)
 			t = myTvDB.myTvDB()
@@ -147,12 +211,12 @@ class serv_TvShowList(object):
 	@cherrypy.tools.json_out()
 	def list(self):
 		self.checkModification()
-		return {"status":200,"error":"TvShow list retrieved in `data`","data":json.loads(json.dumps(self.tvshowlist.getValue(hidePassword=True),default=json_serial))}
+		return {"status":200,"error":"TvShow list retrieved in `data`","data":json.loads(json.dumps(self.tvshowlist.getValue(hidePassword=True),default=json_serial)),"debug":[]}
 		
 	def checkModification(self):
-		if not hasattr(self,"lastModified") or os.path.getmtime(self.tvshowlist.filename) != self.lastModified:
-			self.tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="web/static")
-			self.lastModified = os.path.getmtime(self.tvshowlist.filename)
+		"""if not hasattr(self,"lastModified") or os.path.getmtime(self.tvshowlist.filename) != self.lastModified:
+			self.tvshowlist.addData(dataFile=curPath+"/series.json")
+			self.lastModified = os.path.getmtime(self.tvshowlist.filename)"""
 			
 	@cherrypy.expose
 	def progression(self,tvShowID=-1):
@@ -187,15 +251,25 @@ class updateData(object):
 		return {"id":params['id'.encode('utf8')],"data":json.loads(params['data'.encode('utf8')])}
 		
 class streamGetSeries(object):
+	def __init__(self,tvshowlist,downloader):
+		self.tvshowlist = tvshowlist
+		self.downloader = downloader
+
 	@cherrypy.expose
 	def index(self):
 		cherrypy.response.headers["Content-Type"] = "text/event-stream"
 		cherrypy.response.headers['Cache-Control'] = 'no-cache'
 		cherrypy.response.headers['Connection'] = 'keep-alive'
+			
 		def content():
 			yield "retry: 5000\r\n"
 			while True:
-				data = "Event: server-time\r\ndata: 4" + time.ctime(os.path.getmtime(curPath+"/series.json")) + "\n\n"
+				for tvshow in self.tvshowlist:
+					data = 'id: progression\r\ndata: {\r\n'
+					data += 'data: "' + unicode(tvshow.seriesid) + '":' + unicode(tvshow.get_progression(self.downloader)) + "\r\n"
+					data += 'data: }\n\n'
+					yield data
+				data = "id: server-time\r\ndata: " + time.ctime(os.path.getmtime(curPath+"/series.json")) + "\n\n"
 				yield data
 				time.sleep(5)
 				
@@ -239,14 +313,14 @@ def main():
 	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=curPath+"/config.json")
 	downloader = Downloader.Downloader("downloader",dataFile=curPath+"/config.json")
 	transferer = Transferer.Transferer("transferer",dataFile=curPath+"/config.json")
-	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="web/static")
+	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="web/static",verbosity=False)
 	notificator = Notificator.Notificator(id="notificator",dataFile=curPath+"/config.json",verbosity=False)
-	
+	print("init:"+unicode(id(tvshowlist)))
 	root = Root()
 	root.update = Root()
 	root.livesearch = LiveSearch()
 	root.tvshowlist = serv_TvShowList(tvshowlist=tvshowlist,downloader=downloader)
-	root.streamGetSeries = streamGetSeries()
+	root.streamGetSeries = streamGetSeries(tvshowlist=tvshowlist,downloader=downloader)
 	
 	cherrypy.config["tools.encode.on"] = True
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
@@ -271,7 +345,21 @@ def main():
 	#conf = tvshowlist.getConf(conf)
 	#root.update.tvshowlist = updateData(tvshowlist)
 	
-	wd = cherrypy.process.plugins.BackgroundTask(1, daemon.daemon)
+	#wd = cherrypy.process.plugins.BackgroundTask(1, daemon.daemon)
+	def backgoundProcess(tvshowlist,downloader,transferer,searcher,force):
+		tvshowlist.update(downloader=downloader,transferer=transferer,searcher=searcher,force=force)
+	
+	wd = cherrypy.process.plugins.BackgroundTask(
+			interval=10,
+			function=backgoundProcess,
+			kwargs={
+				"tvshowlist":tvshowlist,
+				"downloader":downloader,
+				"transferer":transferer,
+				"searcher":torrentsearch,
+				"force":False
+			}
+	)
 	wd.start()
 	
 	cherrypy.quickstart(root,"/".encode('utf8'),conf)

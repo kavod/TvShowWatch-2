@@ -1,0 +1,21 @@
+{
+	"tvShowList":	
+	[
+		{
+			"seriesid":321, 
+			"season":1, 
+			"episode":2,
+			"status":0, 
+			"nextUpdate":"30/10/2015 00:00:00", 
+			"downloader_id":"0"
+		},
+		{
+			"seriesid":123, 
+			"season":1, 
+			"episode":1,
+			"status":0, 
+			"nextUpdate":"30/10/2015 00:00:00", 
+			"downloader_id":"0"
+		}
+	]
+}

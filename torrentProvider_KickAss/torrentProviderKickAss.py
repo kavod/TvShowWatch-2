@@ -14,15 +14,15 @@ torrentProvider.TRACKER_CONF.append({'id':'kat','name':'KickAss Torrents','url':
 def connect_kat(self):
 	return self.test_kat()
 
-def test_kat(self):
-	req = requests.post(self.provider['url']+"/json.php", verify=False)
+def test_kat(self,verify=True):
+	req = requests.post(self.provider['url']+"/json.php", verify=verify)
 	return ('title' in req.json().keys())
 			
-def search_kat(self, search):
+def search_kat(self, search,verify=True):
 	if not self.test():
 		self.connect()
 	params = {'q':search}
-	result = requests.post(self.provider['url']+"/json.php",params=params, verify=False)
+	result = requests.post(self.provider['url']+"/json.php",params=params, verify=verify)
 	result = result.json()
 	logging.debug('%s', result)
 	if 'list' in result.keys():
@@ -34,9 +34,9 @@ def search_kat(self, search):
 	else:
 		return []
                     
-def download_kat(self,torrent_id):
+def download_kat(self,torrent_id,verify=True):
 	logging.debug(unicode(torrent_id))
-	stream = requests.get(unicode(torrent_id), stream=True, verify=False, headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/43.0.2357.130 Chrome/43.0.2357.130 Safari/537.36'})
+	stream = requests.get(unicode(torrent_id), stream=True, verify=verify, headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/43.0.2357.130 Chrome/43.0.2357.130 Safari/537.36'})
 	tmpFile = unicode(tempfile.mkstemp('.torrent')[1])
 	with open(tmpFile, 'wb') as f:
 		for chunk in stream.iter_content(chunk_size=1024): 

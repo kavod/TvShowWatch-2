@@ -43,7 +43,10 @@ httpretty_urls = [
 DEBUG=False
 
 class TestTvShowSchedule(LogTestCase.LogTestCase):
+	@httpretty.activate
 	def setUp(self):
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.downloader = Downloader.Downloader(verbosity=DEBUG)
 		self.transferer = Transferer.Transferer(id="transferer",verbosity=DEBUG)
 		self.configFileTransmission = "tests/downloaderTransmission.json"
@@ -61,11 +64,9 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		shutil.rmtree(self.tmpdir1)
 		shutil.rmtree(self.tmpdir2)
 	
-	@httpretty.activate
 	def test_creation(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,title='Lost',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),info={'seriesname':'Lost'},autoComplete=False)
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
 		self.assertEqual(tvShow['status'],0)
 		
@@ -73,22 +74,10 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 	def test_creation_without_overview_and_banner(self):
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=111,title='About Face',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=111,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),info={'seriesname':'About Face'})
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
 		self.assertEqual(tvShow['info']['overview'],"")
-	
-	@httpretty.activate
-	def test_creation_with_banner(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-		tmpfile = unicode(tempfile.mkstemp('.jpg')[1])
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,title='Lost',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),banner= tmpfile,verbosity=DEBUG)
-		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
-		self.assertEqual(tvShow['info']['banner_url'],tmpfile)
-		tvShow.deleteBanner()
-		# Banner must be preserved
-		self.assertEqual(tvShow['info']['banner_url'],tmpfile)
-		os.remove(tmpfile)
 	
 	@httpretty.activate
 	def test_creation_with_new_banner_dl(self):
@@ -97,19 +86,10 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tmpdir = unicode(tempfile.mkdtemp())
 		tmpfile = '{0}/banner_123.jpg'.format(tmpdir)
-		tvShow = tvShowSchedule.tvShowSchedule(
-			seriesid=123,
-			title='Lost',
-			season=1,
-			episode=1,
-			status=0,
-			nextUpdate=datetime.datetime.now(),
-			banner_dir=tmpdir,
-			dl_banner= True,
-			verbosity=DEBUG
-		)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,bannerDir=tmpdir,autoComplete=True,verbosity=DEBUG)
+		tvShow.set(season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),info={'seriesname':'Lost'})
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
-		self.assertEqual(tvShow['info']['banner_url'],tmpfile)
+		self.assertTrue(tvShow['info']['banner'])
 		self.assertTrue(os.path.isfile(tmpfile))
 		self.assertEqual(LogTestCase.md5(tmpfile),LogTestCase.md5('tests/image.jpg'))
 		self.assertTrue(httpretty.has_request())
@@ -123,19 +103,10 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		tmpdir = unicode(tempfile.mkdtemp())
 		tmpfile = '{0}/banner_123.jpg'.format(tmpdir)
 		shutil.copyfile('tests/image1.jpg',tmpfile)
-		tvShow = tvShowSchedule.tvShowSchedule(
-			seriesid=123,
-			title='Lost',
-			season=1,
-			episode=1,
-			status=0,
-			nextUpdate=datetime.datetime.now(),
-			banner_dir=tmpdir,
-			dl_banner= True,
-			verbosity=DEBUG
-		)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,bannerDir=tmpdir,autoComplete=True,verbosity=DEBUG)
+		tvShow.set(season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),info={'seriesname':'Lost'})
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
-		self.assertEqual(tvShow['info']['banner_url'],tmpfile)
+		self.assertTrue(tvShow['info']['banner'])
 		self.assertTrue(os.path.isfile(tmpfile))
 		self.assertEqual(LogTestCase.md5(tmpfile),LogTestCase.md5('tests/image1.jpg'))
 		self.assertFalse(httpretty.has_request())
@@ -150,19 +121,10 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		tmpdir = unicode(tempfile.mkdtemp())
 		tmpfile = '{0}/banner_123.jpg'.format(tmpdir)
 		shutil.copyfile('tests/image1.jpg',tmpfile)
-		tvShow = tvShowSchedule.tvShowSchedule(
-			seriesid=123,
-			title='Lost',
-			season=1,
-			episode=1,
-			status=0,
-			nextUpdate=datetime.datetime.now(),
-			banner_dir=tmpdir,
-			dl_banner= True,
-			verbosity=DEBUG
-		)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,bannerDir=tmpdir,autoComplete=True,verbosity=DEBUG)
+		tvShow.set(season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),info={'seriesname':'Lost'})
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
-		self.assertEqual(tvShow['info']['banner_url'],tmpfile)
+		self.assertTrue(tvShow['info']['banner'])
 		self.assertTrue(os.path.isfile(tmpfile))
 		self.assertEqual(LogTestCase.md5(tmpfile),LogTestCase.md5('tests/image.jpg'))
 		self.assertTrue(httpretty.has_request())
@@ -171,25 +133,15 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		
 	@httpretty.activate
 	def test_delete_banner(self):
-		#os.path.getmtime = mock.MagicMock(return_value=time.mktime((datetime.datetime.now() - datetime.timedelta(days=45)).timetuple()))
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tmpdir = unicode(tempfile.mkdtemp())
 		tmpfile = '{0}/banner_123.jpg'.format(tmpdir)
 		shutil.copyfile('tests/image1.jpg',tmpfile)
-		tvShow = tvShowSchedule.tvShowSchedule(
-			seriesid=123,
-			title='Lost',
-			season=1,
-			episode=1,
-			status=0,
-			nextUpdate=datetime.datetime.now(),
-			banner_dir=tmpdir,
-			dl_banner= True,
-			verbosity=DEBUG
-		)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,bannerDir=tmpdir,autoComplete=True,verbosity=DEBUG)
+		tvShow.set(season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),info={'seriesname':'Lost'})
 		tvShow.deleteBanner()
-		self.assertNotIn('banner_url',tvShow['info'].keys())
+		self.assertFalse(tvShow['info']['banner'])
 		self.assertFalse(os.path.isfile(tmpfile))
 		shutil.rmtree(tmpdir)
 		
@@ -228,8 +180,15 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.downloader.loadConfig(self.configFileTransmission)
 		self.transferer.addData(self.configFileTvShowSchedule)
 		self.transferer.setValue(self.transfererData)
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
-		tvShow._set(status=30,downloader_id = 3)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=30,
+			downloader_id = 3
+		)
 		self.assertEqual(tvShow.get_progression(downloader=self.downloader),75)
 		
 	@httpretty.activate
@@ -237,13 +196,15 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=2,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=2,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=0
+		)
 		self.assertEqual(tvShow['status'],0)
-		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
-		self.assertEqual(tvShow['status'],10)
-		
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=0,episode=0,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
-		self.assertEqual(tvShow['status'],10)
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],10)
 		
@@ -257,12 +218,16 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
                                httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
                             ])
-        
-		if not self.testTransmission:
-			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
+                            
 		self.downloader.loadConfig(self.configFileTransmission)
-		
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,title='TvShow 1',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 1'},
+			status=0
+		)
 		self.assertEqual(tvShow['status'],0)
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],20)
@@ -276,29 +241,36 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
                                httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
                             ])
 		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		
-		if not self.testTransmission:
-			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
 		self.downloader.loadConfig(self.configFileTransmission)
 		
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,title='TvShow 1',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 1'},
+			status=0
+		)
 		self.assertEqual(tvShow['status'],0)
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],30)
 		
-	"""
-	# No more relevant. A new added TvShow without episode indicated will schedule the pilot
 	@httpretty.activate
 	def test_update_0_to_90(self): # Added to TvShow Achieved
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,title='TvShow 1',season=0,episode=0,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			info={'seriesname':'TvShow 1'}
+		)
 		self.assertEqual(tvShow['status'],0)
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
-		self.assertEqual(tvShow['status'],90)"""
+		self.assertEqual(tvShow['status'],90)
 		
 	@httpretty.activate
 	def test_update_10_to_20(self): # not broadcasted to waiting for torrent availability
@@ -308,7 +280,14 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
 		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_not_found.json','r').read())
 		
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=1,status=10,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=10
+		)
 		self.assertEqual(tvShow['status'],10)
 
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
@@ -325,20 +304,26 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
                                httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
                             ])
 		
-		if not self.testTransmission:
-			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
 		self.downloader.loadConfig(self.configFileTransmission)
 		
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=1,status=10,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=10
+		)
 		self.assertEqual(tvShow['status'],10)
 		
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],30)
 		
 	@httpretty.activate
-	def test_update_20_to_20_file_corrput(self): # Waiting for torrent availability to itself caused by corrupted file
+	def test_update_20_to_20_file_corrupt(self): # Waiting for torrent availability to itself caused by corrupted file
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
@@ -353,8 +338,14 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
 		self.downloader.loadConfig(self.configFileTransmission)
 		
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
-		tvShow._set(status=20)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=20
+		)
 		with self.assertLogs(level='ERROR'):
 			tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],20)
@@ -370,13 +361,20 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
                                httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
                             ])
 		if not self.testTransmission:
 			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
 		self.downloader.loadConfig(self.configFileTransmission)
 		
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
-		tvShow._set(status=20)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=20
+		)
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],30)
 		
@@ -394,9 +392,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
                             ])
-		if not self.testTransmission:
-			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
-
+                            
 		os.makedirs(self.tmpdir1+"/foo")
 		for myFile in files:
 			with open(self.tmpdir1+"/"+myFile, 'a'):
@@ -404,8 +400,15 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.downloader.loadConfig(self.configFileTransmission)
 		self.transferer.addData(self.configFileTvShowSchedule)
 		self.transferer.setValue(self.transfererData)
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
-		tvShow._set(status=30,downloader_id = 3)	
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=30,
+			downloader_id=3
+		)	
 		for myFile in files:
 			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
 			self.assertFalse(os.path.isfile(self.tmpdir2+"/"+myFile))	
@@ -442,8 +445,15 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		transfererData = dict(self.transfererData)
 		transfererData['delete_after'] = True
 		self.transferer.setValue(transfererData)
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
-		tvShow._set(status=30,downloader_id = 3)	
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=30,
+			downloader_id=3
+		)		
 		for myFile in files:
 			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
 			self.assertFalse(os.path.isfile(self.tmpdir2+"/"+myFile))	
@@ -478,8 +488,15 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.downloader.loadConfig(self.configFileTransmission)
 		self.transferer.addData(self.configFileTvShowSchedule)
 		self.transferer.setValue(self.transfererData)
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=1,episode=2,status=0,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
-		tvShow._set(status=30,downloader_id = 3)	
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=2,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=30,
+			downloader_id=3
+		)		
 		for myFile in files:
 			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
 			self.assertFalse(os.path.isfile(self.tmpdir2+"/"+myFile))	
@@ -495,8 +512,12 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,title='TvShow 2',season=0,episode=0,status=90,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
-		self.assertEqual(tvShow['status'],90)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=90
+		)
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],10)
 		
@@ -505,7 +526,11 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,title='TvShow 1',season=0,episode=0,status=90,nextUpdate=datetime.datetime.now(),verbosity=DEBUG)
-		self.assertEqual(tvShow['status'],90)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 1'},
+			status=90
+		)
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],90)

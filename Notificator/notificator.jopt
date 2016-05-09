@@ -10,7 +10,8 @@
 						"text" : "Email"
 					}
 				],
-				"removeDefaultNone": true,
+				"noneLabel": "-- Select --",
+				"removeDefaultNone": false,
 				"order":1
 			},
 			"emailConf":{

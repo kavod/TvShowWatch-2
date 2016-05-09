@@ -9,43 +9,27 @@
 		this.list = [];
 		this.source1 = {};
 		
-		this.check_progression = function(event){
-			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
-			tvshow.progress = event.data;
-		};
-		var check_progression = this.check_progression;
-		
 		this.build_tvShowList = function() {
 			tvshowlist.list = [];
 			$http.get('/tvshowlist/list')
 				.success(function(data) {
 					tvshowlist.list = data.data;
-					for (var i = 0 ; i< tvshowlist.list.length ; i++)
-					{
-						if ([30,35].indexOf(tvshowlist.list[i]['status']) != -1)
-						{
-							seriesid = tvshowlist.list[i]['seriesid'];
-							this.source1 = new EventSource("/tvshowlist/progression?tvShowID="+seriesid.toString());
-							this.source1.onmessage = function(event){
-								var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
-								tvshow.progress = event.data;
-							};
-						}
-					}
 				});
 		};
 		build_tvShowList = this.build_tvShowList;
 		this.build_tvShowList();
 		
 		this.tvShowChanged = function(newTvShow){
+			var found = false;
 			for (var i = 0 ; i < tvshowlist.list.length ; i++) {
 				if (tvshowlist.list[i].seriesid == newTvShow.seriesid){
-					if (!(tvshowlist.list[i].season == newTvShow.season &&
-							tvshowlist.list[i].episode == newTvShow.episode &&
-							tvshowlist.list[i].pattern == newTvShow.pattern)){
-						tvshowlist.list[i] = newTvShow;
-					}
+					for(var prop in newTvShow) { tvshowlist.list[i][prop] = newTvShow[prop];}
+					found = true;
+					break;
 				}
+			}
+			if (!found) {
+				tvshowlist.list.push(newTvShow);
 			}
 		}
 		tvShowChanged = this.tvShowChanged;
@@ -62,18 +46,35 @@
 		update_tvShowList = this.update_tvShowList;
 		
 		this.check_update = function(event){
-			if ( serie_time == "0" )
+			if (event.lastEventId == 'server-time')
 			{
-				serie_time = event.data;
-			}
-			if (serie_time != event.data)
-			{
-				serie_time = event.data;
-				update_tvShowList();
+				if ( serie_time == "0" )
+				{
+					serie_time = event.data;
+				}
+				if (serie_time != event.data)
+				{
+					console.log([serie_time,event.data])
+					serie_time = event.data;
+					update_tvShowList();
+				}
+			} else {
+				var data = JSON.parse(event.data);
+				for (seriesid in data)
+				{
+					var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == parseInt(seriesid); })[0];
+					if (tvshow === undefined) {
+						console.log("Error assigning progress")
+						console.log(tvshowlist.list)
+						console.log(parseInt(seriesid))
+					} else {
+						tvshow.progress = data[seriesid];
+					}
+				}
 			}
 		};
 		this.source = new EventSource("streamGetSeries");
-		this.source.onmessage = this.check_update;
+		this.source.addEventListener("message",this.check_update);
 		
 		this.delete = function(seriesid) {
 			$http({
@@ -141,6 +142,122 @@
 				
 			});
 		};
+		
+		this.updateEmails = function(seriesid) {
+			var newvalue = {};
+			newvalue = {tvShowID:parseInt(seriesid)};
+			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
+			tvshow.emails.push(tvshow.newEmail);
+			newvalue.emails = tvshow.emails;
+			delete(tvshow.newEmail);
+			$http({
+				method: 'POST',
+				url: '/tvshowlist/update',
+				data: $.param(newvalue),
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			})
+			.then(function(data) {
+			  	if (data.data.status == 200)
+			  		$('#notification').scope().alert_success(data.data);
+			  	else
+			  		$('#notification').scope().alert_error(data.data);
+				
+			});
+		};
+		
+		this.deleteEmail = function(seriesid,email) {
+			var newvalue = {};
+			newvalue = {tvShowID:parseInt(seriesid)};
+			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
+			var index = tvshow.emails.indexOf(email);
+			if (index > -1) {
+				tvshow.emails.splice(index, 1);
+			}
+			newvalue.emails = tvshow.emails;
+			console.log(newvalue.emails);
+			$http({
+				method: 'POST',
+				url: '/tvshowlist/update',
+				data: $.param(newvalue),
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			})
+			.then(function(data) {
+			  	if (data.data.status == 200)
+			  		$('#notification').scope().alert_success(data.data);
+			  	else
+			  		$('#notification').scope().alert_error(data.data);
+				
+			});
+		};
+		
+		this.updateKeywords = function(seriesid) {
+			var newvalue = {};
+			newvalue = {tvShowID:parseInt(seriesid)};
+			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
+			tvshow.keywords.push(tvshow.newKeyword);
+			newvalue.keywords = tvshow.keywords;
+			delete(tvshow.newKeyword);
+			$http({
+				method: 'POST',
+				url: '/tvshowlist/update',
+				data: $.param(newvalue),
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			})
+			.then(function(data) {
+			  	if (data.data.status == 200)
+			  		$('#notification').scope().alert_success(data.data);
+			  	else
+			  		$('#notification').scope().alert_error(data.data);
+				
+			});
+		};
+		
+		this.deleteKeyword = function(seriesid,keyword) {
+			var newvalue = {};
+			newvalue = {tvShowID:parseInt(seriesid)};
+			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
+			var index = tvshow.keywords.indexOf(keyword);
+			if (index > -1) {
+				tvshow.keywords.splice(index, 1);
+			}
+			newvalue.keywords = tvshow.keywords;
+			console.log(newvalue.keywords);
+			$http({
+				method: 'POST',
+				url: '/tvshowlist/update',
+				data: $.param(newvalue),
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			})
+			.then(function(data) {
+			  	if (data.data.status == 200)
+			  		$('#notification').scope().alert_success(data.data);
+			  	else
+			  		$('#notification').scope().alert_error(data.data);
+				
+			});
+		};
+		
+		this.pushTorrent = function(seriesid) {
+			var newvalue = {};
+			newvalue = {tvShowID:parseInt(seriesid)};
+			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
+			console.log(tvshow.torrentFile)
+			newvalue.torrentFile = tvshow.torrentFile;
+			console.log(newvalue);
+			$http({
+				method: 'POST',
+				url: '/tvshowlist/pushTorrent',
+				data: $.param(newvalue),
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			})
+			.then(function(data) {
+			  	if (data.data.status == 200)
+			  		$('#notification').scope().alert_success(data.data);
+			  	else
+			  		$('#notification').scope().alert_error(data.data);
+				
+			});
+		};
 	}]);
 	
 	app.controller('NewTvShowController', [ '$http', '$scope',function($http,$scope){
@@ -149,6 +266,8 @@
 			this.tvshow.episode = 0;
 			var index = tvShowList.push(this.tvshow);
 			tvShowList[index-1]['isDisable'] = true;
+			if (typeof(this.tvshow)== 'string')
+				this.tvshow = {"title":this.tvshow};
 			var postData = $.param(this.tvshow);
 			delete this.tvshow;
 			$http({
@@ -201,6 +320,26 @@
     		templateUrl: 'tvShowListElement.html'
     	};
     });
+    
+    // By Endy Tjahjono from http://stackoverflow.com/questions/17063000/ng-model-for-input-type-file
+    app.directive("fileread", [function () {
+		return {
+		    scope: {
+		        fileread: "="
+		    },
+		    link: function (scope, element, attributes) {
+		        element.bind("change", function (changeEvent) {
+		            var reader = new FileReader();
+		            reader.onload = function (loadEvent) {
+		                scope.$apply(function () {
+		                    scope.fileread = loadEvent.target.result;
+		                });
+		            }
+		            reader.readAsDataURL(changeEvent.target.files[0]);
+		        });
+		    }
+		}
+	}]);
     
     TSWstatus = {
 		0: "Added",

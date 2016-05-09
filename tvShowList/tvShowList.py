@@ -4,14 +4,18 @@ from __future__ import unicode_literals
 
 import json
 import datetime
+import tzlocal
+import threading
 import myTvDB
 import logging
 import os
 import cherrypy
 import Downloader
+import Notificator
 import Transferer
 import torrentSearch
 import tvShowSchedule
+import Thread2
 
 class tvShowList(list):
 	def __init__(self, id="tvShowList",banner_dir=".",tvShows=None,verbosity=False):
@@ -34,6 +38,7 @@ class tvShowList(list):
 			raise Exception("tvShows parameter must be a basestring (for filename) or a list of myShow, myEpisode, tvShowSchedule or int values")
 			
 		self.id = unicode(id)
+		self.threads = []
 		self.filename = None
 		self.verbosity = verbosity
 		self.banner_dir = unicode(banner_dir)
@@ -46,6 +51,7 @@ class tvShowList(list):
 				'tools.caching.on': False
 			}
 		}
+		self.lock = threading.Lock()
 		
 		list.__init__(self,[])
 		if isinstance(tvShows,basestring):
@@ -57,6 +63,7 @@ class tvShowList(list):
 		self.downloader=None
 		self.transferer=None
 		self.searcher=None
+		self.notificator=None
 
 	# Check if filename is defined
 	def checkCompleted(self):
@@ -71,6 +78,7 @@ class tvShowList(list):
 	def initDataFile(self):
 		self.checkCompleted()
 		initDataFile(self.id,self.filename)
+		self.threads = []
 		
 	# Load data from file	
 	def addData(self,dataFile):
@@ -78,12 +86,17 @@ class tvShowList(list):
 		self.filename = unicode(dataFile)
 		if self.isDataInitialized(self.filename):
 			with open(self.filename) as data_file:
-				for item in json.load(data_file)[self.id]:
-					tvShow = tvShowSchedule.tvShowScheduleFromId(item['seriesid'])
-					value = tvShow.getValue(hidePassword=False)
-					value.update(item)
-					tvShow.setValue(value)
+				fileContent = json.load(data_file)[self.id]
+			for item in fileContent:
+				if self.inList(item['seriesid']):
+					tvShow = self.getTvShow(item['seriesid'])
+					tvShow.setValue(item)
+				else:
+					tvShow = tvShowSchedule.tvShowSchedule(item['seriesid'],bannerDir=self.banner_dir,autoComplete=False,verbosity=self.verbosity)
+					tvShow.setValue(item)
 					self.add(tvShow)
+			for key in [item['seriesid'] for item in self if not self.inList(item['seriesid'])]:
+				self.delete(key)
 		else:
 			self.initDataFile()
 		setattr(self.root.data,self.id.encode('utf8'),staticJsonFile(self.filename,self.id))
@@ -129,17 +142,12 @@ class tvShowList(list):
 		except:
 			raise Exception("S{0:02}E{1:02} does not exists for {2}".format())
 		
-		self.append(tvShowSchedule.tvShowSchedule(
-			int(id), 
-			unicode(title), 
-			season=season, 
-			episode=epno,
-			status=0, 
-			nextUpdate=None, 
-			downloader_id = "", 
-			banner_dir = self.banner_dir,
-			dl_banner=True,
-			verbosity=False)
+		self.append(
+			tvShowSchedule.tvShowScheduleFromMyTvDBEpisode(
+				self.tvdb[id][season][epno],
+				bannerDir=self.banner_dir,
+				verbosity=self.verbosity
+			)
 		)
 		
 	def save(self,filename=None):
@@ -164,6 +172,10 @@ class tvShowList(list):
 			self._add_from_tvShowSchedule(tvShow)
 		else:
 			raise Exception("Add from {0} type is not yet implemented".format(type(tvShow)))
+		self.threads.append(None)
+	
+	def create_banner(self,seriesid,banner_url):
+		banner_path = "{0}/self.banner_dir"
 			
 	def delete(self,tvShow):
 		if isinstance(tvShow,int):
@@ -173,7 +185,14 @@ class tvShowList(list):
 				raise Exception("TvShow {0} not scheduled".format(unicode(tvShow).encode("utf8")))
 			tvShow = self[index]
 			tvShow.deleteBanner()
+			if self.threads[index] is not None:
+				self.threads[index].join()
 			del(self[index])
+			thread = self.threads[index]
+			if thread is not None and thread.isAlive():
+				thread.stop()
+				thread.join()
+			del(self.threads[index])
 		else:
 			raise Exception("Delete from {0} type is not yet implemented".format(type(tvShow)))
 			
@@ -202,6 +221,11 @@ class tvShowList(list):
 		if not isinstance(downloader,Downloader.Downloader):
 			raise TypeError("parameter is not Downloader instance")
 		self.downloader=downloader
+			
+	def _setNotificator(self,notificator):
+		if not isinstance(notificator,Notificator.Notificator):
+			raise TypeError("parameter is not Notificator instance")
+		self.notificator=notificator
 		
 	def _setTransferer(self,transferer):
 		if not isinstance(transferer,Transferer.Transferer):
@@ -213,11 +237,14 @@ class tvShowList(list):
 			raise TypeError("parameter is not torrentSearch instance")
 		self.searcher=searcher
 		
-	def update(self,downloader=None,searcher=None,transferer=None,force=False):
+	def update(self,downloader=None,notificator=None,searcher=None,transferer=None,force=False,wait=False):
 		if downloader is not None:
 			self._setDownloader(downloader)
 		if not isinstance(self.downloader,Downloader.Downloader):
 			raise Exception("No downloader provided")
+			
+		if notificator is not None:
+			self._setNotificator(notificator)
 			
 		if searcher is not None:
 			self._setTorrentSearch(searcher)
@@ -229,9 +256,52 @@ class tvShowList(list):
 		if not isinstance(self.transferer,Transferer.Transferer):
 			raise Exception("No transferer provided")
 		
+		# Update data from file	
+		#if self.filename is not None:
+		#	self.addData(self.filename)
+		
 		for key,tvShow in enumerate(self):
 			logging.info("[tvShowList] ******* UPDATE *******\nTvShow {0}".format(unicode(key)))
-			tvShow.update(downloader=self.downloader,searcher=self.searcher,transferer=self.transferer,force=force)
+			if tvShow.downloader is None:
+				tvShow._setDownloader(self.downloader)
+			if tvShow.searcher is None:
+				tvShow._setTorrentSearch(self.searcher)
+			if tvShow.transferer is None:
+				tvShow._setNotificator(self.notificator)
+			if tvShow.notificator is None:
+				tvShow._setTransferer(self.transferer)
+			if force:
+				now = datetime.datetime.now(tzlocal.get_localzone())
+				tvShow.set(nextUpdate=now)
+			if self.threads[key]:
+				if self.threads[key].isAlive():
+					logging.debug("[tvShowList] Thread alive for {0} ({1}).Skipping update".format(tvShow['info']['seriesname'],unicode(tvShow['seriesid'])))
+				else:
+					self.threads[key] = None
+			else:
+				self.threads[key] = threading.Thread(target=tvShow.update)
+				self.threads[key].daemon = True
+				self.threads[key].start()
+				if wait:
+					self.threads[key].join()
+					self.threads[key] = None
+		if self.filename is not None:
+			self.lock.acquire()
+			try:
+				self.save()
+			except Exception as e:
+				self.lock.release()
+				exc_type, exc_obj, exc_tb = sys.exc_info()
+				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+				print(exc_type, fname, exc_tb.tb_lineno)
+				raise e
+			else:
+				self.lock.release()
+	
+	def join(self):
+		for thread in self.threads:
+			if thread is not None and thread.isAlive():
+				thread.join()
 		
 	def getRoot(self,root=None):
 		self.checkCompleted()

@@ -1,7 +1,8 @@
-__all__ = ['tvShowSchedule','tvShowScheduleFromMyTvDB','tvShowScheduleFromId','fakeTvDB','resetTvDB']
+__all__ = ['tvShowSchedule','tvShowScheduleFromMyTvDB','tvShowScheduleFromMyTvDBEpisode','tvShowScheduleFromId','resetTvDB']
 
 # from directory.fichier import class
-from tvShowSchedule import tvShowSchedule
-from tvShowSchedule import tvShowScheduleFromMyTvDB
-from tvShowSchedule import tvShowScheduleFromId
-from tvShowSchedule import fakeTvDB
+from tvShowSchedule2 import tvShowSchedule
+from tvShowSchedule2 import tvShowScheduleFromMyTvDB
+from tvShowSchedule2 import tvShowScheduleFromMyTvDBEpisode
+from tvShowSchedule2 import tvShowScheduleFromId
+#from tvShowSchedule import fakeTvDB

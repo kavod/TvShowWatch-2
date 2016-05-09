@@ -53,8 +53,8 @@ class TestTvShowList(unittest.TestCase):
 		self.tvShow1 = self.t[self.id1]
 		self.tvShow2 = self.t[self.id2]
 		self.d1 = [{"seriesid":self.id1,"title":self.title1,"status":0}]
-		self.tvShowSchedule1 = tvShowSchedule.tvShowSchedule(self.id1, self.title1, verbosity=DEBUG)
-		self.tvShowSchedule2 = tvShowSchedule.tvShowSchedule(self.id2, self.title2, verbosity=DEBUG)
+		self.tvShowSchedule1 = tvShowSchedule.tvShowSchedule(seriesid=self.id1, verbosity=DEBUG)
+		self.tvShowSchedule2 = tvShowSchedule.tvShowSchedule(seriesid=self.id2, verbosity=DEBUG)
 		self.tmpdir1 = unicode(tempfile.mkdtemp())
 		self.tmpdir2 = unicode(tempfile.mkdtemp())
 		self.tmpdirBanner = unicode(tempfile.mkdtemp())
@@ -107,22 +107,26 @@ class TestTvShowList(unittest.TestCase):
 		self.assertTrue('nextUpdate' in data['tvShowList'][0].keys())
 		self.assertTrue(isinstance(dateutil.parser.parse(data['tvShowList'][0]['nextUpdate']),datetime.datetime))
 		del(data['tvShowList'][0]['nextUpdate'])
+		del(data['tvShowList'][0]['info']['infoUpdate'])
+		self.maxDiff=None
 		self.assertEqual({
 			'tvShowList':[
 				{
 					'seriesid':self.id1,
-					'title':self.title1,
 					'status':0,
 					'season':1,
 					'episode':1,
 					'downloader_id':'',
-					'pattern':self.title1,
+					'pattern':self.title1.lower(),
 					'info':{
-						'banner_url': '{0}/banner_123.jpg'.format(self.tmpdirBanner),
-						'firstaired': '2004-09-22',
-						'overview': 'This is the description of the TvShow number 1 used by myTvDB class tests.'
+						'banner':True,
+						'firstaired': u'2004-09-22T00:00:00+02:00',
+						'overview': 'This is the description of the TvShow number 1 used by myTvDB class tests.',
+						'seriesname':self.title1,
+						'episodesList': [0, 2]
 					},
-					'emails':[]
+					'emails':[],
+					'keywords': []
 				}
 			]
 		},data),
@@ -156,8 +160,9 @@ class TestTvShowList(unittest.TestCase):
 		self.tvShowSchedule1
 		self.l1.add(self.tvShowSchedule1)
 		self.assertEqual(len(self.l1),1)
-		self.assertEqual(self.l1[0]['season'],1)
-		self.assertEqual(self.l1[0]['episode'],1)
+		self.assertEqual(self.l1[0]['season'],0)
+		self.assertEqual(self.l1[0]['episode'],0)
+		self.assertEqual(self.l1[0]['status'],0)
 		
 	@httpretty.activate
 	def test_add_TvShow_with_episode(self):
@@ -175,7 +180,7 @@ class TestTvShowList(unittest.TestCase):
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		with self.assertRaises(Exception):
-			self.l1.add(self.id1,season=7,epno=2)
+			self.l1.add(tvShow=self.id1,season=7,epno=2)
 		self.assertEqual(len(self.l1),0)
 		
 	@httpretty.activate
@@ -245,44 +250,55 @@ class TestTvShowList(unittest.TestCase):
 		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", responses=[
 							   httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
 							   httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
-							   httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read()),
-							   httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read()),
 							   httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
 							   httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
 							   httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read()),
-							   httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read()),
-							   httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read()),
-							   httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read()),
+							   httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read())
 							   ])
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()), 
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()), 
+                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()), 
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()), 
+                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()), 
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()), 
+                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()), 
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()), 
+                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()), 
+                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
                               ])
 		
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
-		shutil.copyfile('tests/tvShowList2.json',tmpfile)
+		shutil.copyfile('tests/tvShowList3.json',tmpfile)
 		
 		self.loadFullConfig()
 		myList = tvShowList.tvShowList(tvShows=tmpfile,verbosity=DEBUG)
-		self.assertEqual(myList[0]['status'],0)
-		self.assertEqual(myList[1]['status'],0)
-		self.assertEqual(myList[2]['status'],0)
-		self.assertEqual(myList[3]['status'],10)
-		self.assertEqual(myList[4]['status'],10)
-		myList.update(downloader=self.downloader,transferer=self.transferer,searcher=self.torrentSearch)
-		self.assertEqual(myList[0]['status'],10)
-		self.assertEqual(myList[1]['status'],20)
-		self.assertEqual(myList[2]['status'],30)
-		self.assertEqual(myList[3]['status'],20)
-		self.assertEqual(myList[4]['status'],30)
+		
+		self.assertEqual(myList[0]['status'],0) # 321 S1E2 0 => 10
+		self.assertEqual(myList[1]['status'],0) # 123 S1E1 0 => 20
+		myList.update(downloader=self.downloader,transferer=self.transferer,searcher=self.torrentSearch,wait=True,force=True)
+		self.assertEqual(myList[0]['status'],10) # 321 S1E2 0 => 10
+		self.assertEqual(myList[1]['status'],20) # 123 S1E1 0 => 20
+		
+		myList[0].set(season=1,episode=1,status=10)
+		myList[1].set(status=0)
+		self.assertEqual(myList[0]['status'],10) # 321 S1E1 10 => 20
+		self.assertEqual(myList[1]['status'],0) # 123 S1E1 0 => 30
+		myList.update(wait=True,force=True)
+		self.assertEqual(myList[0]['status'],20) # 321 S1E1 10 => 20
+		self.assertEqual(myList[1]['status'],30) # 123 S1E1 0 => 30
+		
+		#myList[0].set(season=1,episode=1,status=10)
+		myList[1].set(season=1,episode=1,status=10)
+		self.assertEqual(myList[0]['status'],20) # 321 S1E1 20 => 30
+		self.assertEqual(myList[1]['status'],10) # 123 S1E1 10 => 30
+		myList.update(wait=True,force=True)
+		self.assertEqual(myList[0]['status'],30) # 321 S1E1 20 => 30
+		self.assertEqual(myList[1]['status'],30) # 123 S1E1 10 => 30
 		
 		os.remove(tmpfile)
 		

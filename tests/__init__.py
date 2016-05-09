@@ -8,7 +8,8 @@ __all__ = [
 		'test_tvShowList',
 		'test_tvShowSchedule',
 		'test_transferer',
-		'test_Notificator'
+		'test_Notificator',
+		'test_ScriptCache'
 		]
 
 # from directory.fichier import class
@@ -22,3 +23,4 @@ from test_tvShowList import TestTvShowList
 from test_tvShowSchedule import TestTvShowSchedule
 from test_transferer import TestTransferer
 from test_Notificator import TestNotificator
+from test_ScriptCache import TestScriptCache

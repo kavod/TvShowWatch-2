@@ -17,7 +17,8 @@ import Transferer
 import Notificator
 import JSAG3
 
-path = os.path.dirname(os.path.realpath(__file__))
+import tvShowSchedule2
+"""path = os.path.dirname(os.path.realpath(__file__))
 with open(path + '/status.json') as data_file:    
 	STATUS = json.load(data_file)
 for key,item in STATUS.items():
@@ -60,7 +61,7 @@ def fakeTvDB(tvDB):
 	global t
 	if not isinstance(tvDB,myTvDB.myTvDB):
 		raise TypeError("Incorrect argument: {0}".format(unicode(tvDB).encode('utf8')))
-	t=tvDB
+	t=tvDB"""
 
 class tvShowSchedule(JSAG3.JSAG3):
 	def __init__(
@@ -482,3 +483,6 @@ class tvShowSchedule(JSAG3.JSAG3):
 					except:
 						pass
 					del(self.data['info']['banner_url'])
+
+class tvShowSchedule(tvShowSchedule2.tvShowSchedule):
+	pass
