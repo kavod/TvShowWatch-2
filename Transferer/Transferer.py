@@ -47,6 +47,12 @@ def return_if_filled(var,data):
 	else:
 		return ''
 
+def makePath(path,subFolder=None):
+	if subFolder is not None:
+		return "{0}/{1}".format(path,subFolder)
+	else:
+		return path
+
 class Transferer(JSAG3.JSAG3):
 	def __init__(self,id="transferer",dataFile=None,verbosity=False):
 		curPath = os.path.dirname(os.path.realpath(__file__))
@@ -58,19 +64,20 @@ class Transferer(JSAG3.JSAG3):
 			verbosity=verbosity
 		)
 		
-	def get_uri(self,endpoint="source",filename=".",showPassword=False):
+	def get_uri(self,endpoint="source",filename=".",subFolder=None,showPassword=False):
 		self.checkUsable()
 		if not isinstance(endpoint,basestring) or unicode(endpoint) not in ['source','destination']:
 			raise Exception("You must choose 'endpoint' parameter among 'source'/'destination'")
 		endpoint = unicode(endpoint)
 		data = self.data[endpoint]
+		path = makePath(return_if_filled('path',data),subFolder)
 		uri = URI_PATTERNS[data['protocol']].format(
 			filename,
 			return_if_filled('user',data),
 			return_if_filled('password',data) if showPassword else '*****',
 			return_if_filled('host',data),
 			(':'+return_if_filled('port',data)) if return_if_filled('port',data) !='' else '',
-			return_if_filled('path',data),
+			path,
 			return_if_filled('auth_endpoint',data),
 			return_if_filled('tenant_id',data),
 			return_if_filled('region',data),
@@ -82,24 +89,24 @@ class Transferer(JSAG3.JSAG3):
 		)
 		return uri
 		
-	def transfer(self,filename,delete_after=False):
+	def transfer(self,filename,dstSubFolder=None,delete_after=False):
 		logging.info('[Transferer] Transfering file from {0} to {1}'.format(self.get_uri("source",filename),self.get_uri("destination",filename)))
 		
 		source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
-		dest_file = storage.get_storage(self.get_uri("destination",filename,showPassword=True))
+		dest_file = storage.get_storage(self.get_uri("destination",filename=filename,subFolder=dstSubFolder,showPassword=True))
 		
 		if self.data['source']['protocol'] == 'file' and self.data['destination']['protocol'] == 'file':
-			destination = "{0}/{1}".format(self.data['destination']['path'],filename)
+			destination = "{0}/{1}".format(makePath(self.data['destination']['path'],dstSubFolder),filename)
 			if not os.path.exists(os.path.dirname(destination)):
-				os.mkdir(os.path.dirname(destination))
+				os.makedirs(os.path.dirname(destination))
 			shutil.copyfile("{0}/{1}".format(self.data['source']['path'],filename),destination)
 		else:
 			if self.data['source']['protocol'] == 'file':
 				dest_file.load_from_filename("{0}/{1}".format(self.data['source']['path'],filename))
 			elif self.data['destination']['protocol'] == 'file':
-				destination = "{0}/{1}".format(self.data['destination']['path'],filename)
+				destination = "{0}/{1}".format(makePath(self.data['destination']['path'],dstSubFolder),filename)
 				if not os.path.exists(os.path.dirname(destination)):
-					os.mkdir(os.path.dirname(destination))
+					os.makedirs(os.path.dirname(destination))
 				source_file.save_to_filename(destination)
 			else:
 				tmpfile = unicode(tempfile.mkstemp()[1])

@@ -24,8 +24,6 @@ import daemon
 from cherrypy.process.plugins import Daemonizer
 from cherrypy.process.plugins import PIDFile
 
-"""d = Daemonizer(cherrypy.engine)
-d.subscribe()"""
 PIDFile(cherrypy.engine, tempfile.gettempdir() + '/TSW2.PID').subscribe()
 
 class Root(object):
@@ -53,9 +51,7 @@ class LiveSearch(object):
 			
 class serv_TvShowList(object):
 	def __init__(self,tvshowlist,downloader):
-		print("constructor1:"+unicode(id(tvshowlist)))
 		self.tvshowlist = tvshowlist
-		print("attribute:"+unicode(id(self.tvshowlist)))
 		self.downloader=downloader
 		self.checkModification()
 
@@ -68,7 +64,6 @@ class serv_TvShowList(object):
 		return {"status":errorNo,"error":errorDesc.encode("utf8")}
 		
 	def _add(self,tvShowID,tvShowName):
-		print("_add:"+unicode(id(self.tvshowlist)))
 		self.checkModification()
 		try:
 			self.tvshowlist.add(int(tvShowID))
@@ -81,7 +76,6 @@ class serv_TvShowList(object):
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def add(self, **kwargs):
-		print("add:"+unicode(id(self.tvshowlist)))
 		self.checkModification()
 		if 'title' in kwargs.keys():
 			seriesname = kwargs['title']
@@ -194,9 +188,7 @@ class serv_TvShowList(object):
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def delete(self,tvShowID=-1):
-		print("delete1:"+unicode(id(self.tvshowlist)))
 		self.checkModification()
-		print("delete2:"+unicode(id(self.tvshowlist)))
 		try:
 			tvShowID = int(tvShowID)
 			t = myTvDB.myTvDB()
@@ -315,7 +307,6 @@ def main():
 	transferer = Transferer.Transferer("transferer",dataFile=curPath+"/config.json")
 	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="web/static",verbosity=False)
 	notificator = Notificator.Notificator(id="notificator",dataFile=curPath+"/config.json",verbosity=False)
-	print("init:"+unicode(id(tvshowlist)))
 	root = Root()
 	root.update = Root()
 	root.livesearch = LiveSearch()
@@ -324,6 +315,8 @@ def main():
 	
 	cherrypy.config["tools.encode.on"] = True
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
+	cherrypy.config['engine.autoreload_on'] = False
+	cherrypy.config['server.socket_port'] = 1205
 	
 	root = torrentsearch.getRoot(root)
 	conf = torrentsearch.getConf(conf)
@@ -341,11 +334,6 @@ def main():
 	conf = notificator.getConf(conf)
 	root.update.notificator = updateData(notificator)
 	
-	#root = tvshowlist.getRoot(root)
-	#conf = tvshowlist.getConf(conf)
-	#root.update.tvshowlist = updateData(tvshowlist)
-	
-	#wd = cherrypy.process.plugins.BackgroundTask(1, daemon.daemon)
 	def backgoundProcess(tvshowlist,downloader,transferer,searcher,force):
 		tvshowlist.update(downloader=downloader,transferer=transferer,searcher=searcher,force=force)
 	

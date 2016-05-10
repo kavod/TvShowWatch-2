@@ -416,7 +416,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		for myFile in files:
 			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
 			os.remove(self.tmpdir1+"/"+myFile)
-			self.assertTrue(os.path.isfile(self.tmpdir2+"/"+myFile))
+			self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/Season 1/"+myFile))
 		self.assertEqual(tvShow['status'],10)
 		
 	@httpretty.activate
@@ -461,7 +461,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		for myFile in files:
 			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
 			os.remove(self.tmpdir1+"/"+myFile)
-			self.assertTrue(os.path.isfile(self.tmpdir2+"/"+myFile))
+			self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/Season 1/"+myFile))
 		self.assertEqual(tvShow['status'],10)
 		
 	@httpretty.activate
@@ -504,7 +504,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		for myFile in files:
 			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
 			os.remove(self.tmpdir1+"/"+myFile)
-			self.assertTrue(os.path.isfile(self.tmpdir2+"/"+myFile))
+			self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/Season 1/"+myFile))
 		self.assertEqual(tvShow['status'],90)
 	
 	@httpretty.activate

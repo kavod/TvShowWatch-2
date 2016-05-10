@@ -81,6 +81,17 @@ class TestTransferer(unittest.TestCase):
 		self.assertTrue(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
 		self.assertTrue(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
 		
+	def test_transfer_file_to_file_with_subFolder(self):
+		subFolder="testFolder"
+		trans = self.creation(id="test1",data=self.data1)
+		tmpfile = unicode(tempfile.mkstemp('.txt',dir=self.tmpdirs[0])[1])
+		self.tmpfiles.append(tmpfile)
+		tmpfile = os.path.basename(tmpfile)
+		self.assertFalse(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
+		trans.transfer(tmpfile,dstSubFolder=subFolder)
+		self.assertTrue(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
+		self.assertTrue(os.path.isfile(self.tmpdirs[1]+"/"+subFolder+"/"+tmpfile))
+		
 	def test_transfer_file_to_file_delete_after(self):
 		trans = self.creation(id="test1",data=self.data1)
 		tmpfile = unicode(tempfile.mkstemp('.txt',dir=self.tmpdirs[0])[1])
@@ -114,6 +125,27 @@ class TestTransferer(unittest.TestCase):
 		mock_ftp.connect.assert_called_with(self.ftp_server, port=self.ftp_port)
 		mock_ftp.login.assert_called_with(self.ftp_user, self.ftp_pwd)
 		mock_ftp.cwd.assert_called_with(self.ftp_dir)
+		
+		mock_ftp.storbinary.assert_called_with(
+			"STOR "+tmpfile,mock_ftp.storbinary.mock_calls[0][1][1]	)
+		
+	@mock.patch("ftplib.FTP", autospec=True)
+	def test_transfer_file_to_ftp_with_subFolder(self, mock_ftp_class):
+		subFolder="testFolder"
+		mock_ftp = mock_ftp_class.return_value
+	
+		trans = self.creation(id="test4",data=self.data4)
+		tmpfile = unicode(tempfile.mkstemp('.txt',dir=self.tmpdirs[0])[1])
+		with open(tmpfile,'w') as outfile:
+			outfile.write('niouf')
+		self.tmpfiles.append(tmpfile)
+		tmpfile = os.path.basename(tmpfile)
+		trans.transfer(tmpfile,dstSubFolder=subFolder)
+		
+		mock_ftp_class.assert_called_with()
+		mock_ftp.connect.assert_called_with(self.ftp_server, port=self.ftp_port)
+		mock_ftp.login.assert_called_with(self.ftp_user, self.ftp_pwd)
+		mock_ftp.cwd.assert_called_with(self.ftp_dir+"/"+subFolder)
 		
 		mock_ftp.storbinary.assert_called_with(
 			"STOR "+tmpfile,mock_ftp.storbinary.mock_calls[0][1][1]	)
