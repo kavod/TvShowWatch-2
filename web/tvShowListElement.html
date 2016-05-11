@@ -11,69 +11,14 @@
 		</button>
 	</div>
 	<p> {{ tvshow.info.overview }}</p>
-		<label for="season">Watching episode:</label>
-	<form name="updateEpisode" class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6" ng-submit="updateEpisode.$valid && tvshowlist.updateEpisode(tvshow.seriesid)" novalidate>
-		<span class="input-group-addon">S</span>
-		<input type="number" class="form-control" aria-label="Season" ng-model="tvshow.season" min="1" max="{{tvshow.info.episodesList.length -1}}" required>
-		<span class="input-group-addon">E</span>
-		<input type="number" class="form-control" aria-label="Episode" ng-model="tvshow.episode" min="1" max="{{tvshow.info.episodesList[tvshow.season]}}" required>
-		<span class="input-group-btn">
-			<button class="btn btn-default" type="submit">
-				<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-			</button>
-		</span>
-	</form>
-	<label for="pattern">Search pattern:</label>
-	<form name="updatePattern" class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6" ng-submit="updatePattern.$valid && tvshowlist.updatePattern(tvshow.seriesid)" novalidate>
-		<input type="text" class="form-control" aria-label="pattern" ng-model="tvshow.pattern" required />
-		<span class="input-group-btn">
-			<button class="btn btn-default" type="submit">
-				<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-			</button>
-		</span>
-	</form>
+	<episode tvshow="tvshow" tvshowctrl="tvShowCtrl"></episode>
+	<pattern tvshow="tvshow" tvshowctrl="tvShowCtrl"></pattern>
 	<div ng-show="tvshow.status == 30 || tvshow.status == 35">
 		<label>Download progression</label>
 		<uib-progressbar animate="true" type="success" value="tvshow.progress"><b>{{tvshow.progress}}%</b></uib-progressbar>
 	</div>
-	<div>
-		<label for="newEmail">Notification emails</label>
-		<form name="updateEmails" class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6" ng-submit="updateEmails.$valid && tvshowlist.updateEmails(tvshow.seriesid)" novalidate>
-			<input type="email" class="form-control" aria-label="newEmail" name="newEmail" ng-model="tvshow.newEmail" required />
-			<span class="input-group-btn">
-				<button class="btn btn-default" type="submit">
-					<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-				</button>
-			</span>
-		</form>
-		<div ng-repeat="email in tvshow.emails" class="row">
-			<div class="col-lg-3 col-md-4 col-sm-5 col-xs-6">
-				{{email}}
-				<button class="btn btn-default pull-right btn-sm" aria-label="Delete" ng-click="tvshowlist.deleteEmail(tvshow.seriesid,email)">
-					<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
-				</button>
-			</div>
-		</div>
-	</div>
-	<div>
-		<label for="newKeyword">Search Keywords</label>
-		<form name="updateKeywords" class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6" ng-submit="updateKeywords.$valid && tvshowlist.updateKeywords(tvshow.seriesid)" novalidate>
-			<input type="text" class="form-control" aria-label="newKeyword" name="newKeyword" ng-model="tvshow.newKeyword" required />
-			<span class="input-group-btn">
-				<button class="btn btn-default" type="submit">
-					<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-				</button>
-			</span>
-		</form>
-		<div ng-repeat="keyword in tvshow.keywords" class="row">
-			<div class="col-lg-3 col-md-4 col-sm-5 col-xs-6">
-				{{keyword}}
-				<button class="btn btn-default pull-right btn-sm" aria-label="Delete" ng-click="tvshowlist.deleteKeyword(tvshow.seriesid,keyword)">
-					<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
-				</button>
-			</div>
-		</div>
-	</div>
+	<emails tvshow="tvshow" tvshowctrl="tvShowCtrl"></emails>
+	<keywords tvshow="tvshow" tvshowctrl="tvShowCtrl"></keywords>
 	<div>
 		<label for="torrentFile">Push torrent</label>
 		<form name="pushTorrent" class="input-group" enctype="multipart/form-data" ng-submit="pushTorrent.$valid && tvshowlist.pushTorrent(tvshow.seriesid)" novalidate>

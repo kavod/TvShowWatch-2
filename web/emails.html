@@ -1,0 +1,17 @@
+<label for="newEmail">Notification emails</label>
+<form name="EmailsCtrl.form" class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6" ng-submit="EmailsCtrl.addEmail()" novalidate>
+	<input type="email" class="form-control" aria-label="newEmail" name="newEmail" ng-model="tvshow.newEmail" required />
+	<span class="input-group-btn">
+		<button class="btn btn-default" type="submit">
+			<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+		</button>
+	</span>
+</form>
+<div ng-repeat="email in tvshow.emails" class="row">
+	<div class="col-lg-3 col-md-4 col-sm-5 col-xs-6">
+		{{email}}
+		<button class="btn btn-default pull-right btn-sm" aria-label="Delete" ng-click="EmailsCtrl.deleteEmail(email)">
+			<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+		</button>
+	</div>
+</div>

@@ -1,0 +1,17 @@
+<label for="newKeyword">Search Keywords</label>
+<form name="KeywordsCtrl.form" class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6" ng-submit="KeywordsCtrl.addKeyword()" novalidate>
+	<input type="text" class="form-control" aria-label="newKeyword" name="newKeyword" ng-model="tvshow.newKeyword" required />
+	<span class="input-group-btn">
+		<button class="btn btn-default" type="submit">
+			<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+		</button>
+	</span>
+</form>
+<div ng-repeat="keyword in tvshow.keywords" class="row">
+	<div class="col-lg-3 col-md-4 col-sm-5 col-xs-6">
+		{{keyword}}
+		<button class="btn btn-default pull-right btn-sm" aria-label="Delete" ng-click="KeywordsCtrl.deleteKeyword(keyword)">
+			<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+		</button>
+	</div>
+</div>
