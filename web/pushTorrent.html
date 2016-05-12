@@ -1,0 +1,16 @@
+<div>
+	<label for="torrentFile">Push torrent</label>
+	<form name="PushTorrentCtrl.form" class="input-group" ng-submit="PushTorrentCtrl.uploadFile()" novalidate>
+		<span class="input-group-btn">
+			<span class="btn btn-primary btn-file">
+				Browse&hellip; <input type="file" file-model="tvshow.myFile" valid-file />
+			</span>
+		</span>
+		<input type="text" class="form-control uploadFilename" readonly>
+		<span class="input-group-btn">
+			<button class="btn btn-default" type="submit">
+				<span class="glyphicon glyphicon-upload" aria-hidden="true"></span>
+			</button>
+		</span>
+	</form>
+</div>

@@ -19,15 +19,5 @@
 	</div>
 	<emails tvshow="tvshow" tvshowctrl="tvShowCtrl"></emails>
 	<keywords tvshow="tvshow" tvshowctrl="tvShowCtrl"></keywords>
-	<div>
-		<label for="torrentFile">Push torrent</label>
-		<form name="pushTorrent" class="input-group" enctype="multipart/form-data" ng-submit="pushTorrent.$valid && tvshowlist.pushTorrent(tvshow.seriesid)" novalidate>
-			<input type="file" class="form-control" aria-label="torrentFile" name="torrentFile" fileread="tvshow.torrentFile" />
-			<span class="input-group-btn">
-				<button class="btn btn-default" type="submit">
-					<span class="glyphicon glyphicon-upload" aria-hidden="true"></span>
-				</button>
-			</span>
-		</form>
-	</div>
+	<push-torrent tvshow="tvshow" tvshowctrl="tvShowCtrl"></push-torrent>
 </uib-accordion-group>

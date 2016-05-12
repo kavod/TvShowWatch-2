@@ -1,7 +1,7 @@
 (function(){
 	var app = angular.module('appTsw.TvShow', [ 'ngAnimate', 'ui.bootstrap' ]);
 		
-	app.controller('TvShowController', [ '$http', '$scope', function($http,$scope){
+	app.controller('TvShowController', [ '$http', '$scope', 'fileUpload', function($http,$scope,fileUpload){
 	
 		this.data = $scope.tvshow;
 		
@@ -58,6 +58,15 @@
 			}
 			newvalue.emails = $scope.tvshow.emails;
 			this.update(newvalue);
+		};
+		
+		this.pushTorrent = function() {
+			var file = $scope.tvshow.myFile;
+			var uploadUrl = '/tvshowlist/pushTorrent';
+			fileUpload.uploadFileToUrl(parseInt($scope.tvshow.seriesid),file, uploadUrl);
+			$("input[type='file']").val(null);
+			$(".uploadFilename").val("");
+			$scope.tvshow.myFile = null;
 		};
 		
 		this.update = function(newvalue) {
@@ -120,6 +129,15 @@
 			$scope.tvShowCtrl.deleteKeyword(keyword);
 		};
 	}]);
+	
+	app.controller('PushTorrentController', [ '$http', '$scope', function($http,$scope){
+		this.uploadFile = function(){
+			if (this.form.$valid){
+				$scope.tvShowCtrl.pushTorrent();
+				this.form.$setPristine();
+			}
+		};
+	}]);
 		
     app.filter('numberFixedLen', function () {
         return function (n, len) {
@@ -141,26 +159,6 @@
 			return TSWstatus[parseInt(status)];
 		}
 	});
-    
-    // By Endy Tjahjono from http://stackoverflow.com/questions/17063000/ng-model-for-input-type-file
-    app.directive("fileread", [function () {
-		return {
-		    scope: {
-		        fileread: "="
-		    },
-		    link: function (scope, element, attributes) {
-		        element.bind("change", function (changeEvent) {
-		            var reader = new FileReader();
-		            reader.onload = function (loadEvent) {
-		                scope.$apply(function () {
-		                    scope.fileread = loadEvent.target.result;
-		                });
-		            }
-		            reader.readAsDataURL(changeEvent.target.files[0]);
-		        });
-		    }
-		}
-	}]);
 	    
     app.directive('pattern',function(){
     	return {
@@ -213,6 +211,68 @@
     		templateUrl: 'keywords.html'
     	};
     });
+	    
+    app.directive('pushTorrent',function(){
+    	return {
+    		restrict: 'E',
+    		scope: {
+    			tvshow: '=',
+    			tvShowCtrl: '=tvshowctrl'
+    		},
+    		controller:'PushTorrentController',
+    		controllerAs:'PushTorrentCtrl',
+    		templateUrl: 'pushTorrent.html'
+    	};
+    });
+    
+    app.directive('fileModel', ['$parse', function ($parse) {
+		return {
+		    restrict: 'A',
+		    link: function(scope, element, attrs) {
+		        var model = $parse(attrs.fileModel);
+		        var modelSetter = model.assign;
+		        
+		        element.bind('change', function(){
+		            scope.$apply(function(){
+		                modelSetter(scope, element[0].files[0]);
+		            });
+		        });
+		    }
+		};
+	}]);
+	
+	app.directive('validFile',function(){
+	  return {
+		require:'fileModel',
+		link:function(scope,el,attrs,ngModel){
+		  //change event is fired when file is selected
+		  el.bind('change',function(){
+		    scope.$apply(function(){
+		      ngModel.$setViewValue(el.val());
+		      ngModel.$render();
+		    });
+		  });
+		}
+	  }
+	});
+    
+    app.service('fileUpload', ['$http', function ($http) {
+		this.uploadFileToUrl = function(tvshowid, file, uploadUrl){
+		    var fd = new FormData();
+		    fd.append('torrentFile', file);
+		    fd.append('tvShowID', tvshowid);
+		    $http.post(uploadUrl, fd, {
+		        transformRequest: angular.identity,
+		        headers: {'Content-Type': undefined}
+		    })
+		    .then(function(data){
+			  	if (data.data.status == 200)
+			  		$('#notification').scope().alert_success(data.data);
+			  	else
+			  		$('#notification').scope().alert_error(data.data);
+		    })
+		};
+	}]);
     
     TSWstatus = {
 		0: "Added",

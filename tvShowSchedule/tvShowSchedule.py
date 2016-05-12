@@ -414,10 +414,13 @@ class tvShowSchedule(JSAG3.JSAG3):
 			raise TypeError("parameter is not Transferer instance")
 		self.transferer=transferer
 			
-	def _setTorrentSearch(self,searcher):
-		if not isinstance(searcher,torrentSearch.torrentSearch):
-			raise TypeError("parameter is not torrentSearch instance")
-		self.searcher=searcher
+	def _setTorrentSearch(self,searcher,mandatory=True):
+		if searcher is not None:
+			if not isinstance(searcher,torrentSearch.torrentSearch):
+				raise TypeError("parameter is not torrentSearch instance")
+			self.searcher = searcher
+		if mandatory and not isinstance(self.searcher,torrentSearch.torrentSearch):
+			raise Exception("No torrentSearch provided")
 			
 	def _setAchieved(self):
 		nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(days=30)
@@ -459,16 +462,13 @@ class tvShowSchedule(JSAG3.JSAG3):
 		except:
 			logging.error("[tvShowSchedule] Offline mode. Update canceled")
 			return
+			
 		self._setDownloader(downloader)
+		self._setTorrentSearch(searcher,mandatory=False)
 			
 		if notificator is not None:
 			self._setNotificator(notificator)
-			
-		if searcher is not None:
-			self._setTorrentSearch(searcher)
-		if not isinstance(self.searcher,torrentSearch.torrentSearch):
-			raise Exception("No torrentSearch provided")
-			
+						
 		if transferer is not None:
 			self._setTransferer(transferer)
 		if not isinstance(self.transferer,Transferer.Transferer):
@@ -520,6 +520,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			
 			# Torrent watch
 			elif self['status'] == 20:
+				self._setTorrentSearch(searcher)
 				if len(self['keywords']) < 1:
 					# No keywords
 					keywords = ['']
@@ -657,7 +658,6 @@ class tvShowSchedule(JSAG3.JSAG3):
 		downloader_id=unicode(self.downloader.add_torrent(filename))
 		if int(downloader_id) > 0:
 			self.set(status=30,downloader_id=downloader_id,nextUpdate=now)
-			self.update(force=True)
 			return
 		else:
 			raise Exception("Fail to add torrent")

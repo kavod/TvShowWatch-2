@@ -77,3 +77,18 @@ if __name__ == '__main__':
 			sys.exit()
 		else:
 			sys.exit("%s is not running" % ("TvShowWatch2"))
+	elif sys.argv[1] == 'restart':
+		if daemon_status():
+			print "Stopping %s" % ("TvShowWatch2")
+			stopDaemon()
+		else:
+			print "%s is not running" % ("TvShowWatch2")
+		if daemon_status():
+			print("%s is still running" % ("TvShowWatch2"))
+			sys.exit()
+		else:
+			print("Starting %s" % ("TvShowWatch2"))
+			startDaemon()
+			sys.exit()
+		
+		

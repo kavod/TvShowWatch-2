@@ -1,7 +1,7 @@
 (function(){
 	var app = angular.module('appTsw.TvShowList', [ 'ngAnimate', 'ui.bootstrap', 'appTsw.TvShow' ]);
 		
-	app.controller('TvShowListController', [ '$http', '$scope', function($http,$scope){
+	app.controller('TvShowListController', [ '$http', '$scope', 'fileUpload',function($http,$scope,fileUpload){
 		$scope.oneAtATime = true;
 		
 		var serie_time = "0";
@@ -103,6 +103,19 @@
 		};
 		
 		this.pushTorrent = function(seriesid) {
+			var file = this.myFile;
+		    console.log('file is ' );
+		    console.dir(file);
+		    var uploadUrl = "/fileUpload";
+			return;
+		    fileUpload.uploadFileToUrl(file, uploadUrl);
+
+			$http.post(uploadUrl, fd, {
+				withCredentials: true,
+				headers: {'Content-Type': undefined },
+				transformRequest: angular.identity
+			}).success( console.log("...all right!...") ).error( console.log("..damn!...") );
+			return;
 			var newvalue = {};
 			newvalue = {tvShowID:parseInt(seriesid)};
 			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
@@ -123,8 +136,10 @@
 				
 			});
 		};
+		
+		
 	}]);
-	
+		
 	app.controller('NewTvShowController', [ '$http', '$scope',function($http,$scope){
 		this.addTvShow = function(tvShowList) {
 			console.log($scope);

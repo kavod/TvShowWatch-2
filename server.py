@@ -169,12 +169,12 @@ class serv_TvShowList(object):
 		if 'tvShowID' in kwargs.keys() and self.tvshowlist.inList(int(kwargs['tvShowID'])):
 			tvShowID = int(kwargs['tvShowID'])
 			if 'torrentFile' in kwargs.keys():
-				raise Exception(kwargs)
 				if kwargs['torrentFile'].file:
 					tvShow = self.tvshowlist.getTvShow(int(tvShowID))
-					fn = os.path.basename(params['torrentFile'].file.name)
 					try:
-						tvShow.pushTorrent(filename=fn,downloader=self.downloader)
+						with open('out.torrent', 'wb') as f:
+							f.write(kwargs['torrentFile'].file.read())
+						tvShow.pushTorrent(filename='out.torrent',downloader=self.downloader)
 						return {"status":200,"error":"TvShow {0} updated".format(tvShow['info']['seriesname'])}
 					except Exception as e:
 						return self._error(400,e[0])
