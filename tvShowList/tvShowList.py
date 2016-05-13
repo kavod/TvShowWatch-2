@@ -266,9 +266,9 @@ class tvShowList(list):
 			if tvShow.searcher is None:
 				tvShow._setTorrentSearch(self.searcher)
 			if tvShow.transferer is None:
-				tvShow._setNotificator(self.notificator)
-			if tvShow.notificator is None:
 				tvShow._setTransferer(self.transferer)
+			if tvShow.notificator is None:
+				tvShow._setNotificator(self.notificator)
 			if force:
 				now = datetime.datetime.now(tzlocal.get_localzone())
 				tvShow.set(nextUpdate=now)

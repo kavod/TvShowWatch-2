@@ -64,9 +64,9 @@
 				{
 					var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == parseInt(seriesid); })[0];
 					if (tvshow === undefined) {
-						console.log("Error assigning progress")
-						console.log(tvshowlist.list)
-						console.log(parseInt(seriesid))
+						console.log("Error assigning progress");
+						console.log(tvshowlist.list);
+						console.log(parseInt(seriesid));
 					} else {
 						tvshow.progress = data[seriesid];
 					}

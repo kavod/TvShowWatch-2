@@ -169,7 +169,7 @@ class serv_TvShowList(object):
 		if 'tvShowID' in kwargs.keys() and self.tvshowlist.inList(int(kwargs['tvShowID'])):
 			tvShowID = int(kwargs['tvShowID'])
 			if 'torrentFile' in kwargs.keys():
-				if kwargs['torrentFile'].file:
+				if not isinstance(kwargs['torrentFile'],basestring):
 					tvShow = self.tvshowlist.getTvShow(int(tvShowID))
 					try:
 						with open('out.torrent', 'wb') as f:
@@ -225,7 +225,7 @@ class serv_TvShowList(object):
 		def content():
 			yield "retry: 5000\r\n"
 			while True:
-				data = "Event: progression\r\ndata: " + unicode(tvShow.get_progression(self.downloader)) + "\n\n"
+				data = "Event: progression\r\ndata: " + json.dumps(tvShow.get_progression(self.downloader)) + "\n\n"
 				yield data
 				time.sleep(5)
 				
@@ -335,7 +335,7 @@ def main():
 	root.update.notificator = updateData(notificator)
 	
 	def backgoundProcess(tvshowlist,downloader,transferer,searcher,force):
-		tvshowlist.update(downloader=downloader,transferer=transferer,searcher=searcher,force=force)
+		tvshowlist.update(downloader=downloader,transferer=transferer,searcher=searcher,notificator=notificator,force=force)
 	
 	wd = cherrypy.process.plugins.BackgroundTask(
 			interval=10,

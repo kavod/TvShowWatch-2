@@ -241,7 +241,7 @@
 		};
 	}]);
 	
-	app.directive('validFile',function(){
+	/*app.directive('validFile',function(){
 	  return {
 		require:'fileModel',
 		link:function(scope,el,attrs,ngModel){
@@ -254,7 +254,7 @@
 		  });
 		}
 	  }
-	});
+	});*/
     
     app.service('fileUpload', ['$http', function ($http) {
 		this.uploadFileToUrl = function(tvshowid, file, uploadUrl){

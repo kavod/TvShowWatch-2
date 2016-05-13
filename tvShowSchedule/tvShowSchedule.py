@@ -409,10 +409,13 @@ class tvShowSchedule(JSAG3.JSAG3):
 			raise TypeError("parameter is not Notificator instance")
 		self.notificator=notificator
 		
-	def _setTransferer(self,transferer):
-		if not isinstance(transferer,Transferer.Transferer):
-			raise TypeError("parameter is not Transferer instance")
-		self.transferer=transferer
+	def _setTransferer(self,transferer,mandatory=True):
+		if transferer is not None:
+			if not isinstance(transferer,Transferer.Transferer):
+				raise TypeError("parameter is not Transferer instance")
+			self.transferer=transferer
+		if mandatory and not isinstance(transferer,Transferer.Transferer):
+			raise Exception("No transferer provided")
 			
 	def _setTorrentSearch(self,searcher,mandatory=True):
 		if searcher is not None:
@@ -465,14 +468,10 @@ class tvShowSchedule(JSAG3.JSAG3):
 			
 		self._setDownloader(downloader)
 		self._setTorrentSearch(searcher,mandatory=False)
+		self._setTransferer(transferer,mandatory=False)
 			
 		if notificator is not None:
 			self._setNotificator(notificator)
-						
-		if transferer is not None:
-			self._setTransferer(transferer)
-		if not isinstance(self.transferer,Transferer.Transferer):
-			raise Exception("No transferer provided")
 			
 		logging.debug("[tvShowSchedule] Next status scheduled on {0} ({2}). It is {1} ({3})".format(unicode(self['nextUpdate']),unicode(now),type(self['nextUpdate']),type(now)))
 		if not self.isInfoUpdated():
@@ -618,6 +617,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 				self.update(force=True)
 				
 	def downloadTorrent(self):
+		self._setTransferer(self.transferer,mandatory=True)
 		t = myTvDB.myTvDB()
 		# Transfer torrent
 		logging.debug("[tvShowSchedule] Transferer: {0}".format(self.transferer))
