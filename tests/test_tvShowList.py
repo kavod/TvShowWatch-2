@@ -276,7 +276,7 @@ class TestTvShowList(unittest.TestCase):
 		shutil.copyfile('tests/tvShowList3.json',tmpfile)
 		
 		self.loadFullConfig()
-		myList = tvShowList.tvShowList(tvShows=tmpfile,verbosity=DEBUG)
+		myList = tvShowList.tvShowList(banner_dir=self.tmpdirBanner,tvShows=tmpfile,verbosity=DEBUG)
 		
 		self.assertEqual(myList[0]['status'],0) # 321 S1E2 0 => 10
 		self.assertEqual(myList[1]['status'],0) # 123 S1E1 0 => 20
