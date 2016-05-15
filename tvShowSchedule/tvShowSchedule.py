@@ -19,11 +19,11 @@ import Notificator
 import JSAG3
 
 path = os.path.dirname(os.path.realpath(__file__))
-with open(path + '/status.json') as data_file:    
+with open(path + '/status.json') as data_file:
 	STATUS = json.load(data_file)
 for key,item in STATUS.items():
 	STATUS[int(key)] = item
-	
+
 def tvShowScheduleFromMyTvDB(tvShow,bannerDir=None, verbosity=False):
 	if not isinstance(tvShow,myTvDB.myShow):
 		raise TypeError("Incorrect argument: {0} ({1})".format(unicode(tvShow).encode('utf8'),type(tvShow)))
@@ -46,11 +46,11 @@ def tvShowScheduleFromMyTvDB(tvShow,bannerDir=None, verbosity=False):
 		episode=0,
 		status=0,
 		nextUpdate=datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2),
-		downloader_id="", 
+		downloader_id="",
 		autoComplete=True
 	)
 	return tvShowSch
-	
+
 def tvShowScheduleFromMyTvDBEpisode(episode,bannerDir=None, verbosity=False):
 	if not isinstance(episode,myTvDB.myEpisode):
 		raise TypeError("Incorrect argument: {0} ({1})".format(unicode(episode).encode('utf8'),type(episode)))
@@ -66,13 +66,13 @@ def tvShowScheduleFromMyTvDBEpisode(episode,bannerDir=None, verbosity=False):
 		autoComplete=True
 	)
 	return tvShowSch
-	
+
 def tvShowScheduleFromId(tvShow,bannerDir=None, verbosity=False):
 	t = myTvDB.myTvDB()
 	if not isinstance(tvShow,int):
 		raise TypeError("Incorrect argument: {0}".format(unicode(tvShow).encode('utf8')))
 	return tvShowScheduleFromMyTvDB(t[int(tvShow)],bannerDir=bannerDir, verbosity=verbosity)
-	
+
 def fakeTvDB(tvDB):
 	global t
 	if not isinstance(tvDB,myTvDB.myTvDB):
@@ -92,7 +92,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		)
 		if bannerDir is not None and not isinstance(bannerDir,basestring):
 			raise ValueError("bannerDir must be string or None, not {0}".format(type(bannerDir)))
-		
+
 		self.bannerDir = bannerDir
 		self.downloader = None
 		self.notificator = None
@@ -115,7 +115,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			):
 		logging.debug("[TvShowSchedule] set method called")
 		v2MinutesAfter = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2)
-		
+
 		# Initialization
 		if self.data is None:
 			self.data = {
@@ -129,7 +129,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 							"emails":[],
 							"keywords":[]
 						}
-		
+
 		# Status
 		if status is not None:
 			if isinstance(status,int):
@@ -138,12 +138,12 @@ class tvShowSchedule(JSAG3.JSAG3):
 			else:
 				raise ValueError("Status must be an integer, not {0}".format(type(status)))
 			self['status'] = status
-		
+
 		# Season/Episode
 		if (season is None) != (episode is None):
 			season = None
 			episode = None
-		
+
 		if season is not None:
 			if isinstance(season,int) and isinstance(episode,int) and season >= 0 and episode >= 0:
 				if season * episode < 1:
@@ -159,7 +159,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 					self['status'] = 0
 			else:
 				raise ValueError("Season & Episode must be positive integers. Got: {0} and {1}".format(type(season),type(episode)))
-			
+
 		# NextUpdate
 		if nextUpdate is not None:
 			if isinstance(nextUpdate,basestring):
@@ -170,21 +170,21 @@ class tvShowSchedule(JSAG3.JSAG3):
 				self['nextUpdate'] = nextUpdate
 			else:
 				raise ValueError("nextUpdate must be a datetime, not {0}".format(type(nextUpdate)))
-				
+
 		# Downloader_id
 		if downloader_id is not None:
 			if isinstance(downloader_id,basestring) or isinstance(downloader_id,int):
 				self['downloader_id'] = unicode(downloader_id)
 			else:
-				raise ValueError("downloader_id must be a string, not {0}".format(type(downloader_id)))	
-				
+				raise ValueError("downloader_id must be a string, not {0}".format(type(downloader_id)))
+
 		# Pattern
 		if pattern is not None:
 			if isinstance(pattern,basestring) or isinstance(pattern,int):
 				self['pattern'] = unicode(pattern)
 			else:
-				raise ValueError("pattern must be a string, not {0}".format(type(pattern)))	
-					
+				raise ValueError("pattern must be a string, not {0}".format(type(pattern)))
+
 		# Info
 		if info is not None:
 			if isinstance(info,dict):
@@ -242,28 +242,28 @@ class tvShowSchedule(JSAG3.JSAG3):
 						raise TypeError("info.episodesList must be an array of integers. Not {0}".format(type(info['episodesList'])))
 			else:
 				raise ValueError("info must be a dict, not {0}".format(type(info)))
-				
+
 		# Emails
 		if emails is not None:
 			if isinstance(emails,list) and all(isinstance(item,basestring) for item in emails):
 				self['emails'] = emails
 			else:
 				raise ValueError("emails must be an array of string (with email format). Got {0}".format(type(emails)))
-				
+
 		# Keywords
 		if keywords is not None:
 			if isinstance(keywords,list) and all(isinstance(item,basestring) for item in keywords):
 				self['keywords'] = keywords
 			else:
 				raise ValueError("keywords must be an array of string. Got {0}".format(type(keywords)))
-		
+
 		self.setDefault()
 		if autoComplete:
 			self.updateInfo(force=False)
-		
+
 		if self.dataFile is not None:
 			self.save()
-	
+
 	def setDefault(self):
 		logging.debug("[TvShowSchedule] setDefault method called")
 		v2MinutesAfter = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2)
@@ -278,7 +278,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		if 'pattern' not in self.data.keys() or self['pattern'] is None:
 			if 'seriesname' in self['info'].keys():
 				self['pattern'] = self['info']['seriesname'].lower()
-	
+
 	def updateInfo(self,force=False):
 		logging.debug("[TvShowSchedule] updateInfo method called")
 		v30DaysAgo = datetime.datetime.now(tzlocal.get_localzone()) - datetime.timedelta(days=30)
@@ -292,8 +292,8 @@ class tvShowSchedule(JSAG3.JSAG3):
 			else:
 				overview = ""
 			bannerAvailable = (
-				self.bannerDir is not None 
-				and 'banner' in t[self.seriesid].data 
+				self.bannerDir is not None
+				and 'banner' in t[self.seriesid].data
 				and t[self.seriesid].data['banner'] is not None
 			)
 			episodesList = t[self.seriesid].getEpisodesList()
@@ -314,7 +314,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			self.set(info=info,autoComplete=False)
 			if bannerAvailable and not self.isBannerUpdated():
 				self.updateBanner(t[self.seriesid].data['banner'])
-				
+
 			if self['season'] * self['episode'] > 0:
 				try:
 					t[self.seriesid][self['season']][self['episode']]
@@ -332,7 +332,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			self.set(info=info,autoComplete=False)
 		self.setDefault()
 		logging.debug("[tvShowSchedule] TvShow has been updated. New value:\n {0}".format(unicode(self.data)))
-	
+
 	def isInfoUpdated(self):
 		v30DaysAgo = datetime.datetime.now(tzlocal.get_localzone()) - datetime.timedelta(days=30)
 		if 'seriesname' not in self['info']:
@@ -352,12 +352,12 @@ class tvShowSchedule(JSAG3.JSAG3):
 		if self['info']['infoUpdate'] < v30DaysAgo:
 			return False
 		return True
-	
+
 	def bannerPath(self):
 		if self.bannerDir is None:
 			raise Exception("No bannerDir")
 		return "{0}/banner_{1}.jpg".format(self.bannerDir,unicode(self.seriesid))
-	
+
 	def isBannerUpdated(self):
 		v30DaysAgo = datetime.datetime.now(tzlocal.get_localzone()) - datetime.timedelta(days=30)
 		if self['info']['banner'] and self.bannerDir is not None:
@@ -380,7 +380,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		with open(localfile,'wb') as f:
 			f.write(urllib2.urlopen(url).read())
 			f.close()
-	
+
 	def deleteBanner(self):
 		if (self.bannerDir is not None and self['info']['banner']):
 			try:
@@ -388,14 +388,14 @@ class tvShowSchedule(JSAG3.JSAG3):
 			except:
 				pass
 			self.data['info']['banner'] = False
-	
+
 	def setValue(self,value):
 		JSAG3.JSAG3.setValue(self,value)
 		self.setDefault()
 		if not self.isInfoUpdated():
 			self.updateInfo(force=True)
 		logging.debug("[tvShowSchedule] TvShow has been updated. New value:\n {0}".format(unicode(self.data)))
-			
+
 	def _setDownloader(self,downloader,mandatory=True):
 		if downloader is not None:
 			if not isinstance(downloader,Downloader.Downloader):
@@ -403,12 +403,12 @@ class tvShowSchedule(JSAG3.JSAG3):
 			self.downloader=downloader
 		if mandatory and not isinstance(self.downloader,Downloader.Downloader):
 			raise Exception("No downloader provided")
-		
+
 	def _setNotificator(self,notificator):
 		if not isinstance(notificator,Notificator.Notificator) and notificator is not None:
 			raise TypeError("parameter is not Notificator instance")
 		self.notificator=notificator
-		
+
 	def _setTransferer(self,transferer,mandatory=True):
 		if transferer is not None:
 			if not isinstance(transferer,Transferer.Transferer):
@@ -416,7 +416,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			self.transferer=transferer
 		if mandatory and not isinstance(transferer,Transferer.Transferer):
 			raise Exception("No transferer provided")
-			
+
 	def _setTorrentSearch(self,searcher,mandatory=True):
 		if searcher is not None:
 			if not isinstance(searcher,torrentSearch.torrentSearch):
@@ -424,24 +424,24 @@ class tvShowSchedule(JSAG3.JSAG3):
 			self.searcher = searcher
 		if mandatory and not isinstance(self.searcher,torrentSearch.torrentSearch):
 			raise Exception("No torrentSearch provided")
-			
+
 	def _setAchieved(self):
 		nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(days=30)
 		self.set(season = 0,episode = 0,status = 90,nextUpdate=nextUpdate)
-		
+
 	def _setNotYetAired(self,episode):
 		nextUpdate = min(tzlocal.get_localzone().localize(datetime.datetime.strptime(episode['firstaired'],'%Y-%m-%d')),datetime.datetime.now(tzlocal.get_localzone())+datetime.timedelta(days=7))
 		self.set(season=int(episode['seasonnumber']),episode=int(episode['episodenumber']),status=10,nextUpdate=nextUpdate)
-		
+
 	def get_progression(self,downloader=None):
 		if downloader is not None:
 			self._setDownloader(downloader)
 		if not isinstance(self.downloader,Downloader.Downloader):
 			raise Exception("No downloader provided")
-			
+
 		if self['status'] not in [30,35]:
 			return 0
-		
+
 		if self['downloader_id'] is None:
 			# Incorrect or missing downloader identifier.
 			logging.warning("Unable to determine slot. Push the status to 20")
@@ -453,11 +453,11 @@ class tvShowSchedule(JSAG3.JSAG3):
 				return progression
 			except:
 				logging.warning("[tvShowSchedule] Unable to retrieve progression for: {0}".format(unicode(self['downloader_id'])))
-			
+
 			# Something went wrong... Let's restart download
 			self.set(status=20)
-			
-		
+
+
 	def update(self,downloader=None,searcher=None,transferer=None,notificator=None,force=False):
 		now = datetime.datetime.now(tzlocal.get_localzone())
 		try:
@@ -465,18 +465,18 @@ class tvShowSchedule(JSAG3.JSAG3):
 		except:
 			logging.error("[tvShowSchedule] Offline mode. Update canceled")
 			return
-			
+
 		self._setDownloader(downloader)
 		self._setTorrentSearch(searcher,mandatory=False)
 		self._setTransferer(transferer,mandatory=False)
-			
+
 		if notificator is not None:
 			self._setNotificator(notificator)
-			
+
 		logging.debug("[tvShowSchedule] Next status scheduled on {0} ({2}). It is {1} ({3})".format(unicode(self['nextUpdate']),unicode(now),type(self['nextUpdate']),type(now)))
 		if not self.isInfoUpdated():
 			self.updateInfo(force=True)
-		
+
 		try:
 			self['nextUpdate'] < now
 		except:
@@ -505,7 +505,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 					else:
 						# Next episode now identified. Let's wait for it.
 						self._setNotYetAired(next)
-						
+
 			# Not yet aired
 			elif self['status'] == 10:
 				firstaired = tzlocal.get_localzone().localize(datetime.datetime.strptime(t[self['seriesid']][self['season']][self['episode']]['firstaired'],'%Y-%m-%d'))
@@ -516,7 +516,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 				# Episode still not aired. Let's wait until its broadcast
 				else:
 					self._setNotYetAired(t[self['seriesid']][self['season']][self['episode']])
-			
+
 			# Torrent watch
 			elif self['status'] == 20:
 				self._setTorrentSearch(searcher)
@@ -526,7 +526,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 				else:
 					keywords = self['keywords']
 				for keyword in keywords:
-					tor = self.searcher.search("{0} S{1:02}E{2:02} {3}".format(self['info']['seriesname'],self['season'],self['episode'],keyword))
+					tor = self.searcher.search("{0} S{1:02}E{2:02} {3}".format(self['pattern'],self['season'],self['episode'],keyword))
 					# Torrent is found. Process download
 					if tor is not None:
 						tmpFile = self.searcher.download(tor)
@@ -538,7 +538,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 				# If torrent not found wait for 15min.
 				nextUpdate = now+datetime.timedelta(minutes=15)
 				self.set(nextUpdate=nextUpdate)
-			
+
 			# Download in progress
 			elif self['status'] == 30:
 				logging.debug("[tvShowSchedule] downloader_id is: {0}".format(self['downloader_id']))
@@ -551,7 +551,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 					except:
 						logging.warning("[tvShowSchedule] Unable to retrieve status for: {0}".format(unicode(self['downloader_id'])))
 						status = ''
-					
+
 					if status != '':
 						# Status identified
 						if status == "downloading":
@@ -571,7 +571,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 					logging.error("Unable to determine slot. Push the status to 20")
 					self.set(status=20)
 					self.update(force=True)
-					
+
 			# To be transfered
 			elif self['status'] == 35:
 				logging.debug("[tvShowSchedule] downloader_id is: {0}".format(self['downloader_id']))
@@ -583,7 +583,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 						logging.debug("[tvShowSchedule] Get new status: {0}".format(status))
 					except:
 						status = ''
-					
+
 					if status != '':
 						# Status identified
 						if status == "downloading":
@@ -597,12 +597,12 @@ class tvShowSchedule(JSAG3.JSAG3):
 						# Incorrect or missing torrent. Let's watch torrent again.
 						self.set(status=20)
 						self.update(force=True)
-					
+
 				else:
 					# Incorrect or missing downloader identifier. Let's watch torrent again.
 					self.set(status=20)
 					self.update(force=True)
-				
+
 			# Broadcast achieved
 			elif self['status'] == 90:
 				tvShow = t[self['seriesid']]
@@ -615,7 +615,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 				# Incorrect or missing status. Put status to 0
 				self.set(status=0)
 				self.update(force=True)
-				
+
 	def downloadTorrent(self):
 		self._setTransferer(self.transferer,mandatory=True)
 		t = myTvDB.myTvDB()
@@ -629,9 +629,9 @@ class tvShowSchedule(JSAG3.JSAG3):
 				self.downloader.delete_torrent(self['downloader_id'])
 			except:
 				logging.error("[tvShowSchedule] Unable to delete source file {0}. Ignoring".format(myFile))
-		
+
 		notifContent = "{0} S{1:02}E{2:02} has been downloaded.\n".format(self['info']['seriesname'],self['season'],self['episode'])
-		
+
 		# Schedule next episode
 		tvShow = t[self['seriesid']][self['season']][self['episode']]
 		logging.debug("[tvShowSchedule] Current episode: {0}".format(unicode(tvShow)))
@@ -646,14 +646,14 @@ class tvShowSchedule(JSAG3.JSAG3):
 			notifContent += "The next episode (S{0:02}E{1:02}) is expected on {2}".format(self['season'],self['episode'],self['info']['firstaired'])
 		if self.notificator is not None:
 			self.notificator.send("Download completed!",notifContent,self['emails'])
-					
+
 	def pushTorrent(self,filename,downloader=None):
 		if self['season'] * self['episode'] < 1:
 			raise Exception("Season & episode are not set")
 		if not isinstance(filename,basestring):
 			raise Exception("Filename argument must be a basestring")
 		self._setDownloader(downloader,True)
-			
+
 		now = datetime.datetime.now(tzlocal.get_localzone())
 		downloader_id=unicode(self.downloader.add_torrent(filename))
 		if int(downloader_id) > 0:
@@ -661,10 +661,10 @@ class tvShowSchedule(JSAG3.JSAG3):
 			return
 		else:
 			raise Exception("Fail to add torrent")
-	
+
 	def getLocalPath(self):
 		if not self.isInfoUpdated():
 			self.updateInfo(force=True)
-		
+
 		pathPattern = "{0}/Season {1}"
 		return pathPattern.format(self['info']['seriesname'],self['season'])
