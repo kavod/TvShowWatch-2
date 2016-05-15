@@ -5,4 +5,5 @@ PYTHON="/var/packages/python/target/bin/python"
 
 ${PIP} install --upgrade pip > '/tmp/TSW2.log'
 cd "${SYNOPKG_PKGDEST}" && ${PYTHON} utils/execute_color.py "Installing JSAG3" ${PYTHON} utils/pkg_manager.py "install" "JSAG3" >> '/tmp/TSW2.log'  2>&1
+cd "${SYNOPKG_PKGDEST}" && cp utils/directory_syno.conf utils/directory.conf >> '/tmp/TSW2.log' 2>&1 
 ${PIP} install -r requirements.txt >> '/tmp/TSW2.log' 2>&1 

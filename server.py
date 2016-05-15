@@ -298,7 +298,12 @@ def main():
 		"/status.json".encode('utf8'): {
 			"tools.staticfile.on": True,
 			"tools.staticfile.filename": webPath + "/tvShowSchedule/status.json"
-		}
+		},
+        '/favicon.ico'.encode('utf8'):
+        {
+            'tools.staticfile.on': True,
+            'tools.staticfile.filename': webPath + '/static/favicon.ico'
+        }
 	}
 
 	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=confPath+"/config.json")
