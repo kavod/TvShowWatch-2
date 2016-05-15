@@ -23,19 +23,19 @@ class tvShowList(list):
 			tvShows = []
 		if (
 			(
-				isinstance(tvShows,list) 
+				isinstance(tvShows,list)
 				and not all(
-						isinstance(item,myTvDB.myShow) 
-						or isinstance(item,myTvDB.myEpisode) 
-						or isinstance(item,tvShowSchedule.tvShowSchedule) 
+						isinstance(item,myTvDB.myShow)
+						or isinstance(item,myTvDB.myEpisode)
+						or isinstance(item,tvShowSchedule.tvShowSchedule)
 						or isinstance(item,int)
 						for item in tvShows
 					)
-			) 
+			)
 			and not isinstance(tvShows,basestring)
 		):
 			raise Exception("tvShows parameter must be a basestring (for filename) or a list of myShow, myEpisode, tvShowSchedule or int values")
-			
+
 		self.id = unicode(id)
 		self.threads = []
 		self.filename = None
@@ -51,14 +51,14 @@ class tvShowList(list):
 			}
 		}
 		self.lock = threading.Lock()
-		
+
 		list.__init__(self,[])
 		if isinstance(tvShows,basestring):
 			self.addData(unicode(tvShows))
 		else:
 			for item in tvShows:
 				self.add(item)
-				
+
 		self.downloader=None
 		self.transferer=None
 		self.searcher=None
@@ -68,18 +68,18 @@ class tvShowList(list):
 	def checkCompleted(self):
 		if self.filename is None:
 			raise Exception("[tvShowList] Datafile has not been provided")
-			
+
 	# Control if file exists and is parsable with self.id key
 	def isDataInitialized(self,dataFile):
 		return isDataInitialized(self.id,dataFile)
-	
+
 	# Initialize file with empty array
 	def initDataFile(self):
 		self.checkCompleted()
 		initDataFile(self.id,self.filename)
 		self.threads = []
-		
-	# Load data from file	
+
+	# Load data from file
 	def addData(self,dataFile):
 		logging.debug("[tvShowList] Add data {0}".format(unicode(dataFile)))
 		self.filename = unicode(dataFile)
@@ -99,22 +99,22 @@ class tvShowList(list):
 		else:
 			self.initDataFile()
 		setattr(self.root.data,self.id.encode('utf8'),staticJsonFile(self.filename,self.id))
-		
+
 	def getValue(self,hidePassword=True):
 		result = []
 		for tvShow in self:
 			result.append(tvShow.getValue(hidePassword))
 		return result
-			
+
 	def _add_from_tvShowSchedule(self,tvShow):
 		if not isinstance(tvShow,tvShowSchedule.tvShowSchedule):
 			raise TypeError("argument must be a tvShowSchedule instance")
 		self.append(tvShow)
-			
+
 	def _add_from_myTvDB(self,tvShow,season=None,epno=None):
 		if not isinstance(tvShow,myTvDB.myShow) and not isinstance(tvShow,myTvDB.myEpisode):
 			raise TypeError("argument must be a myTvDB.myShow or myTvDB.myEpisode instance")
-			
+
 		if isinstance(tvShow,myTvDB.myEpisode):
 			id = int(tvShow.get(u'id', 0))
 			title = unicode(tvShow.get(u'seriesname', 0))
@@ -127,28 +127,41 @@ class tvShowList(list):
 			if not isinstance(season,int) and not isinstance(epno,int):
 				nextAired = tvShow.nextAired()
 				if nextAired is None: # Broadcast achieved, schedule pilot
-					season = 1
-					epno = 1
+					season = 0
+					epno = 0
 				else:
 					season = int(nextAired.get(u'seasonnumber', 0))
 					epno = int(nextAired.get(u'episodenumber', 0))
 		if self.inList(id):
 			raise Exception("{0} is already in the TvShow list".format(title))
-			
+
 		self._create_tvdb_api()
-		try:
-			self.tvdb[id][season][epno]
-		except:
-			raise Exception("S{0:02}E{1:02} does not exists for {2}".format())
-		
-		self.append(
-			tvShowSchedule.tvShowScheduleFromMyTvDBEpisode(
-				self.tvdb[id][season][epno],
-				bannerDir=self.banner_dir,
-				verbosity=self.verbosity
+		if season * epno >0:
+			try:
+				self.tvdb[id][season][epno]
+			except:
+				raise Exception("S{0:02}E{1:02} does not exists for {2}".format(season,epno,title))
+
+			self.append(
+				tvShowSchedule.tvShowScheduleFromMyTvDBEpisode(
+					self.tvdb[id][season][epno],
+					bannerDir=self.banner_dir,
+					verbosity=self.verbosity
+				)
 			)
-		)
-		
+		else:
+			try:
+				self.tvdb[id]
+			except:
+				raise Exception("Unable to reconize TV show {0} (ID: {1})".format(title,unicode(id)))
+			self.append(
+				tvShowSchedule.tvShowScheduleFromMyTvDB(
+					self.tvdb[id],
+					bannerDir=self.banner_dir,
+					verbosity=self.verbosity
+				)
+			)
+
 	def save(self,filename=None):
 		if filename is not None:
 			self.filename = unicode(filename).encode('utf8')
@@ -160,7 +173,7 @@ class tvShowList(list):
 			content[self.id].append(tvShow.getValue(hidePassword=False))
 		with open(self.filename, 'w') as outfile:
 			json.dump(content, outfile,default=json_serial)
-	
+
 	def add(self,tvShow,season=None,epno=None):
 		if isinstance(tvShow,myTvDB.myShow) or isinstance(tvShow,myTvDB.myEpisode):
 			self._add_from_myTvDB(tvShow,season=season,epno=epno)
@@ -172,10 +185,10 @@ class tvShowList(list):
 		else:
 			raise Exception("Add from {0} type is not yet implemented".format(type(tvShow)))
 		self.threads.append(None)
-	
+
 	def create_banner(self,seriesid,banner_url):
 		banner_path = "{0}/self.banner_dir"
-			
+
 	def delete(self,tvShow):
 		if isinstance(tvShow,int):
 			try:
@@ -194,7 +207,7 @@ class tvShowList(list):
 			del(self.threads[index])
 		else:
 			raise Exception("Delete from {0} type is not yet implemented".format(type(tvShow)))
-			
+
 	def inList(self,tvShow):
 		if isinstance(tvShow,myTvDB.myShow):
 			id = int(tvShow.data['id'])
@@ -205,60 +218,60 @@ class tvShowList(list):
 		if self is None:
 			return []
 		return id in [show['seriesid'] for show in self]
-		
+
 	def getTvShow(self,key):
 		if self.inList(key):
 			return (item for item in self if item['seriesid'] == key).next()
 		else:
 			return None
-			
+
 	def _create_tvdb_api(self):
 		if self.tvdb is None:
 			self.tvdb = myTvDB.myTvDB()
-			
+
 	def _setDownloader(self,downloader):
 		if not isinstance(downloader,Downloader.Downloader):
 			raise TypeError("parameter is not Downloader instance")
 		self.downloader=downloader
-			
+
 	def _setNotificator(self,notificator):
 		if not isinstance(notificator,Notificator.Notificator):
 			raise TypeError("parameter is not Notificator instance")
 		self.notificator=notificator
-		
+
 	def _setTransferer(self,transferer):
 		if not isinstance(transferer,Transferer.Transferer):
 			raise TypeError("parameter is not Transferer instance")
 		self.transferer=transferer
-			
+
 	def _setTorrentSearch(self,searcher):
 		if not isinstance(searcher,torrentSearch.torrentSearch):
 			raise TypeError("parameter is not torrentSearch instance")
 		self.searcher=searcher
-		
+
 	def update(self,downloader=None,notificator=None,searcher=None,transferer=None,force=False,wait=False):
 		if downloader is not None:
 			self._setDownloader(downloader)
 		if not isinstance(self.downloader,Downloader.Downloader):
 			raise Exception("No downloader provided")
-			
+
 		if notificator is not None:
 			self._setNotificator(notificator)
-			
+
 		if searcher is not None:
 			self._setTorrentSearch(searcher)
 		if not isinstance(self.searcher,torrentSearch.torrentSearch):
 			raise Exception("No torrentSearch provided")
-			
+
 		if transferer is not None:
 			self._setTransferer(transferer)
 		if not isinstance(self.transferer,Transferer.Transferer):
 			raise Exception("No transferer provided")
-		
-		# Update data from file	
+
+		# Update data from file
 		#if self.filename is not None:
 		#	self.addData(self.filename)
-		
+
 		for key,tvShow in enumerate(self):
 			logging.info("[tvShowList] ******* UPDATE *******\nTvShow {0}".format(unicode(key)))
 			if tvShow.downloader is None:
@@ -296,12 +309,12 @@ class tvShowList(list):
 				raise e
 			else:
 				self.lock.release()
-	
+
 	def join(self):
 		for thread in self.threads:
 			if thread is not None and thread.isAlive():
 				thread.join()
-		
+
 	def getRoot(self,root=None):
 		self.checkCompleted()
 		if root is None:
@@ -315,15 +328,15 @@ class tvShowList(list):
 				root.data = Root()
 			setattr(root.schema,self.id.encode('utf8'),getattr(self.root.schema,self.id.encode('utf8')))
 			setattr(root.options,self.id.encode('utf8'),getattr(self.root.options,self.id.encode('utf8')))
-			setattr(root.data,self.id.encode('utf8'),getattr(self.root.data,self.id.encode('utf8')))		
+			setattr(root.data,self.id.encode('utf8'),getattr(self.root.data,self.id.encode('utf8')))
 		return root
-			
+
 	def getConf(self,conf={}):
 		self.checkCompleted()
 		x = conf.copy()
 		x.update(self.conf)
 		return x
-			
+
 	# Depreciate
 	def loadFile(self,filename,path=[]):
 		self.addData(filename)
@@ -350,7 +363,7 @@ def initDataFile(id,filename):
 	logging.debug("[tvShowList] Initialize data '{0}' in {1}.".format(id,filename))
 	newData = getExistingData(filename)
 	newData[id] = []
-		
+
 	with open(filename, 'w') as outfile:
 		json.dump(newData, outfile)
 
@@ -366,14 +379,14 @@ def isDataInitialized(id,dataFile):
 			return False
 	else:
 		logging.debug("[tvShowList] data file {0} does not exist.".format(unicode(dataFile)))
-		return False	
-		
+		return False
+
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
     if isinstance(obj, datetime.datetime):
         serial = obj.isoformat()
         return serial
-    raise TypeError ("Type not serializable")		
+    raise TypeError ("Type not serializable")
 
 # Cherrypy classes
 class Root(object):
@@ -384,15 +397,15 @@ class staticJsonFile(object):
 		self.key = key
 		self.filename = filename
 		self.update()
-			
+
 	def update(self):
 		if not hasattr(self,"lastModified") or os.path.getmtime(self.filename) != self.lastModified:
-			with open(self.filename) as data_file:  
-				self.data = json.load(data_file) 
-				if self.key is not None: 
+			with open(self.filename) as data_file:
+				self.data = json.load(data_file)
+				if self.key is not None:
 					self.data = self.data[self.key]
 			self.lastModified = os.path.getmtime(self.filename)
-			
+
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def index(self):

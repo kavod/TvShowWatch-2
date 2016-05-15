@@ -1,14 +1,14 @@
 (function(){
 	var app = angular.module('appTsw.TvShowList', [ 'ngAnimate', 'ui.bootstrap', 'appTsw.TvShow' ]);
-		
+
 	app.controller('TvShowListController', [ '$http', '$scope', 'fileUpload',function($http,$scope,fileUpload){
 		$scope.oneAtATime = true;
-		
+
 		var serie_time = "0";
 		var tvshowlist = this;
 		this.list = [];
 		this.source1 = {};
-		
+
 		this.build_tvShowList = function() {
 			tvshowlist.list = [];
 			$http.get('/tvshowlist/list')
@@ -18,7 +18,7 @@
 		};
 		build_tvShowList = this.build_tvShowList;
 		this.build_tvShowList();
-		
+
 		this.tvShowChanged = function(newTvShow){
 			var found = false;
 			for (var i = 0 ; i < tvshowlist.list.length ; i++) {
@@ -33,7 +33,7 @@
 			}
 		}
 		tvShowChanged = this.tvShowChanged;
-		
+
 		this.update_tvShowList = function(){
 			$http.get('/tvshowlist/list')
 				.success(function(data) {
@@ -44,7 +44,7 @@
 				});
 		};
 		update_tvShowList = this.update_tvShowList;
-		
+
 		this.check_update = function(event){
 			if (event.lastEventId == 'server-time')
 			{
@@ -75,7 +75,7 @@
 		};
 		this.source = new EventSource("streamGetSeries");
 		this.source.addEventListener("message",this.check_update);
-		
+
 		this.delete = function(seriesid) {
 			$http({
 				method: 'POST',
@@ -88,7 +88,7 @@
 			  		$('#notification').scope().alert_success(data.data);
 			  	else
 			  		$('#notification').scope().alert_error(data.data);
-				
+
 			});
 			var seriesidx = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; });
 			if (seriesidx.length == 0) {
@@ -101,11 +101,9 @@
 				});
 			}
 		};
-		
+
 		this.pushTorrent = function(seriesid) {
 			var file = this.myFile;
-		    console.log('file is ' );
-		    console.dir(file);
 		    var uploadUrl = "/fileUpload";
 			return;
 		    fileUpload.uploadFileToUrl(file, uploadUrl);
@@ -119,9 +117,7 @@
 			var newvalue = {};
 			newvalue = {tvShowID:parseInt(seriesid)};
 			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
-			console.log(tvshow.torrentFile)
 			newvalue.torrentFile = tvshow.torrentFile;
-			console.log(newvalue);
 			$http({
 				method: 'POST',
 				url: '/tvshowlist/pushTorrent',
@@ -133,23 +129,24 @@
 			  		$('#notification').scope().alert_success(data.data);
 			  	else
 			  		$('#notification').scope().alert_error(data.data);
-				
+
 			});
 		};
-		
-		
+
+
 	}]);
-		
+
 	app.controller('NewTvShowController', [ '$http', '$scope',function($http,$scope){
 		this.addTvShow = function(tvShowList) {
 			console.log($scope);
 			if (this.form.$valid) {
 					this.tvshow.season = 0;
 					this.tvshow.episode = 0;
+					console.log(this.tvshow);
 					var index = tvShowList.push(this.tvshow);
 					tvShowList[index-1]['isDisable'] = true;
 					if (typeof(this.tvshow)== 'string')
-						this.tvshow = {"title":this.tvshow};
+						this.tvshow = {"title":this.tvshow,"season":0,"episode":0};
 					var postData = $.param(this.tvshow);
 					delete this.tvshow;
 					$http({
@@ -172,7 +169,7 @@
 			}
 		};
 	}]);
-    
+
     app.directive('tvshow',function(){
     	return {
     		restrict: 'E',
