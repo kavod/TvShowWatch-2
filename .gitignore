@@ -9,3 +9,7 @@ config.json
 copyJSAG3.sh
 series.json
 web/static/*.jpg
+package.tgz
+utils/package.tgz
+utils/tvShowWatch2.spk
+utils/directory.conf

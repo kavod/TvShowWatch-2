@@ -19,7 +19,7 @@ import Transferer
 import Notificator
 import tvShowList
 import myTvDB
-import daemon
+import utils.TSWdirectories
 
 from cherrypy.process.plugins import Daemonizer
 from cherrypy.process.plugins import PIDFile
@@ -172,9 +172,11 @@ class serv_TvShowList(object):
 				if not isinstance(kwargs['torrentFile'],basestring):
 					tvShow = self.tvshowlist.getTvShow(int(tvShowID))
 					try:
-						with open('out.torrent', 'wb') as f:
+						tmpfile = tempfile.gettempdir() + '/out.torrent'
+						with open(tmpfile, 'wb') as f:
 							f.write(kwargs['torrentFile'].file.read())
-						tvShow.pushTorrent(filename='out.torrent',downloader=self.downloader)
+						tvShow.pushTorrent(filename=tmpfile,downloader=self.downloader)
+						os.remove(tmpfile)
 						return {"status":200,"error":"TvShow {0} updated".format(tvShow['info']['seriesname'])}
 					except Exception as e:
 						return self._error(400,e[0])
@@ -261,7 +263,7 @@ class streamGetSeries(object):
 					data += 'data: "' + unicode(tvshow.seriesid) + '":' + unicode(tvshow.get_progression(self.downloader)) + "\r\n"
 					data += 'data: }\n\n'
 					yield data
-				data = "id: server-time\r\ndata: " + time.ctime(os.path.getmtime(curPath+"/series.json")) + "\n\n"
+				data = "id: server-time\r\ndata: " + time.ctime(os.path.getmtime(confPath+"/series.json")) + "\n\n"
 				yield data
 				time.sleep(5)
 				
@@ -269,22 +271,19 @@ class streamGetSeries(object):
 	index._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'} 
 
 curPath = os.path.dirname(os.path.realpath(__file__))
-local_dir = os.path.abspath(os.getcwd())
+#local_dir = os.path.abspath(os.getcwd())
+#local_dir = os.path.abspath("/usr/syno/synoman/webman/3rdparty/TvShowWatch2")
+directories = utils.TSWdirectories(curPath+'/utils/directory.conf')
+webPath = os.path.abspath(directories['web_path'])
+confPath = os.path.abspath(directories['etc_path'])
 
 #if __name__ == '__main__':
 def main():
 	conf = {
 		"/".encode('utf8') : {
 			'tools.staticdir.on': True,
-			'tools.staticdir.root':local_dir,
-			'tools.staticdir.dir': './web',
-			'tools.staticdir.index': 'index.html',
-			'tools.trailing_slash.on' : False
-		},
-		"/web".encode('utf8') : {
-			'tools.staticdir.on': True,
-			'tools.staticdir.root':local_dir,
-			'tools.staticdir.dir': './web',
+			'tools.staticdir.root':webPath,
+			'tools.staticdir.dir': '.',
 			'tools.staticdir.index': 'index.html',
 			'tools.trailing_slash.on' : False
 		},
@@ -298,15 +297,15 @@ def main():
 		},
 		"/status.json".encode('utf8'): {
 			"tools.staticfile.on": True,
-			"tools.staticfile.filename": local_dir + "/tvShowSchedule/status.json"
+			"tools.staticfile.filename": webPath + "/tvShowSchedule/status.json"
 		}
 	}
 
-	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=curPath+"/config.json")
-	downloader = Downloader.Downloader("downloader",dataFile=curPath+"/config.json")
-	transferer = Transferer.Transferer("transferer",dataFile=curPath+"/config.json")
-	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=curPath+"/series.json",banner_dir="web/static",verbosity=False)
-	notificator = Notificator.Notificator(id="notificator",dataFile=curPath+"/config.json",verbosity=False)
+	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=confPath+"/config.json")
+	downloader = Downloader.Downloader("downloader",dataFile=confPath+"/config.json")
+	transferer = Transferer.Transferer("transferer",dataFile=confPath+"/config.json")
+	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=confPath+"/series.json",banner_dir=webPath+"/static",verbosity=False)
+	notificator = Notificator.Notificator(id="notificator",dataFile=confPath+"/config.json",verbosity=False)
 	root = Root()
 	root.update = Root()
 	root.livesearch = LiveSearch()
@@ -317,6 +316,7 @@ def main():
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
 	cherrypy.config['engine.autoreload_on'] = False
 	cherrypy.config['server.socket_port'] = 1205
+	cherrypy.config['server.socket_host'] = '0.0.0.0'.encode('utf8')
 	
 	root = torrentsearch.getRoot(root)
 	conf = torrentsearch.getConf(conf)

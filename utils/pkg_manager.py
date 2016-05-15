@@ -77,7 +77,7 @@ if len(sys.argv) < 3:
 	sys.exit(1)
 
 action = unicode(sys.argv[1])
-if getpass.getuser() == 'root':
+if getpass.getuser() == 'root' or hasattr(sys, 'real_prefix'):
 	action = 'root_' + action
 pkg = unicode(sys.argv[2])
 

@@ -1,0 +1,29 @@
+#!/bin/sh
+
+PIP="/var/packages/python/target/bin/pip"
+PYTHON="/var/packages/python/target/bin/python"
+
+case $1 in
+    start)
+        echo "${SYNOPKG_PKGDEST}" >> '/tmp/TSW2.log'
+        ${PYTHON} "${SYNOPKG_PKGDEST}/tvShowWatch.py" start >> '/tmp/TSW2.log'  2>&1
+        exit 0
+        ;;
+    stop)
+        ${PYTHON} "${SYNOPKG_PKGDEST}/tvShowWatch.py" stop >> '/tmp/TSW2.log'  2>&1
+        exit 0
+        ;;
+    status)
+        status=`${PYTHON} "${SYNOPKG_PKGDEST}/tvShowWatch.py" status|grep "is running"| wc -l`
+        if [ $status -eq 1 ]; then
+        		echo "TvShowWatch is running" >> '/tmp/TSW2.log'  2>&1
+                exit 0
+        else
+        		echo "TvShowWatch is not running" >> '/tmp/TSW2.log'  2>&1
+                exit 3
+        fi
+        ;;
+    *)
+        exit 1
+        ;;
+esac
