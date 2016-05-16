@@ -10,7 +10,7 @@ from importlib import import_module
 TRACKER_CONF = [
 		{'id':'none','name':'No tracker, only manual push','url':"",'param':[]}
 	]
-	
+
 TMPPATH = "/tmp"
 
 def check_provider(trackerID):
@@ -24,12 +24,13 @@ def check_provider(trackerID):
 		return provider[0]
 
 class torrentProvider:
-	def __init__(self,trackerID,param_data,tmppath = TMPPATH, verbosity=False ):
+	def __init__(self,trackerID,param_data,tmppath = TMPPATH, SSLverif=True,verbosity=False ):
 		self.provider = {} 		# Provider data
 		self.token = ''			# If required by provider, authentification token
 		self.param = {}			# If required by provider, extra parameters (like username / password)
 		self.tmppath = tmppath
-		
+		self.SSLverif=SSLverif  # Is the SSL certificate have to be verified?
+
 		# Set verbosity
 		if verbosity:
 			logger = logging.getLogger()
@@ -54,37 +55,37 @@ class torrentProvider:
 
 	def connect(self):
 		return getattr(self, "connect_"+self.provider['id'])()
-		
+
 	def connect_none(self):
 		self.token = 'ok'
 		return True
-		
+
 	def test_none(self):
 		return True
-		
+
 	def test(self):
 		return getattr(self, "test_"+self.provider['id'])()
-		
+
 	def search_none(self,search):
 		return []
 
 	def search(self,search):
 		#search = re.sub('[%s]' % re.escape(string.punctuation), '', search)
 		return getattr(self, "search_" + self.provider['id'] )(search)
-		
+
 	def download_none(self,torrent_id):
 		return False
-		
+
 	def download(self,torrent_id):
 		return getattr(self, "download_" + self.provider['id'] )(torrent_id)
-		
+
 	def select_none(self,result):
 		logging.debug(result)
 		return result[0]
 
 	def select_torrent(self,result):
 		return getattr(self, "select_" + self.provider['id'] )(result)
-		
+
 	def filter_none(self,tor):
 		return []
 
@@ -100,4 +101,3 @@ def loadProviders():
 	for ext in [x for x in os.listdir(thedir) if os.path.isdir(os.path.join(thedir, x)) and x[0:len(extensionPrefix)] == extensionPrefix]:
 		logging.debug("Loading {0}".format(ext))
 		import_module(ext)
-
