@@ -26,14 +26,20 @@ class torrentSearch(JSAG3.JSAG3):
 		logging.debug("[torrentSearch] Data loaded: {0}.".format(unicode(self.data)))
 
 	def search(self,pattern):
+		logging.debug("[torrentSearch] Search pattern: {0}.".format(unicode(pattern)))
+		global_keywords = self.data['keywords']
+		if len(global_keywords)<1:
+			global_keywords=['']
 		if pattern is None or unicode(pattern) == "":
 			raise Exception("Empty pattern")
 		pattern = unicode(pattern)
 		for provider in self.data['providers']:
 			provID = unicode(provider['provider_type'])
 			self.connect_provider(provID)
-			for keyword in self.data['keywords']:
-				query = "{0} {1}".format(pattern,keyword)
+			for keyword in global_keywords:
+				if len(keyword)>0:
+					keyword = ' '+keyword
+				query = "{0}{1}".format(pattern,keyword)
 
 				if 'keywords' in provider.keys() and len(provider['keywords']) > 0:
 					queries = ["{0} {1}".format(query,keyword) for keyword in provider['keywords']]
@@ -52,6 +58,7 @@ class torrentSearch(JSAG3.JSAG3):
 
 	def search_query(self,provID,query):
 		torProv = self.providers[provID]
+		logging.debug("[torrentSearch] Query sent to {0}: '{1}'".format(unicode(provID),unicode(query)))
 		result = torProv.search(query)
 		result = filter(torProv.filter,result)
 		logging.info( "Search of \033[1m{0}\033[0m on \033[1m{1}\033[0m".format(query,provID))
