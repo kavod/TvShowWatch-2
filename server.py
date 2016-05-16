@@ -25,7 +25,10 @@ import utils.TSWdirectories
 from cherrypy.process.plugins import Daemonizer
 from cherrypy.process.plugins import PIDFile
 
-PIDFile(cherrypy.engine, tempfile.gettempdir() + '/TSW2.PID').subscribe()
+curPath = os.path.dirname(os.path.realpath(__file__))
+directories = utils.TSWdirectories(curPath+'/utils/directory.conf')
+tmpPath = os.path.abspath(directories['tmp_path'])
+PIDFile(cherrypy.engine, tmpPath + '/TSW2.PID').subscribe()
 
 class Root(object):
 	pass
@@ -282,10 +285,6 @@ class streamGetSeries(object):
 		return content()
 	index._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'}
 
-curPath = os.path.dirname(os.path.realpath(__file__))
-#local_dir = os.path.abspath(os.getcwd())
-#local_dir = os.path.abspath("/usr/syno/synoman/webman/3rdparty/TvShowWatch2")
-directories = utils.TSWdirectories(curPath+'/utils/directory.conf')
 webPath = os.path.abspath(directories['web_path'])
 confPath = os.path.abspath(directories['etc_path'])
 

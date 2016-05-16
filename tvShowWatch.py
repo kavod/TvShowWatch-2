@@ -8,8 +8,12 @@ import time
 import tempfile
 #import subprocess
 import server
+import utils.TSWdirectories
 
-pid_file = tempfile.gettempdir() + '/TSW2.PID'
+curPath = os.path.dirname(os.path.realpath(__file__))
+directories = utils.TSWdirectories(curPath+'/utils/directory.conf')
+tmpPath = os.path.abspath(directories['tmp_path'])
+pid_file = tmpPath + '/TSW2.PID'
 
 def daemon_status():
 	if os.path.isfile(pid_file):
@@ -34,7 +38,7 @@ def startDaemon():
 			server.main()
 			#subprocess.call(["python",curPath + '/server.py'])
 	sys.exit()
-	
+
 def stopDaemon():
 	if os.path.isfile(pid_file):
 		pid = open(pid_file,'r').read()
@@ -45,7 +49,7 @@ def stopDaemon():
 			os.remove(pid_file)
 		except:
 			pass
-	
+
 def wait_for_status(status,retry):
 	while retry > 0:
 		if not daemon_status():
@@ -53,7 +57,7 @@ def wait_for_status(status,retry):
 		retry -= 1
 		time.sleep(1)
 	return False
-	
+
 if __name__ == '__main__':
 	if sys.argv[1] == 'start':
 		if daemon_status():
@@ -90,5 +94,3 @@ if __name__ == '__main__':
 			print("Starting %s" % ("TvShowWatch2"))
 			startDaemon()
 			sys.exit()
-		
-		
