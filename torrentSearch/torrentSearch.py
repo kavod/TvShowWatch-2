@@ -13,6 +13,7 @@ class torrentSearch(JSAG3.JSAG3):
 	def __init__(self,id="torrentSearch",dataFile=None,verbosity=False):
 		curPath = os.path.dirname(os.path.realpath(__file__))
 		self.providers = dict()
+		self.verbosity=verbosity
 		JSAG3.JSAG3.__init__(self,
 			id=id,
 			schemaFile=curPath+"/torrentSearch.jschem",
@@ -78,7 +79,12 @@ class torrentSearch(JSAG3.JSAG3):
 		provider = [provider for provider in self.data['providers'] if unicode(provider['provider_type']) == provID][0]
 		logging.info( "[torrentSearch] provider: ".format(unicode(self.data['providers'])))
 		if provID not in self.providers.keys():
-			self.providers[provID] = torrentProvider.torrentProvider(provID,provider['authentification'] if 'authentification' in provider.keys() else None)
+			self.providers[provID] = torrentProvider.torrentProvider(
+				trackerID=provID,
+				param_data=provider['authentification'] if 'authentification' in provider.keys() else None,
+				SSLverif=not(self['disableSSL']) if'disableSSL' in self.keys() else True,
+				verbosity=self.verbosity
+			)
 
 	def download(self,tor):
 		availProviders = [prov['id'] for prov in torrentProvider.TRACKER_CONF]

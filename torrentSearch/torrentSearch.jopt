@@ -30,6 +30,10 @@
 					"keywords": {
 						"actionbarStyle": "right",
 						"order":3
+					},
+					"disableSSL":{
+						"rightLabel":"Do not verify SSL connection",
+						"order":4
 					}
 				},
 				"collapsed":true
