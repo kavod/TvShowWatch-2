@@ -27,13 +27,15 @@
 								"type":"string",
 								"format":"password"
 							}
-						}
+						},
+						"required":["username","password"]
 					},
 					"keywords": {
 						"title": "Keywords",
 						"type": "array",
 						"items": {
-							"type":"string"
+							"type":"string",
+							"minLength":1
 						}
 					}
 				},
@@ -47,10 +49,9 @@
 			"description":"Keywords used for all providers",
 			"type":"array",
 			"items":{
-				"title":"Keyword",
-				"type":"string"
+				"type":"string",
+				"minLength":1
 			}
 		}
 	}
 }
-	

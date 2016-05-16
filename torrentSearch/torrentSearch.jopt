@@ -16,7 +16,7 @@
 								"value":"kat",
 								"text":"KickAss Torrents",
 								"auth":false
-							}	
+							}
 						],
 						"removeDefaultNone": true,
 						"order":1
@@ -48,6 +48,7 @@
 		},
 		"keywords":{
 			"collapsible":false,
+			"actionbarStyle": "right",
 			"order":2
 		}
 	}

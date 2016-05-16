@@ -33,7 +33,7 @@ PACKAGES = {
 		'JSAG3':{
 			'install':
 				[
-					['wget',"https://github.com/kavod/JSAG3/releases/download/v3.0.8/JSAG3.tgz",'-q'],
+					['wget',"https://github.com/kavod/JSAG3/releases/download/v3.0.9/JSAG3.tgz",'-q'],
 					['tar','zxf','JSAG3.tgz'],
 					['rm','JSAG3.tgz']
 				],
@@ -43,7 +43,7 @@ PACKAGES = {
 				],
 			'root_install':
 				[
-					['wget',"https://github.com/kavod/JSAG3/releases/download/v3.0.8/JSAG3.tgz",'-q'],
+					['wget',"https://github.com/kavod/JSAG3/releases/download/v3.0.9/JSAG3.tgz",'-q'],
 					['tar','zxf','JSAG3.tgz'],
 					['rm','JSAG3.tgz']
 				],
@@ -71,7 +71,7 @@ PACKAGES = {
 				]
 			}
 		}
-		
+
 if len(sys.argv) < 3:
 	print "Missing argument"
 	sys.exit(1)

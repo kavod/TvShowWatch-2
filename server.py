@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import sys
 import os
 import json
+import jsonschema
 import cherrypy
 from cherrypy.lib import auth_digest
 import threading
@@ -28,16 +29,16 @@ PIDFile(cherrypy.engine, tempfile.gettempdir() + '/TSW2.PID').subscribe()
 
 class Root(object):
 	pass
-	
+
 class LiveSearch(object):
 	@cherrypy.expose
 	def index(self):
 		return ""
-		
+
 	@cherrypy.expose
 	def result(self,result):
 		return result
-		
+
 	def _cp_dispatch(self,vpath):
 		if len(vpath) == 1:
 			t = myTvDB.myTvDB()
@@ -48,7 +49,7 @@ class LiveSearch(object):
 			return self.result
 		else:
 			return self.index
-			
+
 class serv_TvShowList(object):
 	def __init__(self,tvshowlist,downloader):
 		self.tvshowlist = tvshowlist
@@ -59,10 +60,10 @@ class serv_TvShowList(object):
 	@cherrypy.tools.json_out()
 	def index(self):
 		return {"status":400,"error":""}
-		
+
 	def _error(self,errorNo,errorDesc):
 		return {"status":errorNo,"error":errorDesc.encode("utf8")}
-		
+
 	def _add(self,tvShowID,tvShowName):
 		self.checkModification()
 		try:
@@ -72,7 +73,7 @@ class serv_TvShowList(object):
 		except Exception as e:
 			return self._error(400,e[0])
 		return {"status":200,"error":"TvShow {0} added".format(tvShowName),"data":json.loads(json.dumps(tvShow.getValue(),default=json_serial))}
-	
+
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def add(self, **kwargs):
@@ -95,7 +96,7 @@ class serv_TvShowList(object):
 			#cherrypy.request.params['tvShowID'] = tvShow.data['id']
 			return self._add(tvShow.data['id'],tvShow.data['seriesname'])
 		return {"status":401,"error":"Unknown TvShow: '{0}'".format(seriesname)}
-		
+
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def update(self, **kwargs):
@@ -162,7 +163,7 @@ class serv_TvShowList(object):
 				return self._error(400,"{0} - {1}:{2}".format(e[0],fname,exc_tb.tb_lineno))
 		else:
 			return self._error(400,"Unknown TV Show")
-			
+
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def pushTorrent(self, **kwargs):
@@ -186,7 +187,7 @@ class serv_TvShowList(object):
 				return self._error(400,"No file provided")
 		else:
 			return self._error(400,"Unknown TV Show")
-		
+
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def delete(self,tvShowID=-1):
@@ -200,27 +201,27 @@ class serv_TvShowList(object):
 			return {"status":200,"error":"TvShow {0} deleted".format(tvShow['seriesname'])}
 		except Exception as e:
 			return self._error(400,e[0])
-			
+
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def list(self):
 		self.checkModification()
 		return {"status":200,"error":"TvShow list retrieved in `data`","data":json.loads(json.dumps(self.tvshowlist.getValue(hidePassword=True),default=json_serial)),"debug":[]}
-		
+
 	def checkModification(self):
 		"""if not hasattr(self,"lastModified") or os.path.getmtime(self.tvshowlist.filename) != self.lastModified:
 			self.tvshowlist.addData(dataFile=curPath+"/series.json")
 			self.lastModified = os.path.getmtime(self.tvshowlist.filename)"""
-			
+
 	@cherrypy.expose
 	def progression(self,tvShowID=-1):
-		
+
 		tvShowID = int(tvShowID)
 		tvShow = self.tvshowlist.getTvShow(tvShowID)
 		if tvShow is None:
 			cherrypy.response.headers["Content-Type"] = "application/json"
 			return self._error(400,"Unknown TV Show")
-		
+
 		cherrypy.response.headers["Content-Type"] = "text/event-stream"
 		cherrypy.response.headers['Cache-Control'] = 'no-cache'
 		cherrypy.response.headers['Connection'] = 'keep-alive'
@@ -230,20 +231,31 @@ class serv_TvShowList(object):
 				data = "Event: progression\r\ndata: " + json.dumps(tvShow.get_progression(self.downloader)) + "\n\n"
 				yield data
 				time.sleep(5)
-				
+
 		return content()
 	progression._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'}
 
 class updateData(object):
 	def __init__(self,config):
 		self.config = config
-		
+
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def index(self,**params):
-		self.config.updateData(json.loads(params['data'.encode('utf8')]))
-		return {"id":params['id'.encode('utf8')],"data":json.loads(params['data'.encode('utf8')])}
-		
+		try:
+			self.config.updateData(json.loads(params['data'.encode('utf8')]))
+			return {
+				"status":200,
+				"error":"Configuration updated!".encode("utf8"),
+				"id":params['id'.encode('utf8')],
+				"data":json.loads(params['data'.encode('utf8')])
+			}
+		except jsonschema.ValidationError as e:
+			return {"status":400,"error":"Form validation failed. The main cause of this error can be one of keywords is empty".encode("utf8")}
+		except Exception as e:
+			raise Exception(unicode(list(e)))
+			return {"status":400,"error":e[0].encode("utf8")}
+
 class streamGetSeries(object):
 	def __init__(self,tvshowlist,downloader):
 		self.tvshowlist = tvshowlist
@@ -254,7 +266,7 @@ class streamGetSeries(object):
 		cherrypy.response.headers["Content-Type"] = "text/event-stream"
 		cherrypy.response.headers['Cache-Control'] = 'no-cache'
 		cherrypy.response.headers['Connection'] = 'keep-alive'
-			
+
 		def content():
 			yield "retry: 5000\r\n"
 			while True:
@@ -266,9 +278,9 @@ class streamGetSeries(object):
 				data = "id: server-time\r\ndata: " + time.ctime(os.path.getmtime(confPath+"/series.json")) + "\n\n"
 				yield data
 				time.sleep(5)
-				
+
 		return content()
-	index._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'} 
+	index._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'}
 
 curPath = os.path.dirname(os.path.realpath(__file__))
 #local_dir = os.path.abspath(os.getcwd())
@@ -288,10 +300,10 @@ def main():
 			'tools.trailing_slash.on' : False
 		},
 		"/livesearch".encode('utf8') : {
-			
+
 		},
 		"/tvshowlist".encode('utf8') : {
-			
+
 		},
 		"/streamGetSeries".encode('utf8') : {
 		},
@@ -306,7 +318,7 @@ def main():
         }
 	}
 
-	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=confPath+"/config.json")
+	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=confPath+"/config.json",verbosity=True)
 	downloader = Downloader.Downloader("downloader",dataFile=confPath+"/config.json")
 	transferer = Transferer.Transferer("transferer",dataFile=confPath+"/config.json")
 	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=confPath+"/series.json",banner_dir=webPath+"/static",verbosity=False)
@@ -316,32 +328,32 @@ def main():
 	root.livesearch = LiveSearch()
 	root.tvshowlist = serv_TvShowList(tvshowlist=tvshowlist,downloader=downloader)
 	root.streamGetSeries = streamGetSeries(tvshowlist=tvshowlist,downloader=downloader)
-	
+
 	cherrypy.config["tools.encode.on"] = True
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
 	cherrypy.config['engine.autoreload_on'] = False
 	cherrypy.config['server.socket_port'] = 1205
 	cherrypy.config['server.socket_host'] = '0.0.0.0'.encode('utf8')
-	
+
 	root = torrentsearch.getRoot(root)
 	conf = torrentsearch.getConf(conf)
 	root.update.torrentSearch = updateData(torrentsearch)
-	
+
 	root = downloader.getRoot(root)
 	conf = downloader.getConf(conf)
 	root.update.downloader = updateData(downloader)
-	
+
 	root = transferer.getRoot(root)
 	conf = transferer.getConf(conf)
 	root.update.transferer = updateData(transferer)
-	
+
 	root = notificator.getRoot(root)
 	conf = notificator.getConf(conf)
 	root.update.notificator = updateData(notificator)
-	
+
 	def backgoundProcess(tvshowlist,downloader,transferer,searcher,force):
 		tvshowlist.update(downloader=downloader,transferer=transferer,searcher=searcher,notificator=notificator,force=force)
-	
+
 	wd = cherrypy.process.plugins.BackgroundTask(
 			interval=10,
 			function=backgoundProcess,
@@ -354,7 +366,7 @@ def main():
 			}
 	)
 	wd.start()
-	
+
 	cherrypy.quickstart(root,"/".encode('utf8'),conf)
 
 # By jgbarah from http://stackoverflow.com/questions/11875770/how-to-overcome-datetime-datetime-not-json-serializable-in-python
