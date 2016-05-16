@@ -16,8 +16,9 @@ After that, TvShowWatch-2 can:
 
 ## Dependencies
 ### Mandatory
-* Python2.7
-* TransmissionRPC client (plan to manage others or nothing for just download torrents)
+* **Python2.7**
+* **[Transmission] daemon** (plan to manage others or nothing for just download torrents)
+* **pip** for automatic installation of python module dependencies
 
 ### Facultative
 * [T411] account
@@ -31,7 +32,7 @@ After that, TvShowWatch-2 can:
 * Download source (from [releases] or with git clone)
 * Enter directory
 * Type `make install` in order to download and install Dependencies
-* Type `python tvShowWatch start` in order to launch web server and background process
+* Type `python tvShowWatch.py start` in order to launch web server and background process
 * Go to `http://localhost:1205` to populate your configuration data
 * In order to stop TvShowWatch-2, just type `python tvShowWatch stop`
 
@@ -48,3 +49,4 @@ After that, TvShowWatch-2 can:
 [T411]: https://t411.ch
 [Synology]: http://www.synology.com
 [releases]: https://github.com/kavod/TvShowWatch-2/releases
+[Transmission]: https://www.transmissionbt.com/download/
