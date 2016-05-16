@@ -318,7 +318,7 @@ def main():
         }
 	}
 
-	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=confPath+"/config.json",verbosity=True)
+	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=confPath+"/config.json",verbosity=False)
 	downloader = Downloader.Downloader("downloader",dataFile=confPath+"/config.json")
 	transferer = Transferer.Transferer("transferer",dataFile=confPath+"/config.json")
 	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=confPath+"/series.json",banner_dir=webPath+"/static",verbosity=False)
