@@ -63,7 +63,7 @@ class Transferer(JSAG3.JSAG3):
 			dataFile=dataFile,
 			verbosity=verbosity
 		)
-		
+
 	def get_uri(self,endpoint="source",filename=".",subFolder=None,showPassword=False):
 		self.checkUsable()
 		if not isinstance(endpoint,basestring) or unicode(endpoint) not in ['source','destination']:
@@ -77,24 +77,29 @@ class Transferer(JSAG3.JSAG3):
 			return_if_filled('password',data) if showPassword else '*****',
 			return_if_filled('host',data),
 			(':'+return_if_filled('port',data)) if return_if_filled('port',data) !='' else '',
-			path,
+			path.encode('utf8'),
 			return_if_filled('auth_endpoint',data),
 			return_if_filled('tenant_id',data),
 			return_if_filled('region',data),
 			('&public=' + return_if_filled('public',data)) if return_if_filled('public',data) != '' else '',
 			('&api_key=' + return_if_filled('api_key',data)) if return_if_filled('api_key',data) != '' else '',
-			('&temp_url_key=' + return_if_filled('temp_url_key',data)) if return_if_filled('temp_url_key',data) != '' else '',
+			('&temp_url_key=	' + return_if_filled('temp_url_key',data)) if return_if_filled('temp_url_key',data) != '' else '',
 			return_if_filled('access_key',data),
 			return_if_filled('secret_key',data)
 		)
-		return uri
-		
+		return uri.encode('utf-8')
+
 	def transfer(self,filename,dstSubFolder=None,delete_after=False):
-		logging.info('[Transferer] Transfering file from {0} to {1}'.format(self.get_uri("source",filename),self.get_uri("destination",filename)))
-		
+		logging.info(
+			'[Transferer] Transfering file from {0} to {1}'.format(
+				self.get_uri("source",filename).decode('utf-8'),
+				self.get_uri("destination",filename).decode('utf-8')
+			)
+		)
+
 		source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
 		dest_file = storage.get_storage(self.get_uri("destination",filename=filename,subFolder=dstSubFolder,showPassword=True))
-		
+
 		if self.data['source']['protocol'] == 'file' and self.data['destination']['protocol'] == 'file':
 			destination = "{0}/{1}".format(makePath(self.data['destination']['path'],dstSubFolder),filename)
 			if not os.path.exists(os.path.dirname(destination)):
@@ -116,12 +121,12 @@ class Transferer(JSAG3.JSAG3):
 				os.remove(tmpfile)
 		if delete_after:
 			source_file.delete()
-		
+
 	def delete(self,filename):
 		logging.info('[Transferer] Deleting file {0}'.format(self.get_uri("source",filename)))
 		source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
 		source_file.delete()
-			
+
 	def checkUsable(self):
 		if 'source' not in self.data.keys() or self.data['source'] is None:
 			raise Exception("Source not specified")
