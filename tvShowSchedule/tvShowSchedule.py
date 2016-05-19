@@ -666,5 +666,5 @@ class tvShowSchedule(JSAG3.JSAG3):
 		if not self.isInfoUpdated():
 			self.updateInfo(force=True)
 
-		pathPattern = "{0}/Season {1}"
+		pathPattern = "{0}/season {1}"
 		return pathPattern.format(self['info']['seriesname'],self['season'])
