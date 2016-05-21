@@ -26,7 +26,7 @@
 					</div>
 				</form>	<br />
 				<uib-accordion>
-					<tvshow ng-repeat="tvshow in tvshowlist.list | orderBy:'info.seriesname'" tvshow="tvshow" tvshowlist="tvshowlist"></tvshow>
+					<tvshow ng-repeat="tvshow in tvshowlist.list | orderBy:['status','info.seriesname']" tvshow="tvshow" tvshowlist="tvshowlist"></tvshow>
 				</uib-accordion>
 			</div>
 			<div ng-show="tabs.isSelected('conf')">
