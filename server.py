@@ -20,25 +20,61 @@ import Transferer
 import Notificator
 import tvShowList
 import myTvDB
+from auth import AuthController, require, member_of, name_is
 import utils.TSWdirectories
 
 from cherrypy.process.plugins import Daemonizer
 from cherrypy.process.plugins import PIDFile
+from cherrypy.lib.static import serve_file
+
+#cherrypy.server.ssl_module = 'builtin'
+#cherrypy.server.ssl_certificate = "/home/boris/TvShowWatch-2/cert.pem"
+#cherrypy.server.ssl_private_key = "/home/boris/TvShowWatch-2/privkey.pem"
 
 curPath = os.path.dirname(os.path.realpath(__file__))
 directories = utils.TSWdirectories(curPath+'/utils/directory.conf')
 tmpPath = os.path.abspath(directories['tmp_path'])
 PIDFile(cherrypy.engine, tmpPath + '/TSW2.PID').subscribe()
+webPath = os.path.abspath(directories['web_path'])
+confPath = os.path.abspath(directories['etc_path'])
+
+class RestrictedArea:
+    # all methods in this controller (and subcontrollers) is
+    # open only to members of the admin group
+
+    _cp_config = {
+        'auth.require': [member_of('admin')]
+    }
+    cherrypy.response.headers["Access-Control-Allow-Origin"] = "*"
+
+    @cherrypy.expose
+    def index(self):
+        return """This is the admin only area."""
 
 class Root(object):
-	pass
+	auth = AuthController()
+
+	_cp_config = {
+        'auth.require': []
+    }
+
+	@cherrypy.expose
+	def index(self):
+	    return serve_file(webPath+"index.html","text/html")
+
+	@cherrypy.expose
+	def default(self, page):
+	    path = os.path.join(webPath, page)
+	    return serve_file(path, content_type='text/html')
 
 class LiveSearch(object):
 	@cherrypy.expose
+	@require()
 	def index(self):
 		return ""
 
 	@cherrypy.expose
+	@require()
 	def result(self,result):
 		return result
 
@@ -60,6 +96,7 @@ class serv_TvShowList(object):
 		self.checkModification()
 
 	@cherrypy.expose
+	@require()
 	@cherrypy.tools.json_out()
 	def index(self):
 		return {"status":400,"error":""}
@@ -78,6 +115,7 @@ class serv_TvShowList(object):
 		return {"status":200,"error":"TvShow {0} added".format(tvShowName),"data":json.loads(json.dumps(tvShow.getValue(),default=json_serial))}
 
 	@cherrypy.expose
+	@require()
 	@cherrypy.tools.json_out()
 	def add(self, **kwargs):
 		self.checkModification()
@@ -101,6 +139,7 @@ class serv_TvShowList(object):
 		return {"status":401,"error":"Unknown TvShow: '{0}'".format(seriesname)}
 
 	@cherrypy.expose
+	@require()
 	@cherrypy.tools.json_out()
 	def update(self, **kwargs):
 		if 'tvShowID' in kwargs.keys():
@@ -168,6 +207,7 @@ class serv_TvShowList(object):
 			return self._error(400,"Unknown TV Show")
 
 	@cherrypy.expose
+	@require()
 	@cherrypy.tools.json_out()
 	def pushTorrent(self, **kwargs):
 		if 'tvShowID' in kwargs.keys() and self.tvshowlist.inList(int(kwargs['tvShowID'])):
@@ -192,6 +232,7 @@ class serv_TvShowList(object):
 			return self._error(400,"Unknown TV Show")
 
 	@cherrypy.expose
+	@require()
 	@cherrypy.tools.json_out()
 	def delete(self,tvShowID=-1):
 		self.checkModification()
@@ -206,6 +247,7 @@ class serv_TvShowList(object):
 			return self._error(400,e[0])
 
 	@cherrypy.expose
+	@require()
 	@cherrypy.tools.json_out()
 	def list(self):
 		self.checkModification()
@@ -217,6 +259,7 @@ class serv_TvShowList(object):
 			self.lastModified = os.path.getmtime(self.tvshowlist.filename)"""
 
 	@cherrypy.expose
+	@require()
 	def progression(self,tvShowID=-1):
 
 		tvShowID = int(tvShowID)
@@ -243,6 +286,7 @@ class updateData(object):
 		self.config = config
 
 	@cherrypy.expose
+	@require()
 	@cherrypy.tools.json_out()
 	def index(self,**params):
 		try:
@@ -265,6 +309,7 @@ class streamGetSeries(object):
 		self.downloader = downloader
 
 	@cherrypy.expose
+	@require()
 	def index(self):
 		cherrypy.response.headers["Content-Type"] = "text/event-stream"
 		cherrypy.response.headers['Cache-Control'] = 'no-cache'
@@ -285,8 +330,6 @@ class streamGetSeries(object):
 		return content()
 	index._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'}
 
-webPath = os.path.abspath(directories['web_path'])
-confPath = os.path.abspath(directories['etc_path'])
 
 #if __name__ == '__main__':
 def main():
@@ -296,7 +339,14 @@ def main():
 			'tools.staticdir.root':webPath,
 			'tools.staticdir.dir': '.',
 			'tools.staticdir.index': 'index.html',
-			'tools.trailing_slash.on' : False
+			'tools.trailing_slash.on' : False,
+			'tools.sessions.on': True,
+			'tools.auth.on': True,
+            'tools.response_headers.headers':[
+                { 'Access-Control-Allow-Credentials': True },
+                { 'Access-Control-Allow-Origin':'localhost'}
+            ]
+			#'auth.require':[]
 		},
 		"/livesearch".encode('utf8') : {
 
@@ -313,8 +363,8 @@ def main():
         '/favicon.ico'.encode('utf8'):
         {
             'tools.staticfile.on': True,
-            'tools.staticfile.filename': webPath + '/static/favicon.ico'
-        }
+            'tools.staticfile.filename': webPath + '/static/favicon.ico',
+        },
 	}
 
 	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=confPath+"/config.json",verbosity=False)

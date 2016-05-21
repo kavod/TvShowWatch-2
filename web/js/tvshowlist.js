@@ -1,5 +1,14 @@
 (function(){
-	var app = angular.module('appTsw.TvShowList', [ 'ngAnimate', 'ui.bootstrap', 'appTsw.TvShow' ]);
+	var app = angular.module('appTsw.TvShowList', [ 'ngAnimate', 'ui.bootstrap', 'appTsw.TvShow', 'ngCookies']);
+
+	app.config(function($httpProvider) {
+		$httpProvider.defaults.withCredentials = false;
+	});
+
+	app.run(['$http', '$cookies', function($http, $cookies) {
+		$http.defaults.headers.post['X-CSRFToken'] = $cookies.csrftoken;
+	}]);
+
 
 	app.controller('TvShowListController', [ '$http', '$scope', 'fileUpload',function($http,$scope,fileUpload){
 		$scope.oneAtATime = true;
@@ -11,7 +20,10 @@
 
 		this.build_tvShowList = function() {
 			tvshowlist.list = [];
-			$http.get('/tvshowlist/list')
+			config = {
+				withCredentials:true
+			}
+			$http.get('/tvshowlist/list',config)
 				.success(function(data) {
 					tvshowlist.list = data.data;
 				});
@@ -35,7 +47,10 @@
 		tvShowChanged = this.tvShowChanged;
 
 		this.update_tvShowList = function(){
-			$http.get('/tvshowlist/list')
+			config = {
+				withCredentials:true
+			}
+			$http.get('/tvshowlist/list',config)
 				.success(function(data) {
 					for (var i = 0; i<data.data.length ; i++)
 					{

@@ -1,14 +1,22 @@
 (function(){
 	PNotify.prototype.options.styling = "bootstrap3";
-	
-	var app = angular.module('appTsw', [ 'appTsw.TvShowList', 'appTsw.Config', 'ui.bootstrap' ]);
-	
+
+	var app = angular.module('appTsw', [ 'appTsw.TvShowList', 'appTsw.Config', 'ui.bootstrap', 'ngCookies' ]);
+
+	app.config(function($httpProvider) {
+		$httpProvider.defaults.withCredentials = false;
+	});
+
+	app.run(['$http', '$cookies', function($http, $cookies) {
+		$http.defaults.headers.post['X-CSRFToken'] = $cookies.csrftoken;
+	}]);
+
 	app.run(function($rootScope, $templateCache) {
 	   $rootScope.$on('$viewContentLoaded', function() {
 		  $templateCache.removeAll();
 	   });
 	});
-	
+
 	app.controller('TabsController', function(){
 		this.tab = 'tvShows';
 		this.selectTab = function(setTab) {
@@ -18,7 +26,7 @@
 			return this.tab === checkTab;
 		};
 	});
-	
+
 	app.controller('PillsController', function(){
 		this.tab = 'torrent-search';
 		this.selectTab = function(setTab) {
@@ -28,7 +36,7 @@
 			return this.tab === checkTab;
 		};
 	});
-	
+
 	app.controller('NotificationController',['$scope',function($scope) {
 		$scope.alert_error = function(except) {
 			new PNotify({
@@ -46,10 +54,13 @@
 			});
 		}
 	}]);
-	
+
 	app.controller('TypeaheadController', ['$scope','$http', function($scope, $http) {
 		$scope.getLivesearch = function(val) {
-			return $http.get('/livesearch/' + val)
+			config = {
+				withCredentials:true
+			}
+			return $http.get('/livesearch/' + val,config)
 				.then(function(response){
 					return response.data.map(function(item) {
 						return {
@@ -61,7 +72,7 @@
 			});
 		};
 	}]);
-	
+
 })();
 
 $(document).on('change', '.btn-file :file', function() {
@@ -75,11 +86,11 @@ $(document).on('change', '.btn-file :file', function() {
 $(document).on('fileselect', '.btn-file :file', function(event, numFiles, label) {
         var input = $(this).parents('.input-group').find(':text'),
             log = numFiles > 1 ? numFiles + ' files selected' : label;
-        
+
         if( input.length ) {
             input.val(log);
         } else {
             if( log ) alert(log);
         }
-        
+
     });
