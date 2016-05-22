@@ -11,6 +11,10 @@
 				{
 					"value": "transmission",
 					"text" : "TransmissionRPC"
+				},
+				{
+					"value": "synology",
+					"text" : "Synology Download Station"
 				}
 			],
 			"removeDefaultNone": true,
@@ -54,6 +58,52 @@
 			"collapsible":false,
 			"dependencies": {
 				"client": ["transmission"]
+			}
+		},
+		"synoConf": {
+			"fields": {
+				"address": {
+					"order":1
+				},
+				"port": {
+					"order":2
+				},
+				"ssl": {
+					"order":3
+				},
+				"sslNoCheck": {
+					"order":4
+				},
+				"username": {
+					"order":5
+				},
+				"password": {
+					"order": 6
+				},
+				"maxSlots": {
+					"order": 7
+				},
+				"cleanMethod": {
+					"label": "Clean method",
+					"type": "select",
+					"dataSource": [
+						{
+							"value": "oldest",
+							"text": "When max slots is reached, remove oldest torrent"
+						},
+						{
+							"value": "sharest",
+							"text" : "When max slots is reached, remove the most shared torrent"
+						}
+					],
+					"removeDefaultNone": true,
+					"order":8
+				}
+			},
+			"order":2,
+			"collapsible":false,
+			"dependencies": {
+				"client": ["synology"]
 			}
 		}
 	}

@@ -60,10 +60,76 @@
 			},
 			"order":2,
 			"required":["address","port"]
+		},
+		"synoConf":
+		{
+			"title":"Download Station configuration",
+			"type":"object",
+			"properties":
+			{
+				"address":
+				{
+					"title":"Server address",
+					"type":"string",
+					"format":"hostname",
+					"default":"localhost"
+				},
+				"port":
+				{
+					"title":"Server port",
+					"type":"integer",
+					"min":1,
+					"max":65535,
+					"default":9091
+				},
+				"ssl":{
+					"title":"Secured connection",
+					"description":"Use https instead of http",
+					"type":"boolean",
+					"default":true
+				},
+				"sslNoCheck":{
+					"title":"No SSL certificate verification",
+					"description":"Do not check SSL certificate",
+					"type":"boolean",
+					"default":true
+				},
+				"username":
+				{
+					"title":"Username",
+					"type":"string",
+					"default":"transmission"
+				},
+				"password":
+				{
+					"title":"Password",
+					"type":"string",
+					"format": "password",
+					"default":"transmission"
+				},
+				"maxSlots":
+				{
+					"title":"max slot",
+					"description":"Maximum number of slots available",
+					"type":"integer",
+					"min":1,
+					"max":99,
+					"default":6
+				},
+				"cleanMethod":
+				{
+					"title":"Cleaning method",
+					"description":"Strategy to be followed for removing achieved torrents",
+					"type":"string"
+				}
+			},
+			"order":3,
+			"required":["address","port"]
 		}
 	},
 	"required":["client"],
 	"dependencies": {
-		"transConf":["client"]
+		"transConf":["client"],
+		"synoConf":["client"]
 	}
 }
