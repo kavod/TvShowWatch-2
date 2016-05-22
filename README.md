@@ -15,17 +15,29 @@ After that, TvShowWatch-2 can:
 * Watch the next episode
 
 ## Dependencies
-### Mandatory
 * **Python2.7**
-* **[Transmission] daemon** (plan to manage others or nothing for just download torrents)
 * **pip** for automatic installation of python module dependencies
 
-### Facultative
-* [T411] account
-* FTP/SFTP/Amazon/Swift server to transfer your completed downloads to/from
-* [Synology] NAS with DSM 5.0 (package available)
-* For synology setup, you need `python` package from [synoCommunity]
-* Email account for notifications
+## Services used/supported
+* **Tv Show database**
+  * [The TvDB] to get TV shows information
+* **Torrent Providers** to find relevant torrent files
+  * [T411] account
+  * -or- [KickAssTorrent] (account free)
+* **Torrent client** to process torrents and download video files
+  * [Transmission] daemon
+  * -or- **Download Station** by [Synology]
+* **Transfer protocol** to transfer your completed downloads from/to
+  * FTP or SFTP
+  * -or- Amazon S3 account
+  * -or- Swift server to/from
+* **Notifications** to warn you about video file availability
+  * Email account for notifications
+
+## [Synology] Support
+* DSM 5.0
+* `python` package from [synoCommunity]
+* Package available in [releases]
 
 ## Setup
 ### Linux from source
@@ -50,3 +62,4 @@ After that, TvShowWatch-2 can:
 [Synology]: http://www.synology.com
 [releases]: https://github.com/kavod/TvShowWatch-2/releases
 [Transmission]: https://www.transmissionbt.com/download/
+[KickAssTorrent]: https://www.kat.cr
