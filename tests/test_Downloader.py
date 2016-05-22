@@ -70,7 +70,7 @@ class TestDownloader(LogTestCase.LogTestCase):
 		os.remove(tmpfile)
 		self.assertFalse(os.path.isfile(tmpfile))
 
-		self.d = Downloader.Downloader()
+		self.d = Downloader.Downloader(dataFile=tmpfile)
 		self.d.loadConfig(tmpfile)
 
 		self.assertTrue(os.path.isfile(tmpfile))

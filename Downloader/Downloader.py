@@ -23,7 +23,7 @@ class Downloader(JSAG3.JSAG3):
 		self.transmission = None
 		self._synoSid = None
 
-		if dataFile is not None:
+		if 'client' in self.keys():
 			self.loggerName = "Downloader.{0}".format(self['client'])
 		else:
 			self.loggerName = "Downloader"
