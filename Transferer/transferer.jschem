@@ -5,10 +5,15 @@
 		"source": {
 			"title": "Source",
 			"$ref": "#/definitions/endpoint"
-		}, 
+		},
 		"destination": {
 			"title": "Destination",
 			"$ref": "#/definitions/endpoint"
+		},
+		"pathPattern": {
+			"title": "Path structure on destination",
+			"type": "string",
+			"default": "{seriesname}/season {seasonnumber}"
 		},
 		"delete_after": {
 			"title": "Delete after transfer",

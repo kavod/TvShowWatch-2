@@ -64,6 +64,11 @@ class Transferer(JSAG3.JSAG3):
 			verbosity=verbosity
 		)
 
+	def addData(self,dataFile):
+		JSAG3.JSAG3.addData(self,dataFile)
+		if 'pathPattern' not in self.keys():
+			self.data['pathPattern'] = self.schema['properties']['pathPattern']['default']
+
 	def get_uri(self,endpoint="source",filename=".",subFolder=None,showPassword=False):
 		self.checkUsable()
 		if not isinstance(endpoint,basestring) or unicode(endpoint) not in ['source','destination']:

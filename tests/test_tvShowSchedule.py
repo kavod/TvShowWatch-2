@@ -55,7 +55,12 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 
 		self.tmpdir1 = unicode(tempfile.mkdtemp())
 		self.tmpdir2 = unicode(tempfile.mkdtemp())
-		self.transfererData = {"source": {"path": self.tmpdir1, "protocol": "file"}, "destination": {"path": self.tmpdir2, "protocol": "file"}, "delete_after":False}
+		self.transfererData = {
+			"source": {"path": self.tmpdir1, "protocol": "file"},
+			"destination": {"path": self.tmpdir2, "protocol": "file"},
+			"delete_after":False,
+			"pathPattern":"{seriesname}/season {seasonnumber}"
+		}
 
 		self.ts = torrentSearch.torrentSearch(id="torrentSearch",dataFile="tests/torrentSearch2.json",verbosity=DEBUG)
 		self.t = myTvDB.myTvDB(debug=DEBUG,cache=False)
@@ -400,6 +405,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.downloader.loadConfig(self.configFileTransmission)
 		self.transferer.addData(self.configFileTvShowSchedule)
 		self.transferer.setValue(self.transfererData)
+		self.transferer.data['pathPattern'] = "{seriesname}/season {seasonnumber}/episode {episodenumber}"
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
 		tvShow.set(
 			season=1,
@@ -416,7 +422,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		for myFile in files:
 			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
 			os.remove(self.tmpdir1+"/"+myFile)
-			self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/season 1/"+myFile))
+			self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/season 1/episode 1/"+myFile))
 		self.assertEqual(tvShow['status'],10)
 
 	@httpretty.activate
