@@ -647,7 +647,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		if self.notificator is not None:
 			self.notificator.send("Download completed!",notifContent,self['emails'])
 
-	def pushTorrent(self,filename,downloader=None):
+	def pushTorrent(self,filename,downloader=None,delTorrent=True):
 		if self['season'] * self['episode'] < 1:
 			raise Exception("Season & episode are not set")
 		if not isinstance(filename,basestring):
@@ -655,7 +655,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		self._setDownloader(downloader,True)
 
 		now = datetime.datetime.now(tzlocal.get_localzone())
-		downloader_id=unicode(self.downloader.add_torrent(filename))
+		downloader_id=unicode(self.downloader.add_torrent(filename,delTorrent=delTorrent))
 		if int(downloader_id) > 0:
 			self.set(status=30,downloader_id=downloader_id,nextUpdate=now)
 			return
