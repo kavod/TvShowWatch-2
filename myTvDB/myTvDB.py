@@ -58,7 +58,7 @@ class myTvDB(tvdb_api.Tvdb):
 		if sid not in self.shows:
 			self.shows[sid] = myShow()
 		return tvdb_api.Tvdb._setShowData(self, sid, key, value)
-		
+
 	def _setItem(self, sid, seas, ep, attrib, value):
 		if sid not in self.shows:
 			self.shows[sid] = myShow()
@@ -67,7 +67,11 @@ class myTvDB(tvdb_api.Tvdb):
 		if ep not in self.shows[sid][seas]:
 			self.shows[sid][seas][ep] = myEpisode(season = self.shows[sid][seas])
 		self.shows[sid][seas][ep][attrib] = value
-		
+
+	def _getShowData(self, sid, language):
+		tvdb_api.Tvdb._getShowData(self,sid,language)
+		self[sid].clean()
+
 	def livesearch(self, pattern):
 		result = self._loadUrl('http://thetvdb.com/livesearch.php?q={0}'.format(urllib.quote(pattern.encode('utf8'), safe='')))
 		result = re.sub('\s*([{,:])\s*(\w+)\s*([},:])\s*','\\1\"\\2\"\\3',result) # Add double quotes
@@ -75,6 +79,15 @@ class myTvDB(tvdb_api.Tvdb):
 		return json.loads(result)['results']
 
 class myShow(tvdb_api.Show):
+	# Remove all unused episodes (bonus & episode w/o firstaired)
+	def clean(self):
+		for key,season in self.items():
+			if str(key)=="0":
+				del self[key]
+			else:
+				for episode in [episode for episode in season.values() if episode['firstaired'] is None]:
+					del season[int(episode['episodenumber'])]
+
 	def lastAired(self):
 		today = datetime.today()
 		current = tvdb_api.Episode()
@@ -103,9 +116,9 @@ class myShow(tvdb_api.Show):
 		for key,season in self.items():
 			if str(key)=="0":
 				continue
-			for episode in season.values():	
+			for episode in season.values():
 				if episode['firstaired'] is None:
-					continue				
+					continue
 				ep_firstaired = datetime.strptime(episode['firstaired'],'%Y-%m-%d')
 				cur_firstaired = datetime.strptime(current['firstaired'],'%Y-%m-%d')
 				if ep_firstaired is None:
@@ -129,21 +142,21 @@ class myShow(tvdb_api.Show):
 		for key,season in self.items():
 			result.append(str(key))
 		return result
-		
+
 	def getEpisodesList(self):
 		result = {}
 		episodes = self.getEpisodes()
 		for episode in episodes:
 			seasonno = int(episode.get('seasonnumber'))
-			episodeno = int(episode.get('episodenumber')) 
+			episodeno = int(episode.get('episodenumber'))
 			if seasonno * episodeno >0:
 				if seasonno in result.keys():
 					result[seasonno] = max(result[seasonno],episodeno)
 				else:
 					result[seasonno] = episodeno
 		return result
-		
-		
+
+
 class myEpisode(tvdb_api.Episode):
 	def next(self):
 		epno = int(self.get(u'episodenumber', 0))

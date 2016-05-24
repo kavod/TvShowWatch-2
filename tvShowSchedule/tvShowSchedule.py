@@ -319,13 +319,17 @@ class tvShowSchedule(JSAG3.JSAG3):
 				try:
 					t[self.seriesid][self['season']][self['episode']]
 				except:
-					logging.error("[tvShowSchedule] {0} S{1:02}E{2:02} does not exist. Reset to next episode")
+					logging.error("[tvShowSchedule] {0} S{1:02}E{2:02} does not exist. Reset to next episode"
+						.format(self.seriesid,self['season'],self['episode']))
 					self.set(season=0,episode=0,status=0,autoComplete=True)
 					return
 				episodeData = t[self.seriesid][self['season']][self['episode']]
 				firstaired = episodeData['firstaired']
 				if isinstance(firstaired,basestring):
 					firstaired = dateutil.parser.parse(firstaired)
+				if firstaired is None:
+					logging.error("[tvShowSchedule] No firstaired for {0}".format(unicode(firstaired)))
+					raise Exception("No firstaired for {0}".format(unicode(firstaired)))
 				if firstaired.tzinfo is None or firstaired.tzinfo.utcoffset(firstaired) is None:
 					firstaired = tzlocal.get_localzone().localize(firstaired)
 				info['firstaired'] = firstaired

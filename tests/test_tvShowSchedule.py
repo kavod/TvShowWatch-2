@@ -32,6 +32,8 @@ httpretty_urls = [
 	("http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",'tests/httpretty_myTvDB5.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/111/en.xml",'tests/httpretty_myTvDB8.xml'),
 	("http://thetvdb.com/api/A2894E6CB335E443/series/111/all/en.xml",'tests/httpretty_myTvDB9.xml'),
+	("http://thetvdb.com/api/A2894E6CB335E443/series/456/en.xml",'tests/httpretty_myTvDB4.xml'),
+	("http://thetvdb.com/api/A2894E6CB335E443/series/456/all/en.xml",'tests/httpretty_myTvDB7.xml'),
 	("http://thetvdb.com/banners/_cache/graphical/123-g4.jpg",'tests/image.jpg'),
 	(T411_URL + "/auth",'tests/httpretty_t411_auth.json'),
 	(T411_URL + "/users/profile/12345678",'tests/httpretty_t411_auth.json'),
@@ -532,7 +534,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,autoComplete=False,verbosity=DEBUG)
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=456,autoComplete=False,verbosity=DEBUG)
 		tvShow.set(
 			nextUpdate=datetime.datetime.now(),
 			info={'seriesname':'TvShow 1'},
