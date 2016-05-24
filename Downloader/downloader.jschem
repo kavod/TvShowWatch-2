@@ -80,7 +80,7 @@
 					"type":"integer",
 					"min":1,
 					"max":65535,
-					"default":9091
+					"default":5001
 				},
 				"ssl":{
 					"title":"Secured connection",
@@ -92,20 +92,18 @@
 					"title":"No SSL certificate verification",
 					"description":"Do not check SSL certificate",
 					"type":"boolean",
-					"default":true
+					"default":false
 				},
 				"username":
 				{
 					"title":"Username",
-					"type":"string",
-					"default":"transmission"
+					"type":"string"
 				},
 				"password":
 				{
 					"title":"Password",
 					"type":"string",
-					"format": "password",
-					"default":"transmission"
+					"format": "password"
 				},
 				"maxSlots":
 				{
@@ -114,7 +112,7 @@
 					"type":"integer",
 					"min":1,
 					"max":99,
-					"default":6
+					"default":10
 				},
 				"cleanMethod":
 				{
@@ -124,7 +122,10 @@
 				}
 			},
 			"order":3,
-			"required":["address","port"]
+			"required":["address","port"],
+			"dependencies":{
+				"sslNoCheck":["ssl"]
+			}
 		}
 	},
 	"required":["client"],
