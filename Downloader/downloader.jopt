@@ -69,10 +69,15 @@
 					"order":2
 				},
 				"ssl": {
-					"order":3
+					"order":3,
+					"rightLabel":"HTTPS connection"
 				},
 				"sslNoCheck": {
-					"order":4
+					"order":4,
+					"rightLabel":"Do not check SSL certificate",
+					"dependencies":{
+						"ssl":[true,null]
+					}
 				},
 				"username": {
 					"order":5
