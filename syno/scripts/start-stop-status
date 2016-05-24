@@ -2,26 +2,31 @@
 
 PIP="/var/packages/python/target/bin/pip"
 PYTHON="/var/packages/python/target/bin/python"
+LOGFILE="/tmp/TSW2.log"
+if [ -z "${SYNOPKG_PKGDEST}" ]; then SYNOPKG_PKGDEST="/var/packages/TvShowWatch2/target" ; fi
 
 case $1 in
     start)
-        echo "${SYNOPKG_PKGDEST}" >> '/tmp/TSW2.log'
-        ${PYTHON} "${SYNOPKG_PKGDEST}/tvShowWatch.py" start >> '/tmp/TSW2.log'  2>&1
+        echo "${SYNOPKG_PKGDEST}" >> ${LOGFILE}
+        ${PYTHON} "${SYNOPKG_PKGDEST}/tvShowWatch.py" start >> ${LOGFILE}  2>&1
         exit 0
         ;;
     stop)
-        ${PYTHON} "${SYNOPKG_PKGDEST}/tvShowWatch.py" stop >> '/tmp/TSW2.log'  2>&1
+        ${PYTHON} "${SYNOPKG_PKGDEST}/tvShowWatch.py" stop >> ${LOGFILE}  2>&1
         exit 0
         ;;
     status)
         status=`${PYTHON} "${SYNOPKG_PKGDEST}/tvShowWatch.py" status|grep "is running"| wc -l`
         if [ $status -eq 1 ]; then
-        		echo "TvShowWatch is running" >> '/tmp/TSW2.log'  2>&1
+        		echo "TvShowWatch is running" >> ${LOGFILE}  2>&1
                 exit 0
         else
-        		echo "TvShowWatch is not running" >> '/tmp/TSW2.log'  2>&1
+        		echo "TvShowWatch is not running" >> ${LOGFILE}  2>&1
                 exit 3
         fi
+        ;;
+    log)
+        echo ${LOGFILE}
         ;;
     *)
         exit 1
