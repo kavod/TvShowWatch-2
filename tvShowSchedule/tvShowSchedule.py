@@ -534,11 +534,18 @@ class tvShowSchedule(JSAG3.JSAG3):
 					# Torrent is found. Process download
 					if tor is not None:
 						tmpFile = self.searcher.download(tor)
-						downloader_id=unicode(self.downloader.add_torrent(tmpFile))
-						if int(downloader_id) > 0:
-							self.set(status=30,downloader_id=downloader_id,nextUpdate=now)
-							self.update(force=True)
+						try:
+							downloader_id=unicode(self.downloader.add_torrent(tmpFile))
+							if int(downloader_id) > 0:
+								self.set(status=30,downloader_id=downloader_id,nextUpdate=now)
+								self.update(force=True)
+								return
+						except Downloader.DownloaderConnectionError:
+							# Connection error with downloader. Waiting for 5mins
+							nextUpdate = now+datetime.timedelta(minutes=5)
+							self.set(nextUpdate=nextUpdate)
 							return
+
 				# If torrent not found wait for 15min.
 				nextUpdate = now+datetime.timedelta(minutes=15)
 				self.set(nextUpdate=nextUpdate)

@@ -222,6 +222,26 @@ class TestDownloader(LogTestCase.LogTestCase):
 			self.assertIn(status,['check pending', 'checking', 'downloading', 'seeding'])
 
 	@httpretty.activate
+	def test_synology_connectionError(self):
+		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",status=500)
+		self.d = Downloader.Downloader(verbosity=DEBUG)
+		self.d.loadConfig(self.configFile3)
+		logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
+		if self.d.getValue()['client'] is not None:
+			filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+
+			tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+			os.remove(tmpfile)
+			shutil.copyfile(filename, tmpfile)
+
+			with self.assertRaises(Downloader.DownloaderConnectionError):
+				with self.assertLogs(level='ERROR'):
+					id = self.d.add_torrent(tmpfile,delTorrent=True)
+			os.remove(tmpfile)
+		else:
+			raise Exception("No client")
+
+	@httpretty.activate
 	def test_get_files_transmission(self):
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
                                httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),

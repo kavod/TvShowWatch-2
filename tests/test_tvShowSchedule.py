@@ -358,6 +358,29 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.assertEqual(tvShow['status'],20)
 
 	@httpretty.activate
+	def test_update_20_to_20_downloader_connection_error(self): # Waiting for torrent availability to itself caused by connection error
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
+		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
+		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
+		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",status=500)
+
+		self.downloader.loadConfig(self.configFileTransmission)
+
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=20
+		)
+		with self.assertLogs(level='ERROR'):
+			tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		self.assertEqual(tvShow['status'],20)
+
+	@httpretty.activate
 	def test_update_20_to_30(self): # Waiting for torrent availability to Download in progress
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())

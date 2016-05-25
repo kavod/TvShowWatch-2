@@ -2,7 +2,7 @@
 #encoding:utf-8
 from __future__ import unicode_literals
 
-import os
+import os, sys
 import requests
 import transmissionrpc
 import logging
@@ -188,34 +188,72 @@ class Downloader(JSAG3.JSAG3):
 										user=self.transConf['username'] if 'username' in self.transConf.keys() else '',
 										password=self.transConf['password'] if 'password' in self.transConf.keys() else ''
 										)
-			except:
-				conf = self.getValue(hidePassword=True)['transConf']
-				raise Exception("Transmission connection error {0}".format(unicode(conf)))
+			except transmissionrpc.TransmissionError as e:
+				originalException = e.original
+				self.logger.error(
+					"TransmissionError: unable to connect '{0}' (return: {1})"
+					.format(originalException.url,originalException.code)
+				)
+				raise DownloaderConnectionError(
+					"Connection error by transmission",
+					originalException.url,
+					originalException.code,
+					"Transmission",
+					e
+				)
 
 	def _transAvailableSlot(self):
 		if self.data['client'] == 'transmission':
-			if self.transmission is None:
-				self._transConnect()
-			tor = self.transmission.get_torrents()
+			try:
+				if self.transmission is None:
+					self._transConnect()
+				tor = self.transmission.get_torrents()
+			except transmissionrpc.TransmissionError as e:
+				originalException = e.original
+				self.logger.error(
+					"TransmissionError: unable to connect '{0}' (return: {1})"
+					.format(originalException.url,originalException.code)
+				)
+				raise DownloaderConnectionError(
+					"Connection error by transmission",
+					originalException.url,
+					originalException.code,
+					"Transmission",
+					e
+				)
 			return len(tor)+1 <= self.transConf['maxSlots']
 		else:
 			return True
 
 	def _transClean(self):
-		self.logger.info('[Downloader] Max slots reached, removing 1 achieved torrent with {0} method'.format(self.transConf['cleanMethod']))
-		torrents = self.transmission.get_torrents()
-		torrents = [ tor for tor in torrents if tor.status == 'seeding']
-		if self.transConf['cleanMethod'] == 'oldest':
-			torrents = sorted(torrents, key=lambda tor: tor.date_added)
-		elif self.transConf['cleanMethod'] == 'sharest':
-			torrents = sorted(torrents, key=lambda tor: tor.uploadRatio,reverse=True)
-		else:
-			raise Exception("Unknown clean method: {0}".format(unicode(self.transConf['cleanMethod'])))
-		self.logger.info('[Downloader] {0} torrent eligible for cleaning: {1}'.format(len(torrents),torrents))
-		if len(torrents)<1:
-			raise Exception("No eligible torrent for cleaning")
-		id = torrents[0].id
-		return self.delete_torrent(id,delete_data=True)
+		try:
+			self.logger.info('[Downloader] Max slots reached, removing 1 achieved torrent with {0} method'.format(self.transConf['cleanMethod']))
+			torrents = self.transmission.get_torrents()
+			torrents = [ tor for tor in torrents if tor.status == 'seeding']
+			if self.transConf['cleanMethod'] == 'oldest':
+				torrents = sorted(torrents, key=lambda tor: tor.date_added)
+			elif self.transConf['cleanMethod'] == 'sharest':
+				torrents = sorted(torrents, key=lambda tor: tor.uploadRatio,reverse=True)
+			else:
+				raise Exception("Unknown clean method: {0}".format(unicode(self.transConf['cleanMethod'])))
+			self.logger.info('[Downloader] {0} torrent eligible for cleaning: {1}'.format(len(torrents),torrents))
+			if len(torrents)<1:
+				raise Exception("No eligible torrent for cleaning")
+			id = torrents[0].id
+			return self.delete_torrent(id,delete_data=True)
+		except transmissionrpc.TransmissionError as e:
+			originalException = e.original
+			self.logger.error(
+				"TransmissionError: unable to connect '{0}' (return: {1})"
+				.format(originalException.url,originalException.code)
+			)
+			raise DownloaderConnectionError(
+				"Connection error by transmission",
+				originalException.url,
+				originalException.code,
+				"Transmission",
+				e
+			)
 
 	#Synology
 	def _synoRequest(self,path,params,method='GET',files=None):
@@ -226,14 +264,37 @@ class Downloader(JSAG3.JSAG3):
 			unicode(self['synoConf']['port']),
 			path
 			)
-		if method=='POST':
-			if files is None:
-				req = requests.post(url,params=params,verify=verify)
+		try:
+			if method=='POST':
+				if files is None:
+					req = requests.post(url,params=params,verify=verify)
+				else:
+					req = requests.post(url,data=params,files=files,verify=verify)
 			else:
-				req = requests.post(url,data=params,files=files,verify=verify)
-		else:
-			req = requests.get(url,params=params,verify=verify)
-		return req
+				req = requests.get(url,params=params,verify=verify)
+			if req.status_code != 200:
+				self.logger.error(
+					"SynologyDS: unable to connect '{0}' (return: {1})"
+					.format(url,req.status_code)
+				)
+				raise DownloaderConnectionError(
+					"Connection error by SynologyDS",
+					url,
+					client="SynologyDS",
+					code=req.status_code
+				)
+			return req
+		except requests.exceptions.RequestException as e:
+			self.logger.error(
+				"SynologyDS: unable to connect '{0}'"
+				.format(url)
+			)
+			raise DownloaderConnectionError(
+				"Connection error by SynologyDS",
+				url,
+				client="SynologyDS",
+				original=e
+			)
 
 	def _synoConnect(self):
 		if self._synoSid is None:
@@ -360,3 +421,27 @@ class Downloader(JSAG3.JSAG3):
 			):
 				return task['id']
 		return None
+
+class DownloaderConnectionError(OSError):
+	def __init__(self,message='',url='',code=0,client='',original=None):
+		exc_type, exc_obj, exc_tb = sys.exc_info()
+		if exc_tb is not None:
+			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+			fline = exc_tb.tb_lineno
+		else:
+			fname = __file__
+			fline = 0
+		msg = "{0} - {1} - {2} (return: {3}) [{4}:{5}]".format(
+			unicode(message),
+			unicode(url),
+			unicode(client),
+			unicode(code),
+			fname,
+			fline
+		)
+		super(OSError,self).__init__(msg)
+		self.message = message
+		self.url = url
+		self.code = code
+		self.original = None
+		self.client = client
