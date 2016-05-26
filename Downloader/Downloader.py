@@ -22,18 +22,27 @@ class Downloader(JSAG3.JSAG3):
 		)
 		self.transmission = None
 		self._synoSid = None
+		self.verbosity = verbosity
 
+		self._setLogger()
+		self.logger.info("Creation of Downloader from {0}".format(dataFile))
+
+	def __setitem__(self,key,value):
+		JSAG3.__setitem__(self,key,value)
+		if key == 'client':
+			self._setLogger()
+
+	def _setLogger(self):
 		if 'client' in self.keys():
 			self.loggerName = "Downloader.{0}".format(self['client'])
 		else:
 			self.loggerName = "Downloader"
 		self.logger = logging.getLogger(self.loggerName)
-		if verbosity is not None:
-			if isinstance(verbosity,int):
-				self.logger.setLevel(verbosity)
-			if isinstance(verbosity,bool) and verbosity:
+		if self.verbosity is not None:
+			if isinstance(self.verbosity,int):
+				self.logger.setLevel(self.verbosity)
+			if isinstance(self.verbosity,bool) and self.verbosity:
 				self.logger.setLevel(logging.DEBUG)
-		self.logger.info("Creation of Downloader from {0}".format(dataFile))
 
 	def connect(self):
 		if self['client'] == 'transmission':
