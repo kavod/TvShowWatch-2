@@ -31,6 +31,7 @@ httpretty_urls = [
 	("http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",'tests/httpretty_myTvDB5.xml'),
 	("http://thetvdb.com/banners/_cache/graphical/123-g4.jpg",'tests/image.jpg'),
 	("http://thetvdb.com/banners/_cache/graphical/321-g4.jpg",'tests/image.jpg'),
+	("http://thetvdb.com/banners/_cache/graphical/73739-g4.jpg",'tests/image.jpg'),
 	(T411_URL + "/auth",'tests/httpretty_t411_auth.json'),
 	(T411_URL + "/users/profile/12345678",'tests/httpretty_t411_auth.json'),
 	(T411_URL + "/torrents/search/home",'tests/httpretty_t411_search_home.json'),
@@ -82,14 +83,17 @@ class TestTvShowList(unittest.TestCase):
 		self.assertIsInstance(self.l1,tvShowList.tvShowList)
 		self.assertEqual(self.l1,[])
 
+	@httpretty.activate
 	def test_loadFile(self):
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
-		shutil.copyfile('tests/tvShowList1.json',tmpfile)
+		shutil.copyfile('tests/tvShowList2.json',tmpfile)
 
 		self.creation()
 		self.l1.addData(tmpfile)
-		self.assertEqual(len(self.l1),3)
+		self.assertEqual(len(self.l1),2)
 
 		os.remove(tmpfile)
 
