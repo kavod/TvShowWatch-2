@@ -91,7 +91,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			dataFile=None,
 			verbosity=verbosity
 		)
-		self._setLogger()
+		self._setLogger(self['seriesid'] if 'seriesid' in self.keys() else None)
 		if bannerDir is not None and not isinstance(bannerDir,basestring):
 			raise ValueError("bannerDir must be string or None, not {0}".format(type(bannerDir)))
 
@@ -102,18 +102,6 @@ class tvShowSchedule(JSAG3.JSAG3):
 		self.searcher = None
 		self.set(autoComplete=autoComplete)
 		self.logger.info("Creation of tvShowSchedule (seriesid: {0})".format(unicode(seriesid)))
-
-	def _setLogger(self):
-		if 'seriesid' in self.keys():
-			self.loggerName = "tvShowSchedule.{0}".format(self['seriesid'])
-		else:
-			self.loggerName = "tvShowSchedule"
-		self.logger = logging.getLogger(self.loggerName)
-		if self.verbosity is not None:
-			if isinstance(self.verbosity,int):
-				self.logger.setLevel(self.verbosity)
-			if isinstance(self.verbosity,bool) and self.verbosity:
-				self.logger.setLevel(logging.DEBUG)
 
 	def set(
 			self,

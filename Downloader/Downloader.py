@@ -24,7 +24,7 @@ class Downloader(JSAG3.JSAG3):
 		self._synoSid = None
 		self.verbosity = verbosity
 
-		self._setLogger()
+		self._setLogger(self['client'] if 'client' in self.keys() else None)
 		self.logger.info("Creation of Downloader from {0}".format(dataFile))
 
 	def __setitem__(self,key,value):
@@ -32,7 +32,7 @@ class Downloader(JSAG3.JSAG3):
 		if key == 'client':
 			self._setLogger()
 
-	def _setLogger(self):
+	"""def _setLogger(self):
 		if 'client' in self.keys():
 			self.loggerName = "Downloader.{0}".format(self['client'])
 		else:
@@ -42,7 +42,7 @@ class Downloader(JSAG3.JSAG3):
 			if isinstance(self.verbosity,int):
 				self.logger.setLevel(self.verbosity)
 			if isinstance(self.verbosity,bool) and self.verbosity:
-				self.logger.setLevel(logging.DEBUG)
+				self.logger.setLevel(logging.DEBUG)"""
 
 	def connect(self):
 		if self['client'] == 'transmission':
