@@ -82,6 +82,7 @@ def fakeTvDB(tvDB):
 class tvShowSchedule(JSAG3.JSAG3):
 	def __init__(self,seriesid,bannerDir=None,autoComplete=True,verbosity=False):
 		self.seriesid = int(seriesid)
+		self.verbosity = verbosity
 		curPath = os.path.dirname(os.path.realpath(__file__))
 		JSAG3.JSAG3.__init__(self,
 			id="tvShow"+unicode(self.seriesid),
@@ -90,6 +91,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			dataFile=None,
 			verbosity=verbosity
 		)
+		self._setLogger()
 		if bannerDir is not None and not isinstance(bannerDir,basestring):
 			raise ValueError("bannerDir must be string or None, not {0}".format(type(bannerDir)))
 
@@ -99,6 +101,19 @@ class tvShowSchedule(JSAG3.JSAG3):
 		self.transferer = None
 		self.searcher = None
 		self.set(autoComplete=autoComplete)
+		self.logger.info("Creation of tvShowSchedule (seriesid: {0})".format(unicode(seriesid)))
+
+	def _setLogger(self):
+		if 'seriesid' in self.keys():
+			self.loggerName = "tvShowSchedule.{0}".format(self['seriesid'])
+		else:
+			self.loggerName = "tvShowSchedule"
+		self.logger = logging.getLogger(self.loggerName)
+		if self.verbosity is not None:
+			if isinstance(self.verbosity,int):
+				self.logger.setLevel(self.verbosity)
+			if isinstance(self.verbosity,bool) and self.verbosity:
+				self.logger.setLevel(logging.DEBUG)
 
 	def set(
 			self,
@@ -113,7 +128,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			keywords=None,
 			autoComplete=True
 			):
-		logging.debug("[TvShowSchedule] set method called")
+		self.logger.debug("[TvShowSchedule] set method called")
 		v2MinutesAfter = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2)
 
 		# Initialization
@@ -265,7 +280,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			self.save()
 
 	def setDefault(self):
-		logging.debug("[TvShowSchedule] setDefault method called")
+		self.logger.debug("[TvShowSchedule] setDefault method called")
 		v2MinutesAfter = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2)
 		self.data.setdefault('season',0)
 		self.data.setdefault('episode',0)
@@ -280,7 +295,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 				self['pattern'] = self['info']['seriesname'].lower()
 
 	def updateInfo(self,force=False):
-		logging.debug("[TvShowSchedule] updateInfo method called")
+		self.logger.debug("[TvShowSchedule] updateInfo method called")
 		v30DaysAgo = datetime.datetime.now(tzlocal.get_localzone()) - datetime.timedelta(days=30)
 		if force:
 			self['info']['infoUpdate'] = v30DaysAgo
@@ -319,7 +334,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 				try:
 					t[self.seriesid][self['season']][self['episode']]
 				except:
-					logging.error("[tvShowSchedule] {0} S{1:02}E{2:02} does not exist. Reset to next episode"
+					self.logger.error("[tvShowSchedule] {0} S{1:02}E{2:02} does not exist. Reset to next episode"
 						.format(self.seriesid,self['season'],self['episode']))
 					self.set(season=0,episode=0,status=0,autoComplete=True)
 					return
@@ -328,14 +343,14 @@ class tvShowSchedule(JSAG3.JSAG3):
 				if isinstance(firstaired,basestring):
 					firstaired = dateutil.parser.parse(firstaired)
 				if firstaired is None:
-					logging.error("[tvShowSchedule] No firstaired for {0}".format(unicode(firstaired)))
+					self.logger.error("[tvShowSchedule] No firstaired for {0}".format(unicode(firstaired)))
 					raise Exception("No firstaired for {0}".format(unicode(firstaired)))
 				if firstaired.tzinfo is None or firstaired.tzinfo.utcoffset(firstaired) is None:
 					firstaired = tzlocal.get_localzone().localize(firstaired)
 				info['firstaired'] = firstaired
 			self.set(info=info,autoComplete=False)
 		self.setDefault()
-		logging.debug("[tvShowSchedule] TvShow has been updated. New value:\n {0}".format(unicode(self.data)))
+		self.logger.debug("[tvShowSchedule] TvShow has been updated. New value:\n {0}".format(unicode(self.data)))
 
 	def isInfoUpdated(self):
 		v30DaysAgo = datetime.datetime.now(tzlocal.get_localzone()) - datetime.timedelta(days=30)
@@ -398,7 +413,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		self.setDefault()
 		if not self.isInfoUpdated():
 			self.updateInfo(force=True)
-		logging.debug("[tvShowSchedule] TvShow has been updated. New value:\n {0}".format(unicode(self.data)))
+		self.logger.debug("[tvShowSchedule] TvShow has been updated. New value:\n {0}".format(unicode(self.data)))
 
 	def _setDownloader(self,downloader,mandatory=True):
 		if downloader is not None:
@@ -448,15 +463,15 @@ class tvShowSchedule(JSAG3.JSAG3):
 
 		if self['downloader_id'] is None:
 			# Incorrect or missing downloader identifier.
-			logging.warning("Unable to determine slot. Push the status to 20")
+			self.logger.warning("Unable to determine slot. Push the status to 20")
 		else:
 			try:
-				logging.debug("[tvShowSchedule] Downloader: {0}".format(self.downloader))
+				self.logger.debug("Downloader: {0}".format(self.downloader))
 				progression = self.downloader.get_progression(self['downloader_id'])
-				logging.debug("[tvShowSchedule] Get new progression: {0}".format(unicode(progression)))
+				self.logger.debug("Get new progression: {0}".format(unicode(progression)))
 				return progression
 			except:
-				logging.warning("[tvShowSchedule] Unable to retrieve progression for: {0}".format(unicode(self['downloader_id'])))
+				self.logger.warning("Unable to retrieve progression for: {0}".format(unicode(self['downloader_id'])))
 
 			# Something went wrong... Let's restart download
 			self.set(status=20)
@@ -467,7 +482,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		try:
 			t = myTvDB.myTvDB()
 		except:
-			logging.error("[tvShowSchedule] Offline mode. Update canceled")
+			self.logger.error("Offline mode. Update canceled")
 			return
 
 		self._setDownloader(downloader)
@@ -477,7 +492,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		if notificator is not None:
 			self._setNotificator(notificator)
 
-		logging.debug("[tvShowSchedule] Next status scheduled on {0} ({2}). It is {1} ({3})".format(unicode(self['nextUpdate']),unicode(now),type(self['nextUpdate']),type(now)))
+		self.logger.debug("Next status scheduled on {0} ({2}). It is {1} ({3})".format(unicode(self['nextUpdate']),unicode(now),type(self['nextUpdate']),type(now)))
 		if not self.isInfoUpdated():
 			self.updateInfo(force=True)
 
@@ -486,7 +501,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		except:
 			raise Exception(self)
 		if force or self['nextUpdate'] < now:
-			logging.debug("[tvShowSchedule] Former status: {0}".format(self['status']))
+			self.logger.debug("Former status: {0}".format(self['status']))
 			# Added
 			if self['status'] == 0:
 				# Episode identified
@@ -552,15 +567,15 @@ class tvShowSchedule(JSAG3.JSAG3):
 
 			# Download in progress
 			elif self['status'] == 30:
-				logging.debug("[tvShowSchedule] downloader_id is: {0}".format(self['downloader_id']))
+				self.logger.debug("downloader_id is: {0}".format(self['downloader_id']))
 				if self['downloader_id'] is not None:
 					# Identifing status
 					try:
-						logging.debug("[tvShowSchedule] Downloader: {0}".format(self.downloader))
+						self.logger.debug("[tvShowSchedule] Downloader: {0}".format(self.downloader))
 						status = self.downloader.get_status(self['downloader_id'])
-						logging.debug("[tvShowSchedule] Get new status: {0}".format(status))
+						self.logger.debug("[tvShowSchedule] Get new status: {0}".format(status))
 					except:
-						logging.warning("[tvShowSchedule] Unable to retrieve status for: {0}".format(unicode(self['downloader_id'])))
+						self.logger.warning("[tvShowSchedule] Unable to retrieve status for: {0}".format(unicode(self['downloader_id'])))
 						status = ''
 
 					if status != '':
@@ -579,19 +594,19 @@ class tvShowSchedule(JSAG3.JSAG3):
 						self.update(force=True)
 				else:
 					# Incorrect or missing downloader identifier. Let's watch torrent again.
-					logging.error("Unable to determine slot. Push the status to 20")
+					self.logger.error("Unable to determine slot. Push the status to 20")
 					self.set(status=20)
 					self.update(force=True)
 
 			# To be transfered
 			elif self['status'] == 35:
-				logging.debug("[tvShowSchedule] downloader_id is: {0}".format(self['downloader_id']))
+				self.logger.debug("[tvShowSchedule] downloader_id is: {0}".format(self['downloader_id']))
 				if self['downloader_id'] is not None:
 					# Identifing status
 					try:
-						logging.debug("[tvShowSchedule] Downloader: {0}".format(self.downloader))
+						self.logger.debug("[tvShowSchedule] Downloader: {0}".format(self.downloader))
 						status = self.downloader.get_status(self['downloader_id'])
-						logging.debug("[tvShowSchedule] Get new status: {0}".format(status))
+						self.logger.debug("[tvShowSchedule] Get new status: {0}".format(status))
 					except:
 						status = ''
 
@@ -631,7 +646,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		self._setTransferer(self.transferer,mandatory=True)
 		t = myTvDB.myTvDB()
 		# Transfer torrent
-		logging.debug("[tvShowSchedule] Transferer: {0}".format(self.transferer))
+		self.logger.debug("[tvShowSchedule] Transferer: {0}".format(self.transferer))
 		files = self.downloader.get_files(self['downloader_id'])
 		for myFile in files:
 			self.transferer.transfer(myFile,dstSubFolder=self.getLocalPath(self.transferer['pathPattern']),delete_after=False)
@@ -639,15 +654,15 @@ class tvShowSchedule(JSAG3.JSAG3):
 			try:
 				self.downloader.delete_torrent(self['downloader_id'])
 			except:
-				logging.error("[tvShowSchedule] Unable to delete source file {0}. Ignoring".format(myFile))
+				self.logger.error("[tvShowSchedule] Unable to delete source file {0}. Ignoring".format(myFile))
 
 		notifContent = "{0} S{1:02}E{2:02} has been downloaded.\n".format(self['info']['seriesname'],self['season'],self['episode'])
 
 		# Schedule next episode
 		tvShow = t[self['seriesid']][self['season']][self['episode']]
-		logging.debug("[tvShowSchedule] Current episode: {0}".format(unicode(tvShow)))
+		self.logger.debug("[tvShowSchedule] Current episode: {0}".format(unicode(tvShow)))
 		next = tvShow.next()
-		logging.debug("[tvShowSchedule] Next episode: {0}".format(unicode(next)))
+		self.logger.debug("[tvShowSchedule] Next episode: {0}".format(unicode(next)))
 		if next is None:
 			self._setAchieved()
 			notifContent += "Unfortunatly, for moment, it is the last episode scheduled for this TV show :("
