@@ -32,18 +32,6 @@ class Downloader(JSAG3.JSAG3):
 		if key == 'client':
 			self._setLogger()
 
-	"""def _setLogger(self):
-		if 'client' in self.keys():
-			self.loggerName = "Downloader.{0}".format(self['client'])
-		else:
-			self.loggerName = "Downloader"
-		self.logger = logging.getLogger(self.loggerName)
-		if self.verbosity is not None:
-			if isinstance(self.verbosity,int):
-				self.logger.setLevel(self.verbosity)
-			if isinstance(self.verbosity,bool) and self.verbosity:
-				self.logger.setLevel(logging.DEBUG)"""
-
 	def connect(self):
 		if self['client'] == 'transmission':
 			self._transConnect()
