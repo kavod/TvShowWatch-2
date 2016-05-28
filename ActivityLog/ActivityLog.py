@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import os, sys
 import datetime
+import time
 import sqlite3
 
 sql_table_exists = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS activity(
      newStatus INTEGER
 )
 """
+sql_select = "SELECT * FROM activity WHERE {0}"
 sql_insert_entry = """INSERT INTO activity (seriesid,datetime,oldStatus,newStatus)
     VALUES (?,?,?,?)"""
 
@@ -47,7 +49,29 @@ class ActivityLog(object):
 
     def add_entry(self,seriesid,oldStatus,newStatus,myDatetime=None):
         if myDatetime is None:
-            myDatetime = datetime.datetime.now()
+            myDatetime = time.mktime(datetime.datetime.now().timetuple())
         cursor = self.conn.cursor()
         cursor.execute(sql_insert_entry,(seriesid,myDatetime,oldStatus,newStatus,))
         self.conn.commit()
+
+    def get_entry(
+        self,
+        seriesid=None,
+        oldStatus=None,
+        newStatus=None,
+        myDatetimeFrom=None,
+        myDatetimeTo=None
+    ):
+        strSQL = []
+        strVar = ()
+        if seriesid is not None:
+            strSQL.append("seriesid=?")
+            strVar += (seriesid,)
+        if oldStatus is not None:
+            strSQL.append("oldStatus=?")
+            strVar += (oldStatus,)
+        if newStatus is not None:
+            strSQL.append("newStatus=?")
+            strVar += (newStatus,)
+        cursor = self.conn.cursor()
+        cursor.execute(sql_select.format(" AND ".join(strSQL)),strVar)

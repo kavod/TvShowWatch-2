@@ -33,3 +33,19 @@ class TestActivityLog(LogTestCase.LogTestCase):
 			newStatus = 20
 		)
 		os.remove(tmpfile)
+
+	def test_get_entry(self):
+		tmpfile = unicode(tempfile.mkstemp('.db')[1])
+		os.remove(tmpfile)
+		db = ActivityLog.ActivityLog(tmpfile)
+		db.add_entry(
+			seriesid = 123,
+			oldStatus = 10,
+			newStatus = 20
+		)
+		db.get_entry(
+			seriesid = 123,
+			oldStatus = 10,
+			newStatus = 20
+		)
+		os.remove(tmpfile)
