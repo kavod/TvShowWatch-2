@@ -36,6 +36,7 @@ class ActivityLog(object):
                 self.initDb()
         else:
             self.initDb()
+        self.conn.row_factory = dict_factory
 
     def initDb(self):
         if self.conn is not None:
@@ -53,6 +54,13 @@ class ActivityLog(object):
         cursor = self.conn.cursor()
         cursor.execute(sql_insert_entry,(seriesid,myDatetime,oldStatus,newStatus,))
         self.conn.commit()
+
+    def add_entries(self,entries):
+        if not isinstance(entries,list) or all(not isinstance(item,dict) for item in entries):
+            raise Exception("entries must be a list of dict")
+        for item in entries:
+            myDateTime = item['myDateTime'] if 'myDateTime' in item.keys() else None
+            self.add_entry(item['seriesid'],item['oldStatus'],item['newStatus'],myDateTime)
 
     def get_entry(
         self,
@@ -75,3 +83,10 @@ class ActivityLog(object):
             strVar += (newStatus,)
         cursor = self.conn.cursor()
         cursor.execute(sql_select.format(" AND ".join(strSQL)),strVar)
+        return cursor.fetchall()
+
+def dict_factory(cursor, row):
+	d = {}
+	for idx, col in enumerate(cursor.description):
+		d[col[0]] = row[idx]
+	return d
