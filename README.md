@@ -12,7 +12,7 @@ After that, TvShowWatch-2 can:
 * Watch download progression
 * Transfer completed downloads to your local storage
 * Notify you
-* Watch the next episode
+* Watch the next episode torrent
 
 ## Dependencies
 * **Python2.7**
