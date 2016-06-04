@@ -524,10 +524,37 @@ class tvShowSchedule(JSAG3.JSAG3):
 				else:
 					self._setNotYetAired(t[self['seriesid']][self['season']][self['episode']])
 
-			# Torrent watch
+			# Torrent needed
 			elif self['status'] == 20:
 				self._setTorrentSearch(searcher)
-				if len(self['keywords']) < 1:
+				if 'providers' in self.searcher.keys() and len(self.searcher['providers'])>0:
+					self.logger.debug(
+						"{0} torrent provider(s) found"
+						.format(unicode(len(self.searcher['providers']))))
+					self.set(status=22,nextUpdate=now)
+				else:
+					self.logger.debug("No torrent provider found")
+					self.set(status=21,nextUpdate=now)
+				self.update(force=True)
+
+			# Torrent required from user
+			elif self['status'] == 21:
+				if 'providers' in self.searcher.keys() and len(self.searcher['providers'])>0:
+					self.logger.debug(
+						"{0} torrent provider(s) found"
+						.format(unicode(len(self.searcher['providers']))))
+					self.set(status=22,nextUpdate=now)
+					self.update(force=True)
+				# else... just waiting
+				nextUpdate = now+datetime.timedelta(minutes=5)
+				self.set(nextUpdate=nextUpdate)
+
+			# Torrent watch from torrent provider
+			elif self['status'] == 22:
+				self._setTorrentSearch(searcher)
+				if 'providers' not in self.searcher.keys() or len(self.searcher['providers'])<1:
+					self.set(status=21,nextUpdate=now)
+				if 'keywords' not in self.keys() or len(self['keywords']) < 1:
 					# No keywords
 					keywords = ['']
 				else:

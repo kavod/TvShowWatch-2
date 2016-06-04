@@ -282,25 +282,25 @@ class TestTvShowList(unittest.TestCase):
 		myList = tvShowList.tvShowList(banner_dir=self.tmpdirBanner,tvShows=tmpfile,verbosity=DEBUG)
 
 		self.assertEqual(myList[0]['status'],0) # 321 S1E2 0 => 10
-		self.assertEqual(myList[1]['status'],0) # 123 S1E1 0 => 20
+		self.assertEqual(myList[1]['status'],0) # 123 S1E1 0 => 22
 		myList.update(downloader=self.downloader,transferer=self.transferer,searcher=self.torrentSearch,wait=True,force=True)
 		self.assertEqual(myList[0]['status'],10) # 321 S1E2 0 => 10
-		self.assertEqual(myList[1]['status'],20) # 123 S1E1 0 => 20
+		self.assertEqual(myList[1]['status'],22) # 123 S1E1 0 => 22
 
 		myList[0].set(season=1,episode=1,status=10)
 		myList[1].set(status=0)
-		self.assertEqual(myList[0]['status'],10) # 321 S1E1 10 => 20
+		self.assertEqual(myList[0]['status'],10) # 321 S1E1 10 => 22
 		self.assertEqual(myList[1]['status'],0) # 123 S1E1 0 => 30
 		myList.update(wait=True,force=True)
-		self.assertEqual(myList[0]['status'],20) # 321 S1E1 10 => 20
+		self.assertEqual(myList[0]['status'],22) # 321 S1E1 10 => 22
 		self.assertEqual(myList[1]['status'],30) # 123 S1E1 0 => 30
 
 		#myList[0].set(season=1,episode=1,status=10)
 		myList[1].set(season=1,episode=1,status=10)
-		self.assertEqual(myList[0]['status'],20) # 321 S1E1 20 => 30
+		self.assertEqual(myList[0]['status'],22) # 321 S1E1 22 => 30
 		self.assertEqual(myList[1]['status'],10) # 123 S1E1 10 => 30
 		myList.update(wait=True,force=True)
-		self.assertEqual(myList[0]['status'],30) # 321 S1E1 20 => 30
+		self.assertEqual(myList[0]['status'],30) # 321 S1E1 22 => 30
 		self.assertEqual(myList[1]['status'],30) # 123 S1E1 10 => 30
 
 		os.remove(tmpfile)

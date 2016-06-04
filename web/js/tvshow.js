@@ -1,10 +1,10 @@
 (function(){
 	var app = angular.module('appTsw.TvShow', [ 'ngAnimate', 'ui.bootstrap' ]);
-		
+
 	app.controller('TvShowController', [ '$http', '$scope', 'fileUpload', function($http,$scope,fileUpload){
-	
+
 		this.data = $scope.tvshow;
-		
+
 		this.updateEpisode = function(seriesid) {
 			var newvalue = {};
 			newvalue = {tvShowID:parseInt($scope.tvshow.seriesid)};
@@ -12,14 +12,14 @@
 			newvalue.episode = parseInt($scope.tvshow.episode);
 			this.update(newvalue);
 		};
-			
+
 		this.updatePattern = function() {
 			var newvalue = {};
 			newvalue = {tvShowID:parseInt($scope.tvshow.seriesid)};
 			newvalue.pattern = $scope.tvshow.pattern;
 			this.update(newvalue);
 		};
-		
+
 		this.addKeyword = function() {
 			var newvalue = {};
 			newvalue = {tvShowID:parseInt($scope.tvshow.seriesid)};
@@ -28,7 +28,7 @@
 			delete($scope.tvshow.newKeyword);
 			this.update(newvalue);
 		};
-		
+
 		this.deleteKeyword = function(keyword) {
 			var newvalue = {};
 			newvalue = {tvShowID:parseInt($scope.tvshow.seriesid)};
@@ -39,7 +39,7 @@
 			newvalue.keywords = $scope.tvshow.keywords;
 			this.update(newvalue);
 		};
-		
+
 		this.addEmail = function() {
 			var newvalue = {};
 			newvalue = {tvShowID:parseInt($scope.tvshow.seriesid)};
@@ -48,7 +48,7 @@
 			delete($scope.tvshow.newEmail);
 			this.update(newvalue);
 		};
-		
+
 		this.deleteEmail = function(email) {
 			var newvalue = {};
 			newvalue = {tvShowID:parseInt($scope.tvshow.seriesid)};
@@ -59,7 +59,7 @@
 			newvalue.emails = $scope.tvshow.emails;
 			this.update(newvalue);
 		};
-		
+
 		this.pushTorrent = function() {
 			var file = $scope.tvshow.myFile;
 			var uploadUrl = '/tvshowlist/pushTorrent';
@@ -68,7 +68,7 @@
 			$(".uploadFilename").val("");
 			$scope.tvshow.myFile = null;
 		};
-		
+
 		this.update = function(newvalue) {
 			$http({
 				method: 'POST',
@@ -81,7 +81,7 @@
 			  		$('#notification').scope().alert_success(data.data);
 			  	else
 			  		$('#notification').scope().alert_error(data.data);
-				
+
 			});
 		};
 	}]);
@@ -103,7 +103,7 @@
 			}
 		};
 	}]);
-	
+
 	app.controller('EmailsController', [ '$http', '$scope', function($http,$scope){
 		this.addEmail= function () {
 			if (this.form.$valid) {
@@ -111,12 +111,12 @@
 				this.form.$setPristine();
 			}
 		};
-		
+
 		this.deleteEmail = function(email) {
 			$scope.tvShowCtrl.deleteEmail(email);
 		};
 	}]);
-	
+
 	app.controller('KeywordsController', [ '$http', '$scope', function($http,$scope){
 		this.addKeyword= function () {
 			if (this.form.$valid) {
@@ -124,12 +124,12 @@
 				this.form.$setPristine();
 			}
 		};
-		
+
 		this.deleteKeyword = function(keyword) {
 			$scope.tvShowCtrl.deleteKeyword(keyword);
 		};
 	}]);
-	
+
 	app.controller('PushTorrentController', [ '$http', '$scope', function($http,$scope){
 		this.uploadFile = function(){
 			if (this.form.$valid){
@@ -138,7 +138,7 @@
 			}
 		};
 	}]);
-		
+
     app.filter('numberFixedLen', function () {
         return function (n, len) {
             var num = parseInt(n, 10);
@@ -153,13 +153,13 @@
             return num;
         };
     });
-    
+
 	app.filter('statusLabel', function() {
 		return function (status) {
 			return TSWstatus[parseInt(status)];
 		}
 	});
-	    
+
     app.directive('pattern',function(){
     	return {
     		restrict: 'E',
@@ -172,7 +172,7 @@
     		templateUrl: 'pattern.html'
     	};
     });
-	    
+
     app.directive('episode',function(){
     	return {
     		restrict: 'E',
@@ -185,7 +185,7 @@
     		templateUrl: 'episode.html'
     	};
     });
-	    
+
     app.directive('emails',function(){
     	return {
     		restrict: 'E',
@@ -198,7 +198,7 @@
     		templateUrl: 'emails.html'
     	};
     });
-	    
+
     app.directive('keywords',function(){
     	return {
     		restrict: 'E',
@@ -211,7 +211,7 @@
     		templateUrl: 'keywords.html'
     	};
     });
-	    
+
     app.directive('pushTorrent',function(){
     	return {
     		restrict: 'E',
@@ -224,14 +224,14 @@
     		templateUrl: 'pushTorrent.html'
     	};
     });
-    
+
     app.directive('fileModel', ['$parse', function ($parse) {
 		return {
 		    restrict: 'A',
 		    link: function(scope, element, attrs) {
 		        var model = $parse(attrs.fileModel);
 		        var modelSetter = model.assign;
-		        
+
 		        element.bind('change', function(){
 		            scope.$apply(function(){
 		                modelSetter(scope, element[0].files[0]);
@@ -240,7 +240,7 @@
 		    }
 		};
 	}]);
-	
+
 	/*app.directive('validFile',function(){
 	  return {
 		require:'fileModel',
@@ -255,7 +255,7 @@
 		}
 	  }
 	});*/
-    
+
     app.service('fileUpload', ['$http', function ($http) {
 		this.uploadFileToUrl = function(tvshowid, file, uploadUrl){
 		    var fd = new FormData();
@@ -273,11 +273,13 @@
 		    })
 		};
 	}]);
-    
+
     TSWstatus = {
 		0: "Added",
 		10: "Not yet aired",
-		20: "Watching torrent",
+		20: "torrent required",
+		21: "Waiting torrent push from user",
+		22: "Looking for torrent from torrent provider",
 		30: "Download in progress",
 		35: "Download achieved. To be transfered",
 		90: "Tv Show achieved",

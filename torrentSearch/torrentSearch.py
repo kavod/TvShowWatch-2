@@ -28,7 +28,10 @@ class torrentSearch(JSAG3.JSAG3):
 
 	def search(self,pattern):
 		logging.debug("[torrentSearch] Search pattern: {0}.".format(unicode(pattern)))
-		global_keywords = self.data['keywords']
+		if 'providers' not in self.data.keys() or len(self.data['providers'])<1:
+			logging.error("[torrentSearch] No torrent provider setup")
+			return None
+		global_keywords = self.data['keywords'] if 'keywords' in self.data.keys() else []
 		if len(global_keywords)<1:
 			global_keywords=['']
 		if pattern is None or unicode(pattern) == "":
