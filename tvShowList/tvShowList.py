@@ -15,6 +15,7 @@ import Downloader
 import Notificator
 import Transferer
 import torrentSearch
+import ActivityLog
 import tvShowSchedule
 
 class tvShowList(list):
@@ -64,6 +65,7 @@ class tvShowList(list):
 		self.transferer=None
 		self.searcher=None
 		self.notificator=None
+		self.activitylog=None
 
 	# Check if filename is defined
 	def checkCompleted(self):
@@ -250,7 +252,12 @@ class tvShowList(list):
 			raise TypeError("parameter is not torrentSearch instance")
 		self.searcher=searcher
 
-	def update(self,downloader=None,notificator=None,searcher=None,transferer=None,force=False,wait=False):
+	def _setActivityLog(self,activitylog):
+		if not isinstance(activitylog,ActivityLog.ActivityLog):
+			raise TypeError("parameter is not ActivityLog instance")
+		self.activitylog=activitylog
+
+	def update(self,downloader=None,notificator=None,searcher=None,transferer=None,activitylog=None,force=False,wait=False):
 		if downloader is not None:
 			self._setDownloader(downloader)
 		if not isinstance(self.downloader,Downloader.Downloader):
@@ -258,6 +265,9 @@ class tvShowList(list):
 
 		if notificator is not None:
 			self._setNotificator(notificator)
+
+		if activitylog is not None:
+			self._setActivityLog(activitylog)
 
 		if searcher is not None:
 			self._setTorrentSearch(searcher)
@@ -283,6 +293,8 @@ class tvShowList(list):
 				tvShow._setTransferer(self.transferer)
 			if tvShow.notificator is None:
 				tvShow._setNotificator(self.notificator)
+			if tvShow.activitylog is None:
+				tvShow._setActivityLog(self.activitylog)
 			if force:
 				now = datetime.datetime.now(tzlocal.get_localzone())
 				tvShow.set(nextUpdate=now)

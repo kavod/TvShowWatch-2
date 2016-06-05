@@ -16,6 +16,7 @@ import Downloader
 import torrentSearch
 import Transferer
 import Notificator
+import ActivityLog
 import JSAG3
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -100,6 +101,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		self.notificator = None
 		self.transferer = None
 		self.searcher = None
+		self.activitylog = None
 		self.set(autoComplete=autoComplete)
 		self.logger.info("Creation of tvShowSchedule (seriesid: {0})".format(unicode(seriesid)))
 
@@ -140,6 +142,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 					raise Exception("Incorrect status: {0}".format(unicode(status).encode('utf8')))
 			else:
 				raise ValueError("Status must be an integer, not {0}".format(type(status)))
+			oldStatus = self['status']
 			self['status'] = status
 
 		# Season/Episode
@@ -162,6 +165,17 @@ class tvShowSchedule(JSAG3.JSAG3):
 					self['status'] = 0
 			else:
 				raise ValueError("Season & Episode must be positive integers. Got: {0} and {1}".format(type(season),type(episode)))
+
+		# Add entry in activityLog
+		if self.activitylog is not None and status is not None:
+			self.activitylog.add_entry(
+				self.seriesid,
+				self['season'],
+				self['episode'],
+				oldStatus,
+				self['status'],
+				"info"
+			)
 
 		# NextUpdate
 		if nextUpdate is not None:
@@ -411,10 +425,13 @@ class tvShowSchedule(JSAG3.JSAG3):
 		if mandatory and not isinstance(self.downloader,Downloader.Downloader):
 			raise Exception("No downloader provided")
 
-	def _setNotificator(self,notificator):
-		if not isinstance(notificator,Notificator.Notificator) and notificator is not None:
-			raise TypeError("parameter is not Notificator instance")
-		self.notificator=notificator
+	def _setNotificator(self,notificator,mandatory=False):
+		if notificator is not None:
+			if not isinstance(notificator,Notificator.Notificator):
+				raise TypeError("parameter is not Notificator instance")
+			self.notificator=notificator
+		if mandatory and not isinstance(notificator,Notificator.Notificator):
+			raise Exception("No notificator provided")
 
 	def _setTransferer(self,transferer,mandatory=True):
 		if transferer is not None:
@@ -431,6 +448,14 @@ class tvShowSchedule(JSAG3.JSAG3):
 			self.searcher = searcher
 		if mandatory and not isinstance(self.searcher,torrentSearch.torrentSearch):
 			raise Exception("No torrentSearch provided")
+
+	def _setActivityLog(self,activitylog,mandatory=False):
+		if activitylog is not None:
+			if not isinstance(activitylog,ActivityLog.ActivityLog):
+				raise TypeError("parameter is not ActivityLog instance")
+			self.activitylog=activitylog
+		if mandatory and not isinstance(self.activitylog,ActivityLog.ActivityLog):
+			raise Exception("No ActivityLog provided")
 
 	def _setAchieved(self):
 		nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(days=30)
@@ -465,7 +490,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			self.set(status=20)
 
 
-	def update(self,downloader=None,searcher=None,transferer=None,notificator=None,force=False):
+	def update(self,downloader=None,searcher=None,transferer=None,notificator=None,activitylog=None,force=False):
 		now = datetime.datetime.now(tzlocal.get_localzone())
 		try:
 			t = myTvDB.myTvDB()
@@ -476,9 +501,8 @@ class tvShowSchedule(JSAG3.JSAG3):
 		self._setDownloader(downloader)
 		self._setTorrentSearch(searcher,mandatory=False)
 		self._setTransferer(transferer,mandatory=False)
-
-		if notificator is not None:
-			self._setNotificator(notificator)
+		self._setNotificator(notificator,mandatory=False)
+		self._setActivityLog(activitylog,mandatory=False)
 
 		self.logger.debug("Next status scheduled on {0} ({2}). It is {1} ({3})".format(unicode(self['nextUpdate']),unicode(now),type(self['nextUpdate']),type(now)))
 		if not self.isInfoUpdated():
@@ -644,6 +668,25 @@ class tvShowSchedule(JSAG3.JSAG3):
 					self.set(status=20)
 					self.update(force=True)
 
+			# Download completed
+			elif self['status'] == 39:
+				notifContent = "{0} S{1:02}E{2:02} has been downloaded.\n".format(self['info']['seriesname'],self['season'],self['episode'])
+
+				# Schedule next episode
+				tvShow = t[self['seriesid']][self['season']][self['episode']]
+				self.logger.debug("[tvShowSchedule] Current episode: {0}".format(unicode(tvShow)))
+				next = tvShow.next()
+				self.logger.debug("[tvShowSchedule] Next episode: {0}".format(unicode(next)))
+				if next is None:
+					self._setAchieved()
+					notifContent += "Unfortunatly, for moment, it is the last episode scheduled for this TV show :("
+				else:
+					self.set(season=int(next['seasonnumber']),episode=int(next['episodenumber']),status=0)
+					self.update(force=True)
+					notifContent += "The next episode (S{0:02}E{1:02}) is expected on {2}".format(self['season'],self['episode'],self['info']['firstaired'])
+				if self.notificator is not None:
+					self.notificator.send("Download completed!",notifContent,self['emails'])
+
 			# Broadcast achieved
 			elif self['status'] == 90:
 				tvShow = t[self['seriesid']]
@@ -670,23 +713,8 @@ class tvShowSchedule(JSAG3.JSAG3):
 				self.downloader.delete_torrent(self['downloader_id'])
 			except:
 				self.logger.error("[tvShowSchedule] Unable to delete source file {0}. Ignoring".format(myFile))
-
-		notifContent = "{0} S{1:02}E{2:02} has been downloaded.\n".format(self['info']['seriesname'],self['season'],self['episode'])
-
-		# Schedule next episode
-		tvShow = t[self['seriesid']][self['season']][self['episode']]
-		self.logger.debug("[tvShowSchedule] Current episode: {0}".format(unicode(tvShow)))
-		next = tvShow.next()
-		self.logger.debug("[tvShowSchedule] Next episode: {0}".format(unicode(next)))
-		if next is None:
-			self._setAchieved()
-			notifContent += "Unfortunatly, for moment, it is the last episode scheduled for this TV show :("
-		else:
-			self.set(season=int(next['seasonnumber']),episode=int(next['episodenumber']),status=0)
-			self.update(force=True)
-			notifContent += "The next episode (S{0:02}E{1:02}) is expected on {2}".format(self['season'],self['episode'],self['info']['firstaired'])
-		if self.notificator is not None:
-			self.notificator.send("Download completed!",notifContent,self['emails'])
+		self.set(status=39)
+		self.update(force=True)
 
 	def pushTorrent(self,filename,downloader=None,delTorrent=True):
 		if self['season'] * self['episode'] < 1:

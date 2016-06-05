@@ -24,6 +24,12 @@ CREATE TABLE IF NOT EXISTS activity(
 sql_select = "SELECT * FROM activity WHERE {0}"
 sql_insert_entry = """INSERT INTO activity (seriesid,datetime,season,episode,oldStatus,newStatus,type)
     VALUES (?,?,?,?,?,?,?)"""
+sql_last_downloads = """
+    SELECT *
+    FROM activity
+    WHERE newstatus = 39
+    ORDER BY datetime DESC
+    LIMIT 10"""
 
 class ActivityLog(object):
     def __init__(self,filename,verbosity=None):
@@ -33,7 +39,7 @@ class ActivityLog(object):
         self._setLogger()
         if os.path.isfile(self.filename):
             try:
-                self.conn = sqlite3.connect(self.filename)
+                self.conn = sqlite3.connect(self.filename,check_same_thread=False)
                 cursor = self.conn.cursor()
                 self.logger.info("SQL: {0} with {1}".format(sql_table_exists,("activity",)))
                 cursor.execute(sql_table_exists,("activity",))
@@ -64,7 +70,7 @@ class ActivityLog(object):
             self.conn.close()
         if os.path.isfile(self.filename):
             os.remove(self.filename)
-        self.conn = sqlite3.connect(self.filename)
+        self.conn = sqlite3.connect(self.filename,check_same_thread=False)
         cursor = self.conn.cursor()
         self.logger.info("SQL: {0}".format(sql_create_activity_table))
         cursor.execute(sql_create_activity_table)
@@ -78,7 +84,7 @@ class ActivityLog(object):
             sql_insert_entry,
             unicode((seriesid,myDatetime,season,episode,oldStatus,newStatus,type,))
         ))
-        cursor.execute(sql_insert_entry,(seriesid,myDatetime,season,episode,oldStatus,newStatus,type,))
+        cursor.execute(sql_insert_entry,(unicode(seriesid),myDatetime,season,episode,oldStatus,newStatus,type,))
         self.conn.commit()
 
     def add_entries(self,entries):
@@ -133,6 +139,14 @@ class ActivityLog(object):
             unicode(strVar)
         ))
         cursor.execute(sql_select.format(" AND ".join(strSQL)),strVar)
+        return cursor.fetchall()
+
+    def get_last_downloads(self):
+        cursor = self.conn.cursor()
+        self.logger.info("SQL: {0}".format(
+            sql_last_downloads
+        ))
+        cursor.execute(sql_last_downloads)
         return cursor.fetchall()
 
 def dict_factory(cursor, row):

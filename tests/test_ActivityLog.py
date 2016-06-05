@@ -73,10 +73,35 @@ class TestActivityLog(LogTestCase.LogTestCase):
 		)
 		os.remove(tmpfile)
 
+	def test_add_None_entry(self):
+		tmpfile = unicode(tempfile.mkstemp('.db')[1])
+		os.remove(tmpfile)
+		db = ActivityLog.ActivityLog(tmpfile,verbosity=DEBUG)
+		db.add_entry(
+			seriesid = 123,
+			season = 2,
+			episode = 7,
+			oldStatus = None,
+			newStatus = 20,
+			type = "info"
+		)
+		l=db.get_entry(seriesid = 123)
+		self.assertEquals(len(l),1)
+		self.assertIsNone(l[0]['oldStatus'])
+		os.remove(tmpfile)
+
 	def test_get_entry(self):
 		tmpfile = unicode(tempfile.mkstemp('.db')[1])
 		os.remove(tmpfile)
 		shutil.copyfile(self.filename1,tmpfile)
 		db = ActivityLog.ActivityLog(tmpfile,verbosity=DEBUG)
-		self.assertEquals(len(db.get_entry(seriesid = 123)),4)
+		self.assertEquals(len(db.get_entry(seriesid = 123)),8)
+		os.remove(tmpfile)
+
+	def test_last_downloads(self):
+		tmpfile = unicode(tempfile.mkstemp('.db')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(self.filename1,tmpfile)
+		db = ActivityLog.ActivityLog(tmpfile,verbosity=DEBUG)
+		self.assertEquals(len(db.get_last_downloads()),2)
 		os.remove(tmpfile)

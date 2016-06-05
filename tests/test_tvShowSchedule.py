@@ -18,6 +18,7 @@ import tvShowSchedule
 import Downloader
 import torrentSearch
 import Transferer
+import ActivityLog
 import shutil
 
 httpretty.HTTPretty.allow_net_connect = False
@@ -45,6 +46,7 @@ httpretty_urls = [
 DEBUG=False
 DEBUG_TORRENT_SEARCH=DEBUG
 DEBUG_TVSHOWSCHEDULE=DEBUG
+DEBUG_ACTIVITYLOG=DEBUG
 
 class TestTvShowSchedule(LogTestCase.LogTestCase):
 	@httpretty.activate
@@ -204,6 +206,9 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 	def test_update_0_to_10(self):
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		os.remove(tmpfile)
+		activilylog = ActivityLog.ActivityLog(tmpfile,verbosity=DEBUG_ACTIVITYLOG)
 
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
 		tvShow.set(
@@ -214,8 +219,29 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			status=0
 		)
 		self.assertEqual(tvShow['status'],0)
-		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		tvShow.update(
+			downloader=self.downloader,
+			transferer=self.transferer,
+			searcher=self.ts,
+			activitylog=activilylog,
+			force=True
+		)
 		self.assertEqual(tvShow['status'],10)
+		log = activilylog.get_entry(seriesid=321)
+		del(log[0]['datetime'])
+		self.assertEqual(
+			log,
+			[{
+				'seriesid': 321,
+				'episode': 2,
+				'season': 1,
+				'oldStatus': 0,
+				'newStatus': 10,
+				'type': u'info',
+				'id': 1
+			}]
+		)
+		os.remove(tmpfile)
 
 	@httpretty.activate
 	def test_update_0_to_22(self): # Added to waiting for torrent availability
@@ -228,6 +254,10 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
                             ])
 
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		os.remove(tmpfile)
+		activilylog = ActivityLog.ActivityLog(tmpfile,verbosity=DEBUG_ACTIVITYLOG)
+
 		self.downloader.loadConfig(self.configFileTransmission)
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
 		tvShow.set(
@@ -238,8 +268,38 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			status=0
 		)
 		self.assertEqual(tvShow['status'],0)
-		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		tvShow.update(
+			downloader=self.downloader,
+			transferer=self.transferer,
+			searcher=self.ts,
+			activitylog=activilylog,
+			force=True
+		)
 		self.assertEqual(tvShow['status'],22)
+		log = activilylog.get_entry(seriesid=123)
+		del(log[0]['datetime'])
+		del(log[1]['datetime'])
+		self.assertEqual(
+			log,
+			[{
+				'seriesid': 123,
+				'episode': 1,
+				'season': 1,
+				'oldStatus': 0,
+				'newStatus': 20,
+				'type': u'info',
+				'id': 1
+			},{
+				'seriesid': 123,
+				'episode': 1,
+				'season': 1,
+				'oldStatus': 20,
+				'newStatus': 22,
+				'type': u'info',
+				'id': 2
+			}]
+		)
+		os.remove(tmpfile)
 
 	@httpretty.activate
 	def test_update_0_to_30(self): # Added to Download in progress
@@ -254,6 +314,10 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
                             ])
 		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		os.remove(tmpfile)
+		activilylog = ActivityLog.ActivityLog(tmpfile,verbosity=DEBUG_ACTIVITYLOG)
+
 		self.downloader.loadConfig(self.configFileTransmission)
 
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
@@ -265,8 +329,47 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			status=0
 		)
 		self.assertEqual(tvShow['status'],0)
-		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		tvShow.update(
+			downloader=self.downloader,
+			transferer=self.transferer,
+			searcher=self.ts,
+			activitylog=activilylog,
+			force=True
+		)
 		self.assertEqual(tvShow['status'],30)
+		log = activilylog.get_entry(seriesid=123)
+		del(log[0]['datetime'])
+		del(log[1]['datetime'])
+		del(log[2]['datetime'])
+		self.assertEqual(
+			log,
+			[{
+				'seriesid': 123,
+				'episode': 1,
+				'season': 1,
+				'oldStatus': 0,
+				'newStatus': 20,
+				'type': u'info',
+				'id': 1
+			},{
+				'seriesid': 123,
+				'episode': 1,
+				'season': 1,
+				'oldStatus': 20,
+				'newStatus': 22,
+				'type': u'info',
+				'id': 2
+			},{
+				'seriesid': 123,
+				'episode': 1,
+				'season': 1,
+				'oldStatus': 22,
+				'newStatus': 30,
+				'type': u'info',
+				'id': 3
+			}]
+		)
+		os.remove(tmpfile)
 
 	@httpretty.activate
 	def test_update_0_to_90(self): # Added to TvShow Achieved
@@ -502,6 +605,9 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
                             ])
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		os.remove(tmpfile)
+		activitylog = ActivityLog.ActivityLog(tmpfile,verbosity=DEBUG_ACTIVITYLOG)
 
 		os.makedirs(self.tmpdir1+"/foo")
 		for myFile in files:
@@ -523,12 +629,76 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		for myFile in files:
 			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
 			self.assertFalse(os.path.isfile(self.tmpdir2+"/"+myFile))
-		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		tvShow.update(
+			downloader=self.downloader,
+			transferer=self.transferer,
+			searcher=self.ts,
+			activitylog=activitylog,
+			force=True
+		)
 		for myFile in files:
 			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
 			os.remove(self.tmpdir1+"/"+myFile)
 			self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/season 1/episode 1/"+myFile))
 		self.assertEqual(tvShow['status'],10)
+
+		log = activitylog.get_entry(seriesid=321)
+		del(log[0]['datetime'])
+		del(log[1]['datetime'])
+		del(log[2]['datetime'])
+		del(log[3]['datetime'])
+		self.assertEqual(
+			log,
+			[{
+				'seriesid': 321,
+				'episode': 1,
+				'season': 1,
+				'oldStatus': 30,
+				'newStatus': 35,
+				'type': u'info',
+				'id': 1
+			},{
+				'seriesid': 321,
+				'episode': 1,
+				'season': 1,
+				'oldStatus': 35,
+				'newStatus': 39,
+				'type': u'info',
+				'id': 2
+			},{
+				'seriesid': 321,
+				'episode': 2,
+				'season': 1,
+				'oldStatus': 39,
+				'newStatus': 0,
+				'type': u'info',
+				'id': 3
+			},{
+				'seriesid': 321,
+				'episode': 2,
+				'season': 1,
+				'oldStatus': 0,
+				'newStatus': 10,
+				'type': u'info',
+				'id': 4
+			}]
+		)
+
+		log = activitylog.get_last_downloads()
+		del(log[0]['datetime'])
+		self.assertEqual(
+			log,
+			[{
+				'seriesid': 321,
+				'episode': 1,
+				'season': 1,
+				'oldStatus': 35,
+				'newStatus': 39,
+				'type': u'info',
+				'id': 2
+			}]
+		)
+		os.remove(tmpfile)
 
 	@httpretty.activate
 	def test_update_30_to_10_with_delete_after(self): # Download in progress to Added

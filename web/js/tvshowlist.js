@@ -45,6 +45,11 @@
 		};
 		update_tvShowList = this.update_tvShowList;
 
+		this.update_home = function(){
+			$('#lastdownloads').scope().updateLog();
+		}
+		update_home = this.update_home;
+
 		this.check_update = function(event){
 			if (event.lastEventId == 'server-time')
 			{
@@ -57,8 +62,9 @@
 					console.log([serie_time,event.data])
 					serie_time = event.data;
 					update_tvShowList();
+					update_home();
 				}
-			} else {
+			} else if (event.lastEventId == 'progression') {
 				var data = JSON.parse(event.data);
 				for (seriesid in data)
 				{

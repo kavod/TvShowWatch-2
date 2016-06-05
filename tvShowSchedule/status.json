@@ -6,6 +6,7 @@
 	"22": "Looking for torrent from torrent provider",
 	"30": "Download in progress",
 	"35": "Download achieved. To be transfered",
+	"39": "Download completed",
 	"90": "Tv Show achieved",
 	"99": "Error"
 }

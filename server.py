@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import sys
 import os
+import hashlib
 import json
 import jsonschema
 import cherrypy
@@ -20,6 +21,7 @@ import Transferer
 import Notificator
 import tvShowList
 import myTvDB
+import ActivityLog
 import utils.TSWdirectories
 
 from cherrypy.process.plugins import Daemonizer
@@ -29,6 +31,13 @@ curPath = os.path.dirname(os.path.realpath(__file__))
 directories = utils.TSWdirectories(curPath+'/utils/directory.conf')
 tmpPath = os.path.abspath(directories['tmp_path'])
 PIDFile(cherrypy.engine, tmpPath + '/TSW2.PID').subscribe()
+
+def md5sum(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
 class Root(object):
 	pass
@@ -52,6 +61,23 @@ class LiveSearch(object):
 			return self.result
 		else:
 			return self.index
+
+class serv_ActivityLog(object):
+    def __init__(self,activitylog):
+    	self.activitylog = activitylog
+
+    @cherrypy.expose
+    def index(self):
+    	return ''
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def lastdownloads(self):
+        t = myTvDB.myTvDB()
+        last_downloads = self.activitylog.get_last_downloads()
+        for dl in last_downloads:
+            dl['seriesname'] = t[dl['seriesid']].data['seriesname']
+        return last_downloads
 
 class serv_TvShowList(object):
 	def __init__(self,tvshowlist,downloader):
@@ -270,16 +296,17 @@ class streamGetSeries(object):
 		cherrypy.response.headers['Connection'] = 'keep-alive'
 
 		def content():
-			yield "retry: 5000\r\n"
+			yield "retry: 10000\r\n"
 			while True:
 				for tvshow in self.tvshowlist:
 					data = 'id: progression\r\ndata: {\r\n'
 					data += 'data: "' + unicode(tvshow.seriesid) + '":' + unicode(tvshow.get_progression(self.downloader)) + "\r\n"
 					data += 'data: }\n\n'
 					yield data
-				data = "id: server-time\r\ndata: " + time.ctime(os.path.getmtime(confPath+"/series.json")) + "\n\n"
+				#data = "id: server-time\r\ndata: " + time.ctime(os.path.getmtime(confPath+"/series.json")) + "\n\n"
+				data = "id: server-time\r\ndata: " + md5sum(confPath+"/series.json") + "\n\n"
 				yield data
-				time.sleep(5)
+				time.sleep(10)
 
 		return content()
 	index._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'}
@@ -321,11 +348,16 @@ def main():
 	transferer = Transferer.Transferer("transferer",dataFile=confPath+"/config.json")
 	tvshowlist = tvShowList.tvShowList(id="tvShowList",tvShows=confPath+"/series.json",banner_dir=webPath+"/static",verbosity=False)
 	notificator = Notificator.Notificator(id="notificator",dataFile=confPath+"/config.json",verbosity=False)
+	activitylog = ActivityLog.ActivityLog(confPath+"/activityLog.db",verbosity=False)
 	root = Root()
 	root.update = Root()
 	root.livesearch = LiveSearch()
 	root.tvshowlist = serv_TvShowList(tvshowlist=tvshowlist,downloader=downloader)
-	root.streamGetSeries = streamGetSeries(tvshowlist=tvshowlist,downloader=downloader)
+	root.activitylog = serv_ActivityLog(activitylog)
+	root.streamGetSeries = streamGetSeries(
+		tvshowlist=tvshowlist,
+		downloader=downloader
+	)
 
 	cherrypy.config["tools.encode.on"] = True
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
@@ -350,7 +382,14 @@ def main():
 	root.update.notificator = updateData(notificator)
 
 	def backgoundProcess(tvshowlist,downloader,transferer,searcher,force):
-		tvshowlist.update(downloader=downloader,transferer=transferer,searcher=searcher,notificator=notificator,force=force)
+		tvshowlist.update(
+			downloader=downloader,
+			transferer=transferer,
+			searcher=searcher,
+			notificator=notificator,
+			activitylog=activitylog,
+			force=force
+		)
 
 	wd = cherrypy.process.plugins.BackgroundTask(
 			interval=10,

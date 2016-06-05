@@ -13,7 +13,16 @@
 				<li ng-class="{ active:tabs.isSelected('tvShows') }"><a href ng-click="tabs.selectTab('tvShows')">TvShows</a></li>
 				<li ng-class="{ active:tabs.isSelected('conf') }"><a href ng-click="tabs.selectTab('conf')">Configuration</a></li>
 			</ul>
-			<div ng-show="tabs.isSelected('home')">Home</div>
+			<div ng-show="tabs.isSelected('home')" id="home">
+				<div id="lastdownloads" ng-controller="LastDownloadsController as LastDlCtrl">
+					<h3>Last downloads completed</h3>
+					<dl class="dl-horizontal">
+						<dt ng-repeat-start="log in LastDlCtrl.logs">{{log.datetime*1000 | date:'short'}}</dt>
+						<dd ng-repeat-end>{{log.seriesname}} S{{log.season | numberFixedLen:2}}E{{log.episode | numberFixedLen:2}}</dd>
+						<li ng-hide="LastDlCtrl.logs.length">No dowload for moment</li>
+					</dl>
+				</div>
+			</div>
 			<div ng-show="tabs.isSelected('tvShows')" ng-controller="TvShowListController as tvshowlist">
 				<form name="newTvShowCtrl.form" class="form-inline" ng-controller="NewTvShowController as newTvShowCtrl" ng-submit="newTvShowCtrl.addTvShow(tvshowlist.list)" novalidate>
 					<!--<pre>Model: {{newTvShowCtrl.tvshow | json}}</pre>-->
@@ -50,8 +59,9 @@
         <script type="text/javascript" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
         <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
         <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.js"></script>
-		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.min.js"></script>
-		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-animate.min.js"></script>
+				<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.min.js"></script>
+				<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-animate.min.js"></script>
+				<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-cookies.js"></script>
         <script type="text/javascript" src="//angular-ui.github.io/bootstrap/ui-bootstrap-tpls-1.3.2.js"></script>
         <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/pnotify/3.0.0/pnotify.min.js"></script>
         <script type="text/javascript" src="//code.cloudcms.com/alpaca/1.5.17/bootstrap/alpaca.min.js"></script>
