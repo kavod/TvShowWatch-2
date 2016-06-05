@@ -33,11 +33,11 @@ tmpPath = os.path.abspath(directories['tmp_path'])
 PIDFile(cherrypy.engine, tmpPath + '/TSW2.PID').subscribe()
 
 def md5sum(fname):
-    hash_md5 = hashlib.md5()
-    with open(fname, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
+	hash_md5 = hashlib.md5()
+	with open(fname, "rb") as f:
+		for chunk in iter(lambda: f.read(4096), b""):
+			hash_md5.update(chunk)
+	return hash_md5.hexdigest()
 
 class Root(object):
 	pass
@@ -63,21 +63,21 @@ class LiveSearch(object):
 			return self.index
 
 class serv_ActivityLog(object):
-    def __init__(self,activitylog):
-    	self.activitylog = activitylog
+	def __init__(self,activitylog):
+		self.activitylog = activitylog
 
-    @cherrypy.expose
-    def index(self):
-    	return ''
+	@cherrypy.expose
+	def index(self):
+		return ''
 
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    def lastdownloads(self):
-        t = myTvDB.myTvDB()
-        last_downloads = self.activitylog.get_last_downloads()
-        for dl in last_downloads:
-            dl['seriesname'] = t[dl['seriesid']].data['seriesname']
-        return last_downloads
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
+	def lastdownloads(self):
+		t = myTvDB.myTvDB()
+		last_downloads = self.activitylog.get_last_downloads()
+		for dl in last_downloads:
+			dl['seriesname'] = t[dl['seriesid']].data['seriesname']
+		return last_downloads
 
 class serv_TvShowList(object):
 	def __init__(self,tvshowlist,downloader):
@@ -128,6 +128,13 @@ class serv_TvShowList(object):
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
+	def forceUpdate(self):
+		for tvShow in self.tvshowlist:
+			self.update(tvShowID=tvShow['seriesid'],force=True)
+		return {"status":200,"error":"All TvShows will be updated now"}
+
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
 	def update(self, **kwargs):
 		if 'tvShowID' in kwargs.keys():
 			tvShowID = int(kwargs['tvShowID'])
@@ -150,7 +157,6 @@ class serv_TvShowList(object):
 					t[tvShowID][season][episode]
 				except:
 					return {"status":400,"error":"No episode S{1:02}E{2:02} for TV show {0}".format(t[tvShowID].data['seriesname'],unicode(season),unicode(episode))}
-				nextUpdate = datetime.datetime.now(tzlocal.get_localzone())
 				status = 0
 			if 'pattern' in kwargs.keys():
 				pattern = unicode(kwargs['pattern'])
@@ -159,11 +165,15 @@ class serv_TvShowList(object):
 					emails = [kwargs['emails[]']]
 				else:
 					emails = kwargs['emails[]']
+
 			if 'keywords[]' in kwargs.keys():
 				if isinstance(kwargs['keywords[]'],basestring):
 					keywords = [kwargs['keywords[]']]
 				else:
 					keywords = kwargs['keywords[]']
+
+			if any(item in ['season','episode','keywords[]','pattern','force'] for item in kwargs.keys()):
+				nextUpdate = datetime.datetime.now(tzlocal.get_localzone())
 			tvShow = self.tvshowlist.getTvShow(tvShowID)
 			if tvShow is None:
 				raise Exception("{0} not found in {1}".format(tvShowID,list(self.tvshowlist)))
@@ -243,7 +253,6 @@ class serv_TvShowList(object):
 
 	@cherrypy.expose
 	def progression(self,tvShowID=-1):
-
 		tvShowID = int(tvShowID)
 		tvShow = self.tvshowlist.getTvShow(tvShowID)
 		if tvShow is None:
@@ -336,11 +345,11 @@ def main():
 			"tools.staticfile.on": True,
 			"tools.staticfile.filename": webPath + "/tvShowSchedule/status.json"
 		},
-        '/favicon.ico'.encode('utf8'):
-        {
-            'tools.staticfile.on': True,
-            'tools.staticfile.filename': webPath + '/static/favicon.ico'
-        }
+		'/favicon.ico'.encode('utf8'):
+		{
+			'tools.staticfile.on': True,
+			'tools.staticfile.filename': webPath + '/static/favicon.ico'
+		}
 	}
 
 	torrentsearch = torrentSearch.torrentSearch("torrentSearch",dataFile=confPath+"/config.json",verbosity=False)
@@ -408,8 +417,8 @@ def main():
 
 # By jgbarah from http://stackoverflow.com/questions/11875770/how-to-overcome-datetime-datetime-not-json-serializable-in-python
 def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-    if isinstance(obj, datetime.datetime):
-        serial = obj.isoformat()
-        return serial
-    raise TypeError ("Type {0} not serializable".format(type(obj)))
+	"""JSON serializer for objects not serializable by default json code"""
+	if isinstance(obj, datetime.datetime):
+		serial = obj.isoformat()
+		return serial
+	raise TypeError ("Type {0} not serializable".format(type(obj)))

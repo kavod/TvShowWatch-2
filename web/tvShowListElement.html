@@ -20,4 +20,10 @@
 	<emails tvshow="tvshow" tvshowctrl="tvShowCtrl"></emails>
 	<keywords tvshow="tvshow" tvshowctrl="tvShowCtrl"></keywords>
 	<push-torrent tvshow="tvshow" tvshowctrl="tvShowCtrl"></push-torrent>
+  <div>
+    <label>Special actions</label><br />
+    <button type="button" class="btn btn-default" ng-click="tvShowCtrl.forceUpdate()">
+      <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span> Force update
+    </button>
+  </div>
 </uib-accordion-group>

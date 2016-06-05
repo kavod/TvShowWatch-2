@@ -24,19 +24,30 @@
 				</div>
 			</div>
 			<div ng-show="tabs.isSelected('tvShows')" ng-controller="TvShowListController as tvshowlist">
-				<form name="newTvShowCtrl.form" class="form-inline" ng-controller="NewTvShowController as newTvShowCtrl" ng-submit="newTvShowCtrl.addTvShow(tvshowlist.list)" novalidate>
-					<!--<pre>Model: {{newTvShowCtrl.tvshow | json}}</pre>-->
-					<label for="search">TV show title</label>
-					<div class="input-group" ng-controller="TypeaheadController as TypeaheadCtrl">
-						<input type="search" class="form-control"  results="5" autocomplete="off" placeholder="Search and add your favorite TV show!"  uib-typeahead="tvShow as tvShow.title for tvShow in getLivesearch($viewValue)" ng-model="newTvShowCtrl.tvshow" typeahead-min-length="2" typeahead-template-url="livesearch.html" required />
-						<span class="input-group-btn">
-							<button class="btn btn-default" type="submit">Add!</button>
-						</span>
+				<div class="row">
+					<div class="col-md-8 col-lg-8 col-sm-8">
+						<form name="newTvShowCtrl.form" class="form-inline" ng-controller="NewTvShowController as newTvShowCtrl" ng-submit="newTvShowCtrl.addTvShow(tvshowlist.list)" novalidate>
+							<!--<pre>Model: {{newTvShowCtrl.tvshow | json}}</pre>-->
+							<label for="search">TV show title</label>
+							<div class="input-group" ng-controller="TypeaheadController as TypeaheadCtrl">
+								<input type="search" class="form-control"  results="5" autocomplete="off" placeholder="Search and add your favorite TV show!"  uib-typeahead="tvShow as tvShow.title for tvShow in getLivesearch($viewValue)" ng-model="newTvShowCtrl.tvshow" typeahead-min-length="2" typeahead-template-url="livesearch.html" required />
+								<span class="input-group-btn">
+									<button class="btn btn-default" type="submit">Add!</button>
+								</span>
+							</div>
+						</form>
 					</div>
-				</form>	<br />
-				<uib-accordion>
-					<tvshow ng-repeat="tvshow in tvshowlist.list | orderBy:['status','info.seriesname']" tvshow="tvshow" tvshowlist="tvshowlist"></tvshow>
-				</uib-accordion>
+					<div class="col-md-4 col-lg-4 col-sm-4 text-right">
+						<button type="button" class="btn btn-default" ng-click="tvshowlist.forceUpdate()" uib-popover="Force all TV Shows to update status" popover-trigger="mouseenter" popover-placement="bottom-left">
+				      <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span> Force update
+				    </button>
+					</div>
+				</div><br />
+				<div class="row">
+					<uib-accordion>
+						<tvshow ng-repeat="tvshow in tvshowlist.list | orderBy:['status','info.seriesname']" tvshow="tvshow" tvshowlist="tvshowlist"></tvshow>
+					</uib-accordion>
+				</div>
 			</div>
 			<div ng-show="tabs.isSelected('conf')">
 				<div class="row" ng-controller="PillsController as pills">

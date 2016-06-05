@@ -107,8 +107,22 @@
 				});
 			}
 		};
+		this.forceUpdate = function() {
+			$http({
+				method: 'POST',
+				url: '/tvshowlist/forceUpdate',
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			})
+			.then(function(data) {
+			  	if (data.data.status == 200)
+			  		$('#notification').scope().alert_success(data.data);
+			  	else
+			  		$('#notification').scope().alert_error(data.data);
 
-		this.pushTorrent = function(seriesid) {
+			});
+		};
+
+		/*this.pushTorrent = function(seriesid) {
 			var file = this.myFile;
 		    var uploadUrl = "/fileUpload";
 			return;
@@ -137,8 +151,7 @@
 			  		$('#notification').scope().alert_error(data.data);
 
 			});
-		};
-
+		};*/
 
 	}]);
 

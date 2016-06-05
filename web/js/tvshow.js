@@ -84,6 +84,21 @@
 
 			});
 		};
+		this.forceUpdate = function() {
+			$http({
+				method: 'POST',
+				url: '/tvshowlist/update',
+				data: $.param({tvShowID:parseInt($scope.tvshow.seriesid),force:true}),
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			})
+			.then(function(data) {
+			  	if (data.data.status == 200)
+			  		$('#notification').scope().alert_success(data.data);
+			  	else
+			  		$('#notification').scope().alert_error(data.data);
+
+			});
+		};
 	}]);
 
 	app.controller('EpisodeController', [ '$http', '$scope', function($http,$scope){
