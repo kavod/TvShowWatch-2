@@ -110,7 +110,8 @@
 		};
 	}]);
 
-	app.controller('PatternController', [ '$http', '$scope', function($http,$scope){
+	app.controller('PatternController', [ '$http', '$scope', '$sce', function($http,$scope,$sce){
+		$scope.htmlPopover = $sce.trustAsHtml("Pattern is the string used for torrent search.<br />It is recommanded to remove special mentions or characters<br /><label>Example:</label><br /><i>The Office (US)</i> => <i>The Office</i><br /><i>What\'s up</i> => <i>Whats up</i>)");
 		this.updatePattern= function () {
 			if (this.form.$valid) {
 				$scope.tvShowCtrl.updatePattern();
@@ -171,9 +172,15 @@
 
 	app.filter('statusLabel', function() {
 		return function (status) {
-			return TSWstatus[parseInt(status)];
+			return TSWstatus[parseInt(status)]['title'];
 		}
 	});
+
+app.filter('statusDescription', function() {
+	return function (status) {
+		return TSWstatus[parseInt(status)]['description'];
+	}
+});
 
     app.directive('pattern',function(){
     	return {
@@ -290,15 +297,45 @@
 	}]);
 
     TSWstatus = {
-		0: "Added",
-		10: "Not yet aired",
-		20: "torrent required",
-		21: "Waiting torrent push from user",
-		22: "Looking for torrent from torrent provider",
-		30: "Download in progress",
-		35: "Download achieved. To be transfered",
-		39: "Download completed",
-		90: "Tv Show achieved",
-		99: "Error"
-	};
+			0: {
+				"title": "Added",
+				"description": "Analysing TV show status"
+				},
+			10: {
+				"title": "Not yet aired",
+				"description": "Waiting for episode broadcast"
+				},
+			20: {
+				"title": "torrent required",
+				"description": "Episode aired. Torrent file required"
+				},
+			21: {
+				"title":"Waiting torrent push from user",
+				"description": "No torrent provider setup. Please configure one or manually push torrent file"
+				},
+			22: {
+				"title":"Looking for torrent from torrent provider",
+				"description": "No torrent file found for moment on your torrent provider(s)"
+			},
+			30: {
+				"title": "Download in progress",
+				"description": "Torrent file found and added to your torrent client. Download is in progress"
+			},
+			35: {
+				"title":"Download achieved. To be transfered",
+				"description": "Torrent client achieved download. Transfer in progress"
+			},
+			39: {
+				"title": "Download completed",
+				"description": "File download & transfer achieved. Next episode will be scheduled"
+			},
+			90: {
+				"title":"Tv Show achieved",
+				"description": "No next episode scheduled for broadcast for moment. Waiting for next episode announcement"
+			},
+			99: {
+				"title": "Error",
+				"description": "Something went wrong :("
+			}
+		};
 })();

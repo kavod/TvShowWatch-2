@@ -1,5 +1,6 @@
 <label for="pattern">Search pattern:</label>
-<form name="PatternCtrl.form" class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6" ng-submit="PatternCtrl.updatePattern()" novalidate>
+<form name="PatternCtrl.form" class="input-group col-lg-3 col-md-4 col-sm-5 col-xs-6" ng-submit="PatternCtrl.updatePattern()" novalidate
+ uib-popover-html="htmlPopover" popover-trigger="mouseenter" popover-placement="bottom-left">
 	<input name="PatternCtrl.field" type="text" class="form-control" aria-label="pattern" ng-model="tvshow.pattern" required />
 	<span class="input-group-btn">
 		<button class="btn btn-default" type="submit">
@@ -7,3 +8,10 @@
 		</button>
 	</span>
 </form>
+<script type="text/ng-template" id="myPopoverTemplate.html">
+		<div>{{dynamicPopover.content}}</div>
+		<div class="form-group">
+			<label>Popup Title:</label>
+			<input type="text" ng-model="dynamicPopover.title" class="form-control">
+		</div>
+</script>
