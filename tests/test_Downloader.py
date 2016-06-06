@@ -32,8 +32,6 @@ class TestDownloader(LogTestCase.LogTestCase):
 
 		self.configFileTransmission = "tests/downloaderTransmission.json"
 		self.testTransmission =  os.path.isfile(self.configFileTransmission)
-		if not self.testTransmission:
-			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
 
 	def test_creation(self):
 		self.d = Downloader.Downloader(verbosity=DEBUG)
@@ -382,6 +380,59 @@ class TestDownloader(LogTestCase.LogTestCase):
 
 			progression = self.d.get_progression(id)
 			self.assertEquals(progression,63)
+
+	@httpretty.activate
+	def test_transmission_start_fail(self):
+		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+                            	httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+								])
+		self.d = Downloader.Downloader(verbosity=DEBUG)
+		self.d.loadConfig(self.configFileTransmission)
+
+		with self.assertLogs(level='ERROR'):
+			with self.assertRaises(Downloader.DownloaderSlotNotExists):
+				self.d.start_torrent(5)
+
+	@httpretty.activate
+	def test_synology_start_fail(self):
+		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
+                               httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
+							   ])
+   		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
+			httpretty.Response(body='{"data":[{"error":405,"id":"dbid_161"}]}'), # start
+			])
+
+		self.d = Downloader.Downloader(verbosity=DEBUG)
+		self.d.loadConfig(self.configFile3)
+
+		with self.assertLogs(level='ERROR'):
+			with self.assertRaises(Downloader.DownloaderSlotNotExists):
+				self.d.start_torrent('dbid_161')
+
+	@httpretty.activate
+	def test_transmission_start_success(self):
+		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+                            	httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+					        	httpretty.Response(body=open('tests/httpretty_transmission_success.json','r').read()),
+								])
+		self.d = Downloader.Downloader(verbosity=DEBUG)
+		self.d.loadConfig(self.configFileTransmission)
+		self.d.start_torrent(3)
+
+	@httpretty.activate
+	def test_synology_start_success(self):
+		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
+                               httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
+							   ])
+   		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
+			httpretty.Response(body='{"data":[{"error":0,"id":"dbid_161"}]}'), # start
+			])
+
+		self.d = Downloader.Downloader(verbosity=DEBUG)
+		self.d.loadConfig(self.configFile3)
+		self.d.start_torrent('dbid_161')
 
 	#Interactives tests
 	"""def test_cliConf(self):

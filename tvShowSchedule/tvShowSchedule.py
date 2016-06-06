@@ -627,6 +627,14 @@ class tvShowSchedule(JSAG3.JSAG3):
 							# Download achieved. To be transfered.
 							self.set(status=35)
 							self.update(force=True)
+						elif status in ['paused','stopped']:
+							# Download paused. Restarting.
+							self.set(status=33)
+							self.update(force=True)
+						else:
+							# Unhandled status
+							nextUpdate = now+datetime.timedelta(minutes=15)
+							self.set(nextUpdate=nextUpdate)
 					else:
 						# Incorrect or missing torrent. Let's watch torrent again.
 						self.set(status=20)
@@ -637,15 +645,29 @@ class tvShowSchedule(JSAG3.JSAG3):
 					self.set(status=20)
 					self.update(force=True)
 
+			# Paused
+			elif self['status'] == 33:
+				self.logger.debug("downloader_id is: {0}".format(self['downloader_id']))
+				if self['downloader_id'] is not None:
+					self.logger.debug("Starting on {0}".format(self.downloader))
+					self.downloader.start_torrent(self['downloader_id'])
+					nextUpdate = now+datetime.timedelta(minutes=15)
+					self.set(status=30,nextUpdate=nextUpdate)
+				else:
+					self.logger.error("Unable to determine slot. Push the status to 20")
+					self.set(status=20)
+					self.update(force=True)
+
+
 			# To be transfered
 			elif self['status'] == 35:
-				self.logger.debug("[tvShowSchedule] downloader_id is: {0}".format(self['downloader_id']))
+				self.logger.debug("downloader_id is: {0}".format(self['downloader_id']))
 				if self['downloader_id'] is not None:
 					# Identifing status
 					try:
-						self.logger.debug("[tvShowSchedule] Downloader: {0}".format(self.downloader))
+						self.logger.debug("Downloader: {0}".format(self.downloader))
 						status = self.downloader.get_status(self['downloader_id'])
-						self.logger.debug("[tvShowSchedule] Get new status: {0}".format(status))
+						self.logger.debug("Get new status: {0}".format(status))
 					except:
 						status = ''
 

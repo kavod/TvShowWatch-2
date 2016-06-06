@@ -84,7 +84,7 @@ class Downloader(JSAG3.JSAG3):
 		self.addData(confFile)
 
 	def add_torrent(self,tor,delTorrent=True):
-		self.logger.info('[Downloader] Add_torrent method called, client is {0}'.format(self.data['client']))
+		self.logger.info('Add_torrent method called, client is {0}'.format(self.data['client']))
 		if not self.availableSlot():
 			self.clean()
 		try:
@@ -98,6 +98,28 @@ class Downloader(JSAG3.JSAG3):
 		if delTorrent:
 			os.remove(tor)
 		return unicode(result)
+
+	def start_torrent(self,id):
+		self.logger.info('Start_torrent method called, client is {0}'.format(self.data['client']))
+		id = self.checkID(id)
+		self.logger.debug("Starting slot #{0}".format(unicode(id)))
+		if self.isConnected():
+			self.connect()
+		if self.data['client'] == 'transmission':
+			try:
+				tor = self.getTorrent(id)
+			except AttributeError as e:
+				self.logger.error('Start torrent failed with Transmission.')
+				raise DownloaderSlotNotExists(downloader_id=id,client=self.data['client'],original=e)
+			tor.start()
+		elif self.data['client'] == 'synology':
+			result = self._synoStart(id)
+			if result['error'] != 0:
+				self.logger.error(
+					'Start torrent failed with Synology. Return code: {0}'
+					.format(unicode(result['error']))
+				)
+				raise DownloaderSlotNotExists(downloader_id=id,client=self.data['client'],original=None)
 
 	def get_status(self,id):
 		self.logger.debug("Client is {0}".format(unicode(self.data['client'])))
@@ -346,6 +368,25 @@ class Downloader(JSAG3.JSAG3):
 		else:
 			return {}
 
+	def _synoStart(self,id):
+		if self.data['client'] == 'synology':
+			if self._synoSid is None:
+				return []
+			params = {
+				"api":"SYNO.DownloadStation.Task",
+				"version":1,
+				"method":"resume",
+				"session":"DownloadStation",
+				"_sid":self._synoSid,
+				"id": id
+			}
+			req = self._synoRequest(
+				path='/webapi/DownloadStation/task.cgi',
+				params=params
+			)
+			return req.json()['data'][0]
+
+
 	def _synoAddTorrents(self,filename,paused=False):
 		if paused:
 			self.logger.warning("Download Station for Synology does not manage creation of paused task. Ignoring paused parameter")
@@ -437,8 +478,26 @@ class DownloaderConnectionError(OSError):
 			fline
 		)
 		super(OSError,self).__init__(msg)
-		self.message = message
+		self.message = msg
 		self.url = url
 		self.code = code
-		self.original = None
+		self.original = original
+		self.client = client
+
+class DownloaderSlotNotExists(KeyError):
+	def __init__(self,downloader_id='',client='',original=None):
+		msgSource = ''
+		if original is not None:
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			if exc_tb is not None:
+				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+				fline = exc_tb.tb_lineno
+			else:
+				fname = __file__
+				fline = 0
+			msgSource = fname + ":" + unicode(fline)
+		msg = "Slot {0} not exists on {1} ({2})".format(unicode(downloader_id),client,msgSource)
+		super(KeyError,self).__init__(msg)
+		self.message = msg
+		self.original = original
 		self.client = client

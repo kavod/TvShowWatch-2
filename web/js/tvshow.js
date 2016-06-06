@@ -321,6 +321,10 @@ app.filter('statusDescription', function() {
 				"title": "Download in progress",
 				"description": "Torrent file found and added to your torrent client. Download is in progress"
 			},
+			33: {
+				"title": "Download paused",
+				"description": "Download is paused on your torrent provider. Please have a look on it then restart"
+			},
 			35: {
 				"title":"Download achieved. To be transfered",
 				"description": "Torrent client achieved download. Transfer in progress"
