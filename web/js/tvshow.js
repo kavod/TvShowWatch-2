@@ -1,6 +1,12 @@
 (function(){
 	var app = angular.module('appTsw.TvShow', [ 'ngAnimate', 'ui.bootstrap' ]);
 
+		app.run(function($rootScope, $templateCache) {
+		   $rootScope.$on('$viewContentLoaded', function() {
+			  $templateCache.removeAll();
+		   });
+		});
+		
 	app.controller('TvShowController', [ '$http', '$scope', 'fileUpload', function($http,$scope,fileUpload){
 
 		this.data = $scope.tvshow;

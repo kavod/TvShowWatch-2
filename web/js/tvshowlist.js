@@ -1,6 +1,12 @@
 (function(){
 	var app = angular.module('appTsw.TvShowList', [ 'ngAnimate', 'ui.bootstrap', 'appTsw.TvShow' ]);
 
+		app.run(function($rootScope, $templateCache) {
+		   $rootScope.$on('$viewContentLoaded', function() {
+			  $templateCache.removeAll();
+		   });
+		});
+
 	app.controller('TvShowListController', [ '$http', '$scope', 'fileUpload',function($http,$scope,fileUpload){
 		$scope.oneAtATime = true;
 

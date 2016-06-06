@@ -331,7 +331,8 @@ def main():
 			'tools.staticdir.root':webPath,
 			'tools.staticdir.dir': '.',
 			'tools.staticdir.index': 'index.html',
-			'tools.trailing_slash.on' : False
+			'tools.trailing_slash.on' : False,
+			'tools.caching.on' : False
 		},
 		"/livesearch".encode('utf8') : {
 
