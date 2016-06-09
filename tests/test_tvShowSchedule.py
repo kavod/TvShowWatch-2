@@ -91,8 +91,11 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.assertEqual(tvShow['info']['overview'],"")
 
 	@httpretty.activate
-	def test_creation_with_new_banner_dl(self):
-		os.path.getmtime = mock.MagicMock(return_value=time.mktime((datetime.datetime.now() - datetime.timedelta(days=45)).timetuple()))
+	@mock.patch('os.path.getmtime')
+	def test_creation_with_new_banner_dl(self,mock_getmtime):
+		mock_getmtime.return_value=time.mktime((datetime.datetime.now() - datetime.timedelta(days=45)).timetuple())
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tmpdir = unicode(tempfile.mkdtemp())
@@ -125,8 +128,9 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		shutil.rmtree(tmpdir)
 
 	@httpretty.activate
-	def test_creation_with_outdated_banner(self):
-		os.path.getmtime = mock.MagicMock(return_value=time.mktime((datetime.datetime.now() - datetime.timedelta(days=45)).timetuple()))
+	@mock.patch('os.path.getmtime')
+	def test_creation_with_outdated_banner(self,mock_getmtime):
+		mock_getmtime.return_value=time.mktime((datetime.datetime.now() - datetime.timedelta(days=45)).timetuple())
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tmpdir = unicode(tempfile.mkdtemp())

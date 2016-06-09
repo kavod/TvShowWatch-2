@@ -282,7 +282,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 			self.save()
 
 	def setDefault(self):
-		self.logger.debug("[TvShowSchedule] setDefault method called")
+		self.logger.debug("setDefault method called")
 		v2MinutesAfter = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(minutes=2)
 		self.data.setdefault('season',0)
 		self.data.setdefault('episode',0)
@@ -387,6 +387,14 @@ class tvShowSchedule(JSAG3.JSAG3):
 				last_mod = datetime.datetime.fromtimestamp(os.path.getmtime(localfile))
 				last_mod = last_mod.replace(tzinfo=tzlocal.get_localzone())
 				if os.path.isfile(localfile):
+					self.logger.debug(
+						"Banner {2} last modification is {0}. Allowed age is {1}"
+						.format(
+							unicode(last_mod),
+							unicode(v30DaysAgo),
+							localfile
+						)
+					)
 					if last_mod < v30DaysAgo:
 						return False
 				else:
