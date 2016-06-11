@@ -2,6 +2,7 @@
 #encoding:utf-8
 from __future__ import unicode_literals
 
+import os
 import requests
 import json
 import re
@@ -65,7 +66,9 @@ def search_t411(self, search):
 def download_t411(self,torrent_id):
 	logging.debug("/torrents/download/"+str(torrent_id))
 	stream = requests.post(self.provider['url']+"/torrents/download/"+str(torrent_id),headers={"Authorization": self.token}, stream=True, verify=self.SSLverif, timeout=5)
-	tmpFile = unicode(tempfile.mkstemp('.torrent')[1])
+	filename = os.path.basename(stream.url)
+	tmpFile = tempfile.gettempdir() + '/' + filename
+	#tmpFile = unicode(tempfile.mkstemp('.torrent')[1])
 	with open(tmpFile, 'wb') as f:
 		for chunk in stream.iter_content(chunk_size=1024):
 			if chunk: # filter out keep-alive new chunks

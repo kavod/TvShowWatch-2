@@ -592,23 +592,36 @@ class tvShowSchedule(JSAG3.JSAG3):
 				else:
 					keywords = self['keywords']
 				for keyword in keywords:
-					tor = self.searcher.search("{0} S{1:02}E{2:02} {3}".format(self['pattern'],self['season'],self['episode'],keyword))
+					search_pattern = "{0} S{1:02}E{2:02} {3}".format(self['pattern'],self['season'],self['episode'],keyword)
+					tor = self.searcher.search(search_pattern)
 					# Torrent is found. Process download
+					self.logger.debug("Torrent is found with pattern '{0}'. Process download".format(search_pattern))
 					if tor is not None:
 						tmpFile = self.searcher.download(tor)
+						self.logger.debug("Torrent downloaded at {0}.".format(tmpFile))
 						try:
 							downloader_id=unicode(self.downloader.add_torrent(tmpFile))
-							if int(downloader_id) > 0:
+							if downloader_id != '-1':
 								self.set(status=30,downloader_id=downloader_id,nextUpdate=now)
 								self.update(force=True)
 								return
+							else:
+								self.logger.error("Unknown error when adding torrent")
 						except Downloader.DownloaderConnectionError:
 							# Connection error with downloader. Waiting for 5mins
+							self.logger.error("Connection error with downloader. Waiting for 5mins")
+							nextUpdate = now+datetime.timedelta(minutes=5)
+							self.set(nextUpdate=nextUpdate)
+							return
+						except Downloader.DownloaderCorruptedTorrent:
+							# Torrent found seems corrupted. Waiting for 5mins
+							self.logger.error("Torrent found seems corrupted. Waiting for 5mins")
 							nextUpdate = now+datetime.timedelta(minutes=5)
 							self.set(nextUpdate=nextUpdate)
 							return
 
 				# If torrent not found wait for 15min.
+				self.logger.debug("Torrent not found")
 				nextUpdate = now+datetime.timedelta(minutes=15)
 				self.set(nextUpdate=nextUpdate)
 
@@ -732,21 +745,23 @@ class tvShowSchedule(JSAG3.JSAG3):
 
 	def downloadTorrent(self):
 		self._setTransferer(self.transferer,mandatory=True)
-		t = myTvDB.myTvDB()
 		# Transfer torrent
-		self.logger.debug("[tvShowSchedule] Transferer: {0}".format(self.transferer))
+		self.logger.debug("Transferer: {0}".format(self.transferer))
 		files = self.downloader.get_files(self['downloader_id'])
-		for myFile in files:
-			self.transferer.transfer(myFile,dstSubFolder=self.getLocalPath(self.transferer['pathPattern']),delete_after=False)
-		if self.transferer['delete_after']:
-			try:
-				self.downloader.delete_torrent(self['downloader_id'])
-			except:
-				self.logger.error("[tvShowSchedule] Unable to delete source file {0}. Ignoring".format(myFile))
+		if 'enable' in self.transferer.keys() and self.transferer['enable']:
+			for myFile in files:
+				self.transferer.transfer(myFile,dstSubFolder=self.getLocalPath(self.transferer['pathPattern']),delete_after=False)
+			if self.transferer['delete_after']:
+				try:
+					self.downloader.delete_torrent(self['downloader_id'])
+				except:
+					self.logger.error("Unable to delete source file {0}. Ignoring".format(myFile))
 		self.set(status=39)
 		self.update(force=True)
 
 	def pushTorrent(self,filename,downloader=None,delTorrent=True):
+		if delTorrent is not True:
+			self.logger.warning("delTorrent parameter is depreciate since it is now part of the configuration. Ignoring")
 		if self['season'] * self['episode'] < 1:
 			raise Exception("Season & episode are not set")
 		if not isinstance(filename,basestring):
@@ -754,7 +769,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		self._setDownloader(downloader,True)
 
 		now = datetime.datetime.now(tzlocal.get_localzone())
-		downloader_id=unicode(self.downloader.add_torrent(filename,delTorrent=delTorrent))
+		downloader_id=unicode(self.downloader.add_torrent(filename))
 		if int(downloader_id) > 0:
 			self.set(status=30,downloader_id=downloader_id,nextUpdate=now)
 			return

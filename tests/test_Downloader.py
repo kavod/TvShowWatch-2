@@ -31,6 +31,7 @@ class TestDownloader(LogTestCase.LogTestCase):
 		self.configFile3 = "tests/downloader3.json"
 
 		self.configFileTransmission = "tests/downloaderTransmission.json"
+		self.configFileNone = "tests/downloaderNone.json"
 		self.testTransmission =  os.path.isfile(self.configFileTransmission)
 
 	def test_creation(self):
@@ -95,7 +96,7 @@ class TestDownloader(LogTestCase.LogTestCase):
 				os.remove(tmpfile)
 				shutil.copyfile(filename, tmpfile)
 
-				id = self.d.add_torrent(tmpfile,delTorrent=True)
+				id = self.d.add_torrent(tmpfile)
 				self.assertEqual(id,"3")
 				self.assertFalse(os.path.isfile(tmpfile))
 				return id
@@ -116,29 +117,56 @@ class TestDownloader(LogTestCase.LogTestCase):
 			])
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
-		logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
-		if self.d.getValue()['client'] is not None:
-			filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
-			tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
-			os.remove(tmpfile)
-			shutil.copyfile(filename, tmpfile)
+		tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(filename, tmpfile)
 
-			id = self.d.add_torrent(tmpfile,delTorrent=True)
-			self.assertEqual(id,"dbid_160")
-			self.assertFalse(os.path.isfile(tmpfile))
+		id = self.d.add_torrent(tmpfile)
+		self.assertEqual(id,"dbid_160")
+		self.assertFalse(os.path.isfile(tmpfile))
+
+	@httpretty.activate
+	def test_add_torrent_none(self):
+		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
+                               httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
+							   ])
+   		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
+			httpretty.Response(body='{"data":{"offeset":0,"tasks":[],"total":0},"success":true}'), # list
+			httpretty.Response(body='{"data":{"offeset":0,"tasks":[],"total":0},"success":true}'), # list
+			httpretty.Response(body='''{"data":{"offeset":0,"tasks":[{"id":"dbid_160","size":"0","status":"waiting","status_extra":null,
+				"title":"tmpvgwQmq.torrent","type":"bt","username":"test"}],"total":1},"success":true}'''), # list
+   							   ])
+   		httpretty.register_uri(httpretty.POST, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
+			httpretty.Response(body='{"success":true}'), # create
+			])
+		self.d = Downloader.Downloader(verbosity=DEBUG)
+		self.d.loadConfig(self.configFileNone)
+		self.d['torrentFolder'] = unicode(tempfile.mkdtemp())
+		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+
+		tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+		os.remove(tmpfile)
+		destfile = "{0}/{1}".format(self.d['torrentFolder'],os.path.basename(tmpfile))
+		shutil.copyfile(filename, tmpfile)
+
+		id = self.d.add_torrent(tmpfile)
+		self.assertEqual(id,"")
+		self.assertFalse(os.path.isfile(tmpfile))
+		self.assertTrue(os.path.isfile(destfile))
+		os.remove(destfile)
 
 	@httpretty.activate
 	def test_add_torrent_transmission_corrupt(self):
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent_corrupt.json','r').read()),
-                            ])
+           httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_add_torrent_corrupt.json','r').read()),
+        ])
 		if self.testTransmission:
 			self.d = Downloader.Downloader(verbosity=DEBUG)
 			self.d.loadConfig(self.configFileTransmission)
-			logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
 			if self.d.getValue()['client'] is not None:
 				filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
@@ -146,11 +174,10 @@ class TestDownloader(LogTestCase.LogTestCase):
 				os.remove(tmpfile)
 				shutil.copyfile(filename, tmpfile)
 
-				with self.assertLogs(level='ERROR'):
-					id = self.d.add_torrent(tmpfile,delTorrent=True)
-				self.assertEqual(id,-1)
-				self.assertFalse(os.path.isfile(tmpfile))
-				return id
+				with self.assertRaises(Downloader.DownloaderCorruptedTorrent):
+					with self.assertLogs(level='ERROR'):
+						id = self.d.add_torrent(tmpfile)
+				os.remove(tmpfile)
 
 	@httpretty.activate
 	def test_get_status_transmission(self):

@@ -8,6 +8,7 @@ import time
 import datetime
 import json
 import tempfile
+import logging
 import shutil
 import httpretty
 import mock
@@ -41,7 +42,7 @@ httpretty_urls = [
 	(T411_URL + "/torrents/search/home",'tests/httpretty_t411_search_home.json'),
 	(T411_URL + "/torrents/search/TvShow%201%20S01E01%20720p",'tests/httpretty_t411_search_not_found.json'),
 	(T411_URL + "/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
-	("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",'tests/httpretty_kat_download_home.magnet'),
+	#("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",'tests/httpretty_kat_download_home.magnet'),
 				]
 DEBUG=False
 DEBUG_TORRENT_SEARCH=DEBUG
@@ -56,12 +57,15 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.downloader = Downloader.Downloader(verbosity=DEBUG)
 		self.transferer = Transferer.Transferer(id="transferer",verbosity=DEBUG)
 		self.configFileTransmission = "tests/downloaderTransmission.json"
+		self.configFileSynology = "tests/downloader3.json"
+		self.configFileNone = "tests/downloaderNone.json"
 		self.configFileTvShowSchedule = "tests/tvShowSchedule.json"
 		self.testTransmission =  os.path.isfile(self.configFileTransmission)
 
 		self.tmpdir1 = unicode(tempfile.mkdtemp())
 		self.tmpdir2 = unicode(tempfile.mkdtemp())
 		self.transfererData = {
+			"enable":True,
 			"source": {"path": self.tmpdir1, "protocol": "file"},
 			"destination": {"path": self.tmpdir2, "protocol": "file"},
 			"delete_after":False,
@@ -185,12 +189,10 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
 		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-                            ])
-		if not self.testTransmission:
-			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
+           httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+        ])
 
 		self.downloader.loadConfig(self.configFileTransmission)
 		self.transferer.addData(self.configFileTvShowSchedule)
@@ -311,12 +313,25 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-                            ])
+           httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+        ])
 		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
+
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
+			status=302,
+			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
+		)
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
+			status=200,
+			body=open('tests/httpretty_kat_download_home.magnet').read()
+		)
 
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
@@ -439,18 +454,31 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.assertEqual(tvShow['status'],22)
 
 	@httpretty.activate
-	def test_update_10_to_30(self): # not broadcasted to Download in progress
+	def test_update_10_to_30_transmission(self): # not broadcasted to Download in progress
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
 		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-                            ])
+           httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+        ])
+
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
+			status=302,
+			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
+		)
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
+			status=200,
+			body=open('tests/httpretty_kat_download_home.magnet').read()
+		)
 
 		self.downloader.loadConfig(self.configFileTransmission)
 
@@ -468,6 +496,92 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.assertEqual(tvShow['status'],30)
 
 	@httpretty.activate
+	def test_update_10_to_30_synology(self): # not broadcasted to Download in progress
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
+		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
+		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
+
+		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
+		   httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
+		])
+		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
+			httpretty.Response(body='{"data":{"offeset":0,"tasks":[],"total":0},"success":true}'), # list
+			httpretty.Response(body='{"data":{"offeset":0,"tasks":[],"total":0},"success":true}'), # list
+			httpretty.Response(body='''{"data":{"offeset":0,"tasks":[{"id":"dbid_160","size":"0","status":"waiting","status_extra":null,
+			"title":"tmpvgwQmq.torrent","type":"bt","username":"test"}],"total":1},"success":true}'''), # list
+		])
+		httpretty.register_uri(httpretty.POST, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
+		httpretty.Response(body='{"success":true}'), # create
+		])
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
+			status=302,
+			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
+		)
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
+			status=200,
+			body=open('tests/httpretty_kat_download_home.magnet').read()
+		)
+
+		self.downloader.loadConfig(self.configFileSynology)
+
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=10
+		)
+		self.assertEqual(tvShow['status'],10)
+
+		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		self.assertEqual(tvShow['status'],30)
+
+	@httpretty.activate
+	def test_update_10_to_10_none(self): # not broadcasted to Download in progress
+		for mock_url in httpretty_urls:
+			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
+		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
+		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
+			status=302,
+			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
+		)
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
+			status=200,
+			body=open('tests/httpretty_kat_download_home.magnet').read()
+		)
+
+		self.downloader.loadConfig(self.configFileNone)
+		self.downloader['torrentFolder'] = unicode(tempfile.mkdtemp())
+
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
+		tvShow.set(
+			season=1,
+			episode=1,
+			nextUpdate=datetime.datetime.now(),
+			info={'seriesname':'TvShow 2'},
+			status=10
+		)
+		self.assertEqual(tvShow['status'],10)
+
+		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		self.assertEqual(tvShow['status'],10)
+		logging.debug("{0}/{1}".format(self.downloader['torrentFolder'],'[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'))
+		self.assertTrue(os.path.isfile("{0}/{1}".format(self.downloader['torrentFolder'],'[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent')))
+
+	@httpretty.activate
 	def test_update_20_to_22_file_corrupt(self): # Waiting for torrent availability to itself caused by corrupted file
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
@@ -475,12 +589,22 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
 		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent_corrupt.json','r').read()),
-                            ])
-		if not self.testTransmission:
-			print "No configuration for Transmission in file {0}, skipping specific tests".format(self.configFileTransmission)
+           httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_add_torrent_corrupt.json','r').read()),
+        ])
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
+			status=302,
+			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
+		)
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
+			status=200,
+			body=open('tests/httpretty_kat_download_home.magnet').read()
+		)
 		self.downloader.loadConfig(self.configFileTransmission)
 
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
@@ -503,6 +627,18 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
 		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",status=500)
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
+			status=302,
+			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
+		)
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
+			status=200,
+			body=open('tests/httpretty_kat_download_home.magnet').read()
+		)
 
 		self.downloader.loadConfig(self.configFileTransmission)
 
@@ -526,11 +662,23 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
 		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-                            ])
+           httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+           httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+        ])
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
+			status=302,
+			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
+		)
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
+			status=200,
+			body=open('tests/httpretty_kat_download_home.magnet').read()
+		)
 		self.downloader.loadConfig(self.configFileTransmission)
 
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)

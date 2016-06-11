@@ -1,1 +1,1 @@
-{"downloader":{"client":"synology","synoConf":{"address":"localhost","port":5001,"ssl":true,"sslNoCheck":true,"username":"test","password":"nioufniouf","maxSlots":6,"cleanMethod":"oldest"}}}
+{"downloader":{"client":"synology","synoConf":{"address":"localhost","port":5001,"ssl":true,"sslNoCheck":true,"username":"test","password":"nioufniouf","maxSlots":6,"cleanMethod":"oldest"},"deleteAfter":true,"torrentFolder":"/tmp"}}

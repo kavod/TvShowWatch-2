@@ -3,11 +3,13 @@
 from __future__ import unicode_literals
 
 import sys
+import os
 import requests
 import json
 import torrentProvider
 import logging
 import tempfile
+import threading
 
 torrentProvider.TRACKER_CONF.append({'id':'kat','name':'KickAss Torrents','url':"https://kat.cr",'param':[]})
 
@@ -37,7 +39,13 @@ def search_kat(self, search):
 def download_kat(self,torrent_id):
 	logging.debug(unicode(torrent_id))
 	stream = requests.get(unicode(torrent_id), stream=True, verify=self.SSLverif, headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/43.0.2357.130 Chrome/43.0.2357.130 Safari/537.36'})
-	tmpFile = unicode(tempfile.mkstemp('.torrent')[1])
+	filename = os.path.basename(stream.url)
+	print(torrent_id)
+	print(stream.history)
+	print(stream.url)
+	print(threading.current_thread())
+	tmpFile = tempfile.gettempdir() + '/' + filename
+	#tmpFile = unicode(tempfile.mkstemp('.torrent')[1])
 	with open(tmpFile, 'wb') as f:
 		for chunk in stream.iter_content(chunk_size=1024):
 			if chunk: # filter out keep-alive new chunks

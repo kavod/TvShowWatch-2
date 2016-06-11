@@ -1,1 +1,1 @@
-{"downloader":{"client":"transmission","transConf":{"address":"localhost","port":9091}}}
+{"downloader":{"client":"transmission","transConf":{"address":"localhost","port":9091},"deleteAfter":true,"torrentFolder":"/tmp"}}

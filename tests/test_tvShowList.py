@@ -251,28 +251,40 @@ class TestTvShowList(unittest.TestCase):
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", responses=[
-							   httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
-							   httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
-							   httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
-							   httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
-							   httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read()),
-							   httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read())
-							   ])
+			httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read())
+		])
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-                              ])
+			httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
+			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
+		])
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
+			status=302,
+			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
+		)
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
+			status=200,
+			body=open('tests/httpretty_kat_download_home.magnet').read()
+		)
 
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
@@ -286,6 +298,18 @@ class TestTvShowList(unittest.TestCase):
 		myList.update(downloader=self.downloader,transferer=self.transferer,searcher=self.torrentSearch,wait=True,force=True)
 		self.assertEqual(myList[0]['status'],10) # 321 S1E2 0 => 10
 		self.assertEqual(myList[1]['status'],22) # 123 S1E1 0 => 22
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
+			status=302,
+			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
+		)
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
+			status=200,
+			body=open('tests/httpretty_kat_download_home.magnet').read()
+		)
 
 		myList[0].set(season=1,episode=1,status=10)
 		myList[1].set(status=0)
@@ -294,6 +318,18 @@ class TestTvShowList(unittest.TestCase):
 		myList.update(wait=True,force=True)
 		self.assertEqual(myList[0]['status'],22) # 321 S1E1 10 => 22
 		self.assertEqual(myList[1]['status'],30) # 123 S1E1 0 => 30
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
+			status=302,
+			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
+		)
+		httpretty.register_uri(
+			httpretty.GET,
+			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
+			status=200,
+			body=open('tests/httpretty_kat_download_home.magnet').read()
+		)
 
 		#myList[0].set(season=1,episode=1,status=10)
 		myList[1].set(season=1,episode=1,status=10)

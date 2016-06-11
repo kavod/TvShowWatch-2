@@ -20,6 +20,19 @@
 			"removeDefaultNone": true,
 			"order":1
 		},
+		"torrentFolder": {
+			"order":3,
+			"dependencies": {
+				"deleteAfter": false
+			}
+		},
+		"deleteAfter": {
+			"rightLabel": "Delete torrent file after it was sent to client?",
+			"order":2,
+			"dependencies": {
+				"client": ["synology","transmission"]
+			}
+		},
 		"transConf": {
 			"fields": {
 				"address": {
@@ -54,7 +67,7 @@
 					"order":6
 				}
 			},
-			"order":2,
+			"order":4,
 			"collapsible":false,
 			"dependencies": {
 				"client": ["transmission"]
@@ -105,7 +118,7 @@
 					"order":8
 				}
 			},
-			"order":2,
+			"order":4,
 			"collapsible":false,
 			"dependencies": {
 				"client": ["synology"]

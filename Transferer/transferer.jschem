@@ -1,7 +1,18 @@
 {
 	"title": "Transferer",
 	"type": "object",
+	"dependencies":{
+		"source":["enable"],
+		"destination":["enable"],
+		"pathPattern":["enable"],
+		"delete_after":["enable"]
+	},
 	"properties": {
+		"enable": {
+			"title": "Enable transfer",
+			"type": "boolean",
+			"default": true
+		},
 		"source": {
 			"title": "Source",
 			"$ref": "#/definitions/endpoint"

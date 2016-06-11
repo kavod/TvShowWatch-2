@@ -215,7 +215,7 @@ class serv_TvShowList(object):
 						tmpfile = tempfile.gettempdir() + '/out.torrent'
 						with open(tmpfile, 'wb') as f:
 							f.write(kwargs['torrentFile'].file.read())
-						tvShow.pushTorrent(filename=tmpfile,downloader=self.downloader,delTorrent=True)
+						tvShow.pushTorrent(filename=tmpfile,downloader=self.downloader)
 						return {"status":200,"error":"TvShow {0} updated".format(tvShow['info']['seriesname'])}
 					except Exception as e:
 						return self._error(400,e[0])

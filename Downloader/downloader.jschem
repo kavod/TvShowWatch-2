@@ -6,7 +6,18 @@
 		"client":
 		{
 			"title":"Downloader client",
-			"type":"string"
+			"type":"string",
+			"default":"none"
+		},
+		"torrentFolder": {
+			"title": "Torrent folder",
+			"type":"string",
+			"default": "~"
+		},
+		"deleteAfter": {
+			"title":"Delete torrent after sent to client",
+			"type":"boolean",
+			"default":true
 		},
 		"transConf":
 		{
@@ -58,7 +69,6 @@
 					"type":"string"
 				}
 			},
-			"order":2,
 			"required":["address","port"]
 		},
 		"synoConf":
@@ -121,16 +131,16 @@
 					"type":"string"
 				}
 			},
-			"order":3,
 			"required":["address","port"],
 			"dependencies":{
 				"sslNoCheck":["ssl"]
 			}
 		}
 	},
-	"required":["client"],
+	"required":["client","torrentFolder"],
 	"dependencies": {
 		"transConf":["client"],
-		"synoConf":["client"]
+		"synoConf":["client"],
+		"torrentFolder":["deleteAfter","client"]
 	}
 }
