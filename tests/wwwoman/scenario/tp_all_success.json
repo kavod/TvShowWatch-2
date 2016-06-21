@@ -1,0 +1,7 @@
+{
+  "description":"Successfull auth and search on T411 & KAT",
+  "templatedir":"tests/wwwoman/content",
+  "includes":["t411_success.json","kat_success.json"],
+  "uriList":[
+  ]
+}

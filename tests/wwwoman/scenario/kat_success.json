@@ -1,0 +1,16 @@
+{
+  "description":"Successfull auth and search on KAT",
+  "templatedir":"tests/wwwoman/content",
+  "uriList":[
+    {
+      "uri":"https://kat.cr/json.php",
+      "method":"POST",
+      "template":"kat_search_home.json"
+    },
+    {
+      "uri":"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
+      "method":"GET",
+      "template":"kat_download_home.magnet"
+    }
+  ]
+}
