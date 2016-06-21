@@ -615,8 +615,9 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			info={'seriesname':'TvShow 2'},
 			status=20
 		)
-		with self.assertLogs(level='ERROR'):
-			tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		with self.assertLogs(logger=tvShow.logger,level='ERROR'):
+			with self.assertLogs(logger=self.downloader.logger,level='ERROR'):
+				tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],22)
 
 	@httpretty.activate
@@ -650,8 +651,9 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			info={'seriesname':'TvShow 2'},
 			status=20
 		)
-		with self.assertLogs(level='ERROR'):
-			tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		with self.assertLogs(logger=tvShow.logger,level='ERROR'):
+			with self.assertLogs(logger=self.downloader.logger,level='ERROR'):
+				tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],22)
 
 	@httpretty.activate
@@ -738,7 +740,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		)
 		self.assertEqual(tvShow['status'],22)
 
-		with self.assertLogs(level='ERROR'):
+		with self.assertLogs(logger=emptyTS.logger,level='ERROR'):
 			tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=emptyTS,force=True)
 		self.assertEqual(tvShow['status'],21)
 		os.remove(tmpfile)

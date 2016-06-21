@@ -491,11 +491,14 @@ class tvShowSchedule(JSAG3.JSAG3):
 				progression = self.downloader.get_progression(self['downloader_id'])
 				self.logger.debug("Get new progression: {0}".format(unicode(progression)))
 				return progression
-			except:
-				self.logger.warning("Unable to retrieve progression for: {0}".format(unicode(self['downloader_id'])))
+			except Exception as e:
+				self.logger.warning(
+					"Unable to retrieve progression for slot N°{0} ({1})"
+					.format(unicode(self['downloader_id']),unicode(e))
+				)
 
 			# Something went wrong... Let's restart download
-			self.set(status=20)
+			#self.set(status=20)
 
 
 	def update(self,downloader=None,searcher=None,transferer=None,notificator=None,activitylog=None,force=False):
@@ -751,6 +754,10 @@ class tvShowSchedule(JSAG3.JSAG3):
 		if 'enable' in self.transferer.keys() and self.transferer['enable']:
 			for myFile in files:
 				self.transferer.transfer(myFile,dstSubFolder=self.getLocalPath(self.transferer['pathPattern']),delete_after=False)
+			self.logger.info(
+				"Transfer achieved in folder {0}"
+				.format(self.getLocalPath(self.transferer['pathPattern']))
+			)
 			if self.transferer['delete_after']:
 				try:
 					self.downloader.delete_torrent(self['downloader_id'])

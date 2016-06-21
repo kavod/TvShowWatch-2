@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import os
 import torrentProvider
 import JSAG3
-import logging
 
 torrentProvider.loadProviders()
 
@@ -24,12 +23,12 @@ class torrentSearch(JSAG3.JSAG3):
 
 	def loadConfig(self,confFile,path=[]):
 		self.addData(confFile)
-		logging.debug("[torrentSearch] Data loaded: {0}.".format(unicode(self.data)))
+		self.logger.debug("Data loaded: {0}.".format(unicode(self.data)))
 
 	def search(self,pattern):
-		logging.debug("[torrentSearch] Search pattern: {0}.".format(unicode(pattern)))
+		self.logger.debug("Search pattern: {0}.".format(unicode(pattern)))
 		if 'providers' not in self.data.keys() or len(self.data['providers'])<1:
-			logging.error("[torrentSearch] No torrent provider setup")
+			self.logger.error("[torrentSearch] No torrent provider setup")
 			return None
 		global_keywords = self.data['keywords'] if 'keywords' in self.data.keys() else []
 		if len(global_keywords)<1:
@@ -53,7 +52,7 @@ class torrentSearch(JSAG3.JSAG3):
 					try:
 						result = self.search_query(provID,query)
 					except:
-						logging.info("Timeout from {0}".format(unicode(provID)))
+						self.logger.info("Timeout from {0}".format(unicode(provID)))
 						continue
 					if len(result)<1:
 						continue
@@ -62,17 +61,17 @@ class torrentSearch(JSAG3.JSAG3):
 
 	def search_query(self,provID,query):
 		torProv = self.providers[provID]
-		logging.debug("[torrentSearch] Query sent to {0}: '{1}'".format(unicode(provID),unicode(query)))
+		self.logger.debug("Query sent to {0}: '{1}'".format(unicode(provID),unicode(query)))
 		result = torProv.search(query)
 		result = filter(torProv.filter,result)
-		logging.info( "Search of \033[1m{0}\033[0m on \033[1m{1}\033[0m".format(query,provID))
+		self.logger.info( "Search of \033[1m{0}\033[0m on \033[1m{1}\033[0m".format(query,provID))
 		if len(result) < 1:
-			logging.info( " > No result")
+			self.logger.info( " > No result")
 			return []
 		elif len(result) == 1:
-			logging.info( " > 1 result")
+			self.logger.info( " > 1 result")
 		elif len(result) > 1:
-			logging.info( " > {0} results".format(unicode(len(result))))
+			self.logger.info( " > {0} results".format(unicode(len(result))))
 		result = torProv.select_torrent(result)
 		result['provider'] = provID
 		return result
@@ -80,7 +79,7 @@ class torrentSearch(JSAG3.JSAG3):
 
 	def connect_provider(self,provID):
 		provider = [provider for provider in self.data['providers'] if unicode(provider['provider_type']) == provID][0]
-		logging.info( "[torrentSearch] provider: ".format(unicode(self.data['providers'])))
+		self.logger.info( "Connecting provider: ".format(unicode(self.data['providers'])))
 		if provID not in self.providers.keys():
 			self.providers[provID] = torrentProvider.torrentProvider(
 				trackerID=provID,

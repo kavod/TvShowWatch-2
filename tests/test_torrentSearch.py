@@ -10,24 +10,15 @@ import torrentProvider
 import torrentSearch
 import logging
 import httpretty
+import wwwoman
 
 DEBUG=False
-httpretty.HTTPretty.allow_net_connect = False
 
 T411_URL = (item for item in torrentProvider.TRACKER_CONF if item["id"] == "t411").next()['url']
 
-httpretty_urls = [
-	(T411_URL + "/auth",'tests/httpretty_t411_auth.json'),
-	(T411_URL + "/users/profile/12345678",'tests/httpretty_t411_auth.json'),
-	(T411_URL + "/torrents/search/home",'tests/httpretty_t411_search_home.json'),
-	(T411_URL + "/torrents/search/home%20720p",'tests/httpretty_t411_search_home.json'),
-	(T411_URL + "/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
-	("https://kat.cr/json.php",'tests/httpretty_kat_search_home.json'),
-	("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",'tests/httpretty_kat_download_home.magnet'),
-	]
-
 class TestTorrentSearch(unittest.TestCase):
 	def setUp(self):
+		wwwoman.wwwomanScenario.scenario_path = "tests/wwwoman/scenario"
 		self.ts = torrentSearch.torrentSearch(id="torrentSearch",verbosity=DEBUG)
 		self.configFile2 = "tests/torrentSearch2.json"
 		self.conf1 = {u'keywords': [u'720p'], u'providers': [{u'provider_type': u'kat',"keywords":["lang_id:2 verified:1"]}]}
@@ -41,9 +32,7 @@ class TestTorrentSearch(unittest.TestCase):
 	def test_loadConfig(self):
 		self.assertTrue(os.path.isfile(self.configFile2))
 		self.ts.loadConfig(self.configFile2)
-		logging.debug("[torrentSearch] Comparison of\n{0}\n-- and --\n{1}".format(self.ts.getValue(hidePassword=False),self.conf1))
 		self.assertEqual(self.ts.getValue(hidePassword=False),self.conf1)
-
 
 	def test_loadConfig_unexisted_file(self):
 		tmpfile = unicode(tempfile.mkstemp('.conf')[1])
@@ -56,31 +45,22 @@ class TestTorrentSearch(unittest.TestCase):
 		self.assertEqual(data,{"torrentSearch":{}})
 		os.remove(tmpfile)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tp_all_success.json")
 	def test_search(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		self.test_loadConfig()
 		tor = self.ts.search("home")
 		self.assertIsInstance(tor,dict)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tp_all_success.json")
 	def test_download(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		self.test_loadConfig()
 		tor = self.ts.search("home")
 		tmpFile = self.ts.download(tor)
 		self.assertTrue(os.path.isfile(tmpFile))
 		os.remove(tmpFile)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tp_all_success.json")
 	def test_search_wo_global_keyword(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		self.ts.data = self.conf2
 		tor = self.ts.search("home")
 		self.assertTrue(httpretty.has_request())
