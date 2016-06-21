@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import os
 import torrentProvider
 import JSAG3
-import logging
 
 torrentProvider.loadProviders()
 
@@ -29,7 +28,7 @@ class torrentSearch(JSAG3.JSAG3):
 	def search(self,pattern):
 		self.logger.debug("Search pattern: {0}.".format(unicode(pattern)))
 		if 'providers' not in self.data.keys() or len(self.data['providers'])<1:
-			logging.error("[torrentSearch] No torrent provider setup")
+			self.logger.error("[torrentSearch] No torrent provider setup")
 			return None
 		global_keywords = self.data['keywords'] if 'keywords' in self.data.keys() else []
 		if len(global_keywords)<1:
@@ -53,7 +52,7 @@ class torrentSearch(JSAG3.JSAG3):
 					try:
 						result = self.search_query(provID,query)
 					except:
-						logging.info("Timeout from {0}".format(unicode(provID)))
+						self.logger.info("Timeout from {0}".format(unicode(provID)))
 						continue
 					if len(result)<1:
 						continue

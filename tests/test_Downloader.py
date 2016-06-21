@@ -175,7 +175,7 @@ class TestDownloader(LogTestCase.LogTestCase):
 				shutil.copyfile(filename, tmpfile)
 
 				with self.assertRaises(Downloader.DownloaderCorruptedTorrent):
-					with self.assertLogs(level='ERROR'):
+					with self.assertLogs(logger=self.d.logger,level='ERROR'):
 						id = self.d.add_torrent(tmpfile)
 				os.remove(tmpfile)
 
@@ -251,7 +251,7 @@ class TestDownloader(LogTestCase.LogTestCase):
 		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",status=500)
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
-		logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
+		self.d.logger.debug("[Downloader] Data:\n".format(unicode(self.d)))
 		if self.d.getValue()['client'] is not None:
 			filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
@@ -260,7 +260,7 @@ class TestDownloader(LogTestCase.LogTestCase):
 			shutil.copyfile(filename, tmpfile)
 
 			with self.assertRaises(Downloader.DownloaderConnectionError):
-				with self.assertLogs(level='ERROR'):
+				with self.assertLogs(logger=self.d.logger,level='ERROR'):
 					id = self.d.add_torrent(tmpfile,delTorrent=True)
 			os.remove(tmpfile)
 		else:
@@ -417,7 +417,7 @@ class TestDownloader(LogTestCase.LogTestCase):
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFileTransmission)
 
-		with self.assertLogs(level='ERROR'):
+		with self.assertLogs(logger=self.d.logger,level='ERROR'):
 			with self.assertRaises(Downloader.DownloaderSlotNotExists):
 				self.d.start_torrent(5)
 
@@ -433,7 +433,7 @@ class TestDownloader(LogTestCase.LogTestCase):
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
 
-		with self.assertLogs(level='ERROR'):
+		with self.assertLogs(logger=self.d.logger,level='ERROR'):
 			with self.assertRaises(Downloader.DownloaderSlotNotExists):
 				self.d.start_torrent('dbid_161')
 

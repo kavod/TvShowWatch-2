@@ -31,7 +31,8 @@ class Downloader(JSAG3.JSAG3):
 	def __setitem__(self,key,value):
 		JSAG3.JSAG3.__setitem__(self,key,value)
 		if key == 'client':
-			self._setLogger()
+			pass
+			self._setLogger(self.getClient())
 
 	def getClient(self):
 		if 'client' not in self.keys():
