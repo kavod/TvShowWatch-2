@@ -40,10 +40,6 @@ def download_kat(self,torrent_id):
 	logging.debug(unicode(torrent_id))
 	stream = requests.get(unicode(torrent_id), stream=True, verify=self.SSLverif, headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/43.0.2357.130 Chrome/43.0.2357.130 Safari/537.36'})
 	filename = os.path.basename(stream.url)
-	print(torrent_id)
-	print(stream.history)
-	print(stream.url)
-	print(threading.current_thread())
 	tmpFile = tempfile.gettempdir() + '/' + filename
 	#tmpFile = unicode(tempfile.mkstemp('.torrent')[1])
 	with open(tmpFile, 'wb') as f:
