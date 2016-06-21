@@ -8,3 +8,4 @@ object_storage>=0.6.2
 httpretty>=0.8.14
 mock>=1.0.1
 cherrypy>=3.7.0
+wwwoman>=0.2

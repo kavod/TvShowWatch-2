@@ -5,73 +5,41 @@ from __future__ import unicode_literals
 import unittest
 import torrentProvider
 import os
-import json
-import logging
-import httpretty
+import wwwoman
 torrentProvider.loadProviders()
 
 DEBUG=False
 
 T411_URL = (item for item in torrentProvider.TRACKER_CONF if item["id"] == "t411").next()['url']
 
-httpretty_urls = [
-	(T411_URL + "/auth",'tests/httpretty_t411_auth.json'),
-	(T411_URL + "/users/profile/12345678",'tests/httpretty_t411_auth.json'),
-	(T411_URL + "/torrents/search/home",'tests/httpretty_t411_search_home.json'),
-	(T411_URL + "/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
-	]
-
-	
 class TestTorrentProviderT411(unittest.TestCase):
-	@httpretty.activate
 	def setUp(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
+		wwwoman.wwwomanScenario.scenario_path = "tests/wwwoman/scenario"
 		self.torProv = torrentProvider.torrentProvider('t411',{"username":"your_username","password":"your_password"},verbosity=DEBUG)
-		
+
 	def test_creation(self):
 		self.assertIsInstance(self.torProv,torrentProvider.torrentProvider)
-		
-	@httpretty.activate
+
+	@wwwoman.register_scenario("t411_success.json")
 	def test_connect(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		self.torProv.connect()
 		self.assertNotEqual(self.torProv.token,'ok')
-		
-	@httpretty.activate
+
+	@wwwoman.register_scenario("t411_success.json")
 	def test_test(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		self.torProv.connect()
 		result = self.torProv.test()
 		self.assertEqual(result,True)
-		
-	@httpretty.activate
+
+	@wwwoman.register_scenario("t411_success.json")
 	def test_search(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		self.torProv.connect()
 		result = self.torProv.search('home')
 		self.assertIsInstance(result,list)
 		self.assertEqual(len(result),2)
-		
-	"""
-	Unrelevant. Filter is done into the seach method
-	@httpretty.activate
-	def test_search_filter(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		self.torProv.connect()
-		result = self.torProv.search('home')
-		self.assertIsInstance(result,list)
-		self.assertGreater(len(result),0)
-		self.assertGreaterEqual(len(result),len(filter(self.torProv.filter,result)))"""
-		
-	@httpretty.activate
+
+	@wwwoman.register_scenario("t411_success.json")
 	def test_download(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		self.torProv.connect()
 		result = self.torProv.search('home')
 		result = self.torProv.select_torrent(result)
@@ -79,11 +47,9 @@ class TestTorrentProviderT411(unittest.TestCase):
 		self.assertTrue(os.path.isfile(tmpFile))
 		self.assertGreater(os.path.getsize(tmpFile),1000)
 		os.remove(tmpFile)
-		
-	@httpretty.activate
+
+	@wwwoman.register_scenario("t411_success.json")
 	def test_select(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		self.torProv.connect()
 		result = self.torProv.search('home')
 		result = self.torProv.select_torrent(result)
