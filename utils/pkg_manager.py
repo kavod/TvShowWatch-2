@@ -8,28 +8,6 @@ import subprocess
 import getpass
 
 PACKAGES = {
-		'JSAG':{
-			'install':
-				[
-					['wget',"https://github.com/kavod/jsonSchemaAppGenerator/releases/download/v1.6.1/JSAG.tgz",'-q'],
-					['tar','zxf','JSAG.tgz'],
-					['rm','JSAG.tgz']
-				],
-			'uninstall':
-				[
-					['rm','-rf','JSAG']
-				],
-			'root_install':
-				[
-					['wget',"https://github.com/kavod/jsonSchemaAppGenerator/releases/download/v1.6.1/JSAG.tgz",'-q'],
-					['tar','zxf','JSAG.tgz'],
-					['rm','JSAG.tgz']
-				],
-			'root_uninstall':
-				[
-					['rm','-rf','JSAG']
-				]
-			},
 		'JSAG3':{
 			'install':
 				[

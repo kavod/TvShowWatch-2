@@ -1,0 +1,27 @@
+{
+  "description":"Successfull auth and search on T411",
+  "templatedir":"tests/wwwoman/content",
+  "baseuri":"https://api.t411.ch",
+  "uriList":[
+    {
+      "uri":"auth",
+      "method":"POST",
+      "template":"t411_auth_success.json"
+    },
+    {
+      "uri":"users/profile/12345678",
+      "method":"POST",
+      "template":"t411_auth_success.json"
+    },
+    {
+      "uri":"torrents/search/home",
+      "method":"POST",
+      "template":"t411_search_home.json"
+    },
+    {
+      "uri":"torrents/download/4711811",
+      "method":"POST",
+      "template":"t411_download.torrent"
+    }
+  ]
+}
