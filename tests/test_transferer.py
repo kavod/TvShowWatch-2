@@ -8,10 +8,12 @@ import tempfile
 import shutil
 import mock
 import Transferer
+import LogTestCase
 
 DEBUG=False
+DEBUG_TRANSFERER=False
 
-class TestTransferer(unittest.TestCase):
+class TestTransferer(LogTestCase.LogTestCase):
 	def setUp(self):
 		self.tmpfiles = []
 		self.tmpdirs = []
@@ -24,10 +26,11 @@ class TestTransferer(unittest.TestCase):
 		self.ftp_pwd = "password"
 		self.ftp_dir = "foo/bar"
 
-		self.data1 = {"source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"path": self.tmpdirs[1], "protocol": "file"}}
-		self.data3 = {"source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"protocol": "ftps", "host": self.ftp_server, "user": self.ftp_user, "path": "/"+self.ftp_dir, "password": self.ftp_pwd, "port": self.ftp_port}}
-		self.data4 = {"source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"protocol": "ftp", "host": self.ftp_server, "user": self.ftp_user, "path": "/"+self.ftp_dir, "password": self.ftp_pwd, "port": self.ftp_port}}
-
+		self.data1 = {"enable":True, "source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"path": self.tmpdirs[1], "protocol": "file"}}
+		self.data3 = {"enable":True, "source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"protocol": "ftps", "host": self.ftp_server, "user": self.ftp_user, "path": "/"+self.ftp_dir, "password": self.ftp_pwd, "port": self.ftp_port}}
+		self.data4 = {"enable":True, "source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"protocol": "ftp", "host": self.ftp_server, "user": self.ftp_user, "path": "/"+self.ftp_dir, "password": self.ftp_pwd, "port": self.ftp_port}}
+		self.data5 = {"enable":False, "source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"path": self.tmpdirs[1], "protocol": "file"}}
+		self.data6 = {"source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"path": self.tmpdirs[1], "protocol": "file"}}
 
 	def test_creation(self):
 		trans = self.creation(id="test1")
@@ -70,6 +73,35 @@ class TestTransferer(unittest.TestCase):
 	def test_get_uri_ftps(self):
 		trans = self.creation(id="test3",data=self.data3)
 		self.assertEquals(trans.get_uri(endpoint="destination",filename="awesome-file.txt"),"ftps://username:*****@my-ftp-server:12345/foo/bar/awesome-file.txt")
+
+	def test_transfer_disabled(self):
+		trans = self.creation(id="test5",data=self.data5)
+		tmpfile = unicode(tempfile.mkstemp('.txt',dir=self.tmpdirs[0])[1])
+		self.tmpfiles.append(tmpfile)
+		tmpfile = os.path.basename(tmpfile)
+		self.assertFalse(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
+		trans.transfer(tmpfile,delete_after=True)
+		self.assertTrue(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
+		self.assertFalse(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
+
+	def test_transfer_no_enable_key(self):
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		self.tmpfiles.append(tmpfile)
+		os.remove(tmpfile)
+		trans = Transferer.Transferer(
+			id="test6",
+			dataFile=tmpfile,
+			verbosity=DEBUG_TRANSFERER
+		)
+		with self.assertLogs(logger='Transferer.test6',level='WARNING'):
+			trans.setValue(self.data6)
+		tmpfile = unicode(tempfile.mkstemp('.txt',dir=self.tmpdirs[0])[1])
+		self.tmpfiles.append(tmpfile)
+		tmpfile = os.path.basename(tmpfile)
+		self.assertFalse(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
+		trans.transfer(tmpfile)
+		self.assertTrue(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
+		self.assertTrue(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
 
 	def test_transfer_file_to_file(self):
 		trans = self.creation(id="test1",data=self.data1)
@@ -154,7 +186,11 @@ class TestTransferer(unittest.TestCase):
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		self.tmpfiles.append(tmpfile)
 		os.remove(tmpfile)
-		trans = Transferer.Transferer(id=id,dataFile=tmpfile,verbosity=DEBUG)
+		trans = Transferer.Transferer(
+			id=id,
+			dataFile=tmpfile,
+			verbosity=DEBUG_TRANSFERER
+		)
 		if data != {}:
 			trans.setValue(data)
 		return trans

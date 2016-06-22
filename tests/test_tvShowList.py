@@ -70,7 +70,7 @@ class TestTvShowList(unittest.TestCase):
 		self.downloader = Downloader.Downloader(verbosity=DEBUG)
 		self.downloader.loadConfig(self.confFilename)
 		self.transferer = Transferer.Transferer(id="transferer",verbosity=DEBUG)
-		self.transfererData = {"source": {"path": self.tmpdir1, "protocol": "file"}, "destination": {"path": self.tmpdir2, "protocol": "file"}}
+		self.transfererData = {"enable":True,"source": {"path": self.tmpdir1, "protocol": "file"}, "destination": {"path": self.tmpdir2, "protocol": "file"}}
 		self.transferer.addData(self.confFilename)
 		self.transferer.setValue(self.transfererData)
 		self.torrentSearch = torrentSearch.torrentSearch(id="torrentSearch",dataFile=self.confFilename,verbosity=DEBUG)
