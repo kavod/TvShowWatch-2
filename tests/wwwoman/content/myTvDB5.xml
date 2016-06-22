@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Data><Series>
+    <id>321</id>
+    <Actors>|Boris Kavod|Boris the king of the slip|</Actors>
+    <Airs_DayOfWeek>Tuesday</Airs_DayOfWeek>
+    <Airs_Time>9:00 PM</Airs_Time>
+    <ContentRating>TV-14</ContentRating>
+    <FirstAired>2004-09-22</FirstAired>
+    <Genre>|Action|Adventure|Drama|Science-Fiction|</Genre>
+    <IMDB_ID>tt0411008</IMDB_ID>
+    <Language>en</Language>
+    <Network>Kavod One (US)</Network>
+    <NetworkID></NetworkID>
+    <Overview>This is the description of the TvShow number 2 used by myTvDB class tests.</Overview>
+    <Rating>9.8</Rating>
+    <RatingCount>734</RatingCount>
+    <Runtime>45</Runtime>
+    <SeriesID>321</SeriesID>
+    <SeriesName>TvShow 2</SeriesName>
+    <Status>Ended</Status>
+    <added></added>
+    <addedBy></addedBy>
+    <banner>graphical/123-g4.jpg</banner>
+    <fanart>fanart/original/123-7.jpg</fanart>
+    <lastupdated>1453415473</lastupdated>
+    <poster>posters/123-11.jpg</poster>
+    <tms_wanted_old>1</tms_wanted_old>
+    <zap2it_id>SH672362</zap2it_id>
+  </Series>
+<Episode>
+  <id>127131</id>
+  <Combined_episodenumber>1.0</Combined_episodenumber>
+  <Combined_season>1</Combined_season>
+  <DVD_chapter></DVD_chapter>
+  <DVD_discid></DVD_discid>
+  <DVD_episodenumber>1.0</DVD_episodenumber>
+  <DVD_season>1</DVD_season>
+  <Director>J.J. Abrams</Director>
+  <EpImgFlag>2</EpImgFlag>
+  <EpisodeName>Pilot</EpisodeName>
+  <EpisodeNumber>1</EpisodeNumber>
+  <FirstAired>2004-09-22</FirstAired>
+  <GuestStars>|Greg Grunberg| John Dixon| Michelle Arthur|</GuestStars>
+  <IMDB_ID></IMDB_ID>
+  <Language>en</Language>
+  <Overview>Stripped of everything, the 48 survivors scavenge what they can from the plane for their survival. Some panic. Some pin their hopes on rescue. A few find inner strength they never knew they had-like Kate who, with no medical training, suddenly finds herself suturing the doctor's wounds. The band of friends, family, enemies and strangers must work together against the cruel weather and harsh terrain. But the intense howls of  mysterious creatures stalking the jungle fill them all with fear. Fortunately, thanks to the calm leadership of quick-thinking Jack and level-headed Kate, they have hope. But even heroes have secrets, as the survivors will come to learn.
+</Overview>
+  <ProductionCode>100</ProductionCode>
+  <Rating>8.0</Rating>
+  <RatingCount>128</RatingCount>
+  <SeasonNumber>1</SeasonNumber>
+  <Writer>J.J. Abrams, Damon Lindelof</Writer>
+  <absolute_number></absolute_number>
+  <filename>episodes/73739/127131.jpg</filename>
+  <lastupdated>1385037650</lastupdated>
+  <seasonid>6345</seasonid>
+  <seriesid>321</seriesid>
+  <thumb_added></thumb_added>
+  <thumb_height>225</thumb_height>
+  <thumb_width>400</thumb_width>
+</Episode>
+<Episode>
+  <id>127131</id>
+  <Combined_episodenumber>2.0</Combined_episodenumber>
+  <Combined_season>1</Combined_season>
+  <DVD_chapter></DVD_chapter>
+  <DVD_discid></DVD_discid>
+  <DVD_episodenumber>2.0</DVD_episodenumber>
+  <DVD_season>1</DVD_season>
+  <Director>J.J. Abrams</Director>
+  <EpImgFlag>2</EpImgFlag>
+  <EpisodeName>Final for moment</EpisodeName>
+  <EpisodeNumber>2</EpisodeNumber>
+  <FirstAired>2099-05-23</FirstAired>
+  <GuestStars>|Boris Kavod|</GuestStars>
+  <IMDB_ID></IMDB_ID>
+  <Language>en</Language>
+  <Overview>All characters die!</Overview>
+  <ProductionCode>100</ProductionCode>
+  <Rating>8.0</Rating>
+  <RatingCount>128</RatingCount>
+  <SeasonNumber>1</SeasonNumber>
+  <Writer>J.J. Abrams, Damon Lindelof</Writer>
+  <absolute_number></absolute_number>
+  <filename>episodes/73739/127131.jpg</filename>
+  <lastupdated>1385037650</lastupdated>
+  <seasonid>6345</seasonid>
+  <seriesid>321</seriesid>
+  <thumb_added></thumb_added>
+  <thumb_height>225</thumb_height>
+  <thumb_width>400</thumb_width>
+</Episode>
+</Data>

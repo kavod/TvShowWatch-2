@@ -5,12 +5,22 @@
     {
       "uri":"https://kat.cr/json.php",
       "method":"POST",
-      "template":"kat_search_home.json"
+      "template":"kat_search_home.json",
+      "match_querystring":true
     },
     {
       "uri":"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
       "method":"GET",
-      "template":"kat_download_home.magnet"
+      "template":"kat_download_home.magnet",
+      "match_querystring":true,
+      "status":302,
+      "location":"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent"
+    },
+    {
+      "uri":"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
+      "method":"GET",
+      "template":"kat_download_home.magnet",
+      "match_querystring":true
     }
   ]
 }

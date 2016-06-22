@@ -1,0 +1,83 @@
+{
+  "description":"Requests to thetvdb",
+  "templatedir":"tests/wwwoman/content",
+  "uriList":[
+    {
+      "uri":"http://thetvdb.com/api/GetSeries.php",
+      "method":"GET",
+      "template":"myTvDB1.xml",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/api/A2894E6CB335E443/series/123/en.xml",
+      "method":"GET",
+      "template":"myTvDB2.xml",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/api/A2894E6CB335E443/series/123/all/en.xml",
+      "method":"GET",
+      "template":"myTvDB3.xml",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/api/A2894E6CB335E443/series/321/en.xml",
+      "method":"GET",
+      "template":"myTvDB4.xml",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",
+      "method":"GET",
+      "template":"myTvDB5.xml",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/api/A2894E6CB335E443/series/456/en.xml",
+      "method":"GET",
+      "template":"myTvDB4.xml",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/api/A2894E6CB335E443/series/456/all/en.xml",
+      "method":"GET",
+      "template":"myTvDB7.xml",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/api/A2894E6CB335E443/series/222/en.xml",
+      "method":"GET",
+      "template":"myTvDB_next_episode_wo_firstaired_showInfo.xml",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/api/A2894E6CB335E443/series/222/all/en.xml",
+      "method":"GET",
+      "template":"myTvDB_next_episode_wo_firstaired_episodesInfo.xml",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/banners/_cache/graphical/123-g4.jpg",
+      "method":"GET",
+      "template":"myTvDB_banner.jpg",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/banners/_cache/graphical/321-g4.jpg",
+      "method":"GET",
+      "template":"myTvDB_banner.jpg",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    }
+  ]
+}

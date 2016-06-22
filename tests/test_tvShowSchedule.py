@@ -48,6 +48,7 @@ DEBUG=False
 DEBUG_TORRENT_SEARCH=DEBUG
 DEBUG_TVSHOWSCHEDULE=DEBUG
 DEBUG_ACTIVITYLOG=DEBUG
+DEBUG_TRANSFERER=DEBUG
 
 class TestTvShowSchedule(LogTestCase.LogTestCase):
 	@httpretty.activate
@@ -55,7 +56,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		for mock_url in httpretty_urls:
 			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.downloader = Downloader.Downloader(verbosity=DEBUG)
-		self.transferer = Transferer.Transferer(id="transferer",verbosity=DEBUG)
+		self.transferer = Transferer.Transferer(id="transferer",verbosity=DEBUG_TRANSFERER)
 		self.configFileTransmission = "tests/downloaderTransmission.json"
 		self.configFileSynology = "tests/downloader3.json"
 		self.configFileNone = "tests/downloaderNone.json"

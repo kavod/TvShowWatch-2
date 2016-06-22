@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Data>
+<Series>
+<seriesid>123</seriesid>
+<language>en</language>
+<SeriesName>TvShow1</SeriesName>
+<banner>graphical/123-g4.jpg</banner>
+<Overview>This is the description of the TvShow number 1 used by myTvDB class tests.</Overview>
+<FirstAired>2004-09-22</FirstAired>
+<Network>Kavod One (FR)</Network>
+<IMDB_ID>tt0411008</IMDB_ID>
+<zap2it_id>SH672362</zap2it_id>
+<id>123</id>
+</Series>
+<Series>
+<seriesid>456</seriesid>
+<language>en</language>
+<SeriesName>TvShow2</SeriesName>
+<banner>graphical/123-g4.jpg</banner>
+<Overview>This is the description of the TvShow number 2 used by myTvDB class tests.</Overview>
+<FirstAired>2004-09-22</FirstAired>
+<Network>Kavod One (FR)</Network>
+<IMDB_ID>tt0411008</IMDB_ID>
+<zap2it_id>SH672362</zap2it_id>
+<id>123</id>
+</Series>
+</Data>

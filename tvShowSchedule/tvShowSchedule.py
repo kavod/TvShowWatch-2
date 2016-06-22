@@ -763,6 +763,8 @@ class tvShowSchedule(JSAG3.JSAG3):
 					self.downloader.delete_torrent(self['downloader_id'])
 				except:
 					self.logger.error("Unable to delete source file {0}. Ignoring".format(myFile))
+		else:
+			self.logger.debug("Transferer is disabled. No download")
 		self.set(status=39)
 		self.update(force=True)
 

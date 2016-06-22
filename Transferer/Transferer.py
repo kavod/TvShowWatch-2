@@ -64,10 +64,22 @@ class Transferer(JSAG3.JSAG3):
 			verbosity=verbosity
 		)
 
-	def addData(self,dataFile):
-		JSAG3.JSAG3.addData(self,dataFile)
+	#def addData(self,dataFile):
+	#	JSAG3.JSAG3.addData(self,dataFile)
+
+	def setValue(self,value):
+		JSAG3.JSAG3.setValue(self,value)
 		if 'pathPattern' not in self.keys():
 			self.data['pathPattern'] = self.schema['properties']['pathPattern']['default']
+		if len(self.keys())>1:
+			# Update before commit #e31f682
+			if 'enable' not in self.keys():
+				mustBeEnabled = ('source' in self.keys())
+				self.logger.warning(
+					"'enable' key is not set. Autosetting to: {0}"
+					.format(mustBeEnabled)
+				)
+				self.data['enable'] = mustBeEnabled
 
 	def get_uri(self,endpoint="source",filename=".",subFolder=None,showPassword=False):
 		self.checkUsable()
@@ -95,37 +107,47 @@ class Transferer(JSAG3.JSAG3):
 		return uri.encode('utf-8')
 
 	def transfer(self,filename,dstSubFolder=None,delete_after=False):
-		logging.info(
-			'[Transferer] Transfering file from {0} to {1}'.format(
-				self.get_uri("source",filename).decode('utf-8'),
-				self.get_uri("destination",filename).decode('utf-8')
+		if 'enable' in self.data.keys() and self.data['enable']:
+			self.logger.info(
+				'Transfering file from {0} to {1}'.format(
+					self.get_uri("source",filename).decode('utf-8'),
+					self.get_uri("destination",filename).decode('utf-8')
+				)
 			)
-		)
 
-		source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
-		dest_file = storage.get_storage(self.get_uri("destination",filename=filename,subFolder=dstSubFolder,showPassword=True))
+			source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
+			dest_file = storage.get_storage(self.get_uri("destination",filename=filename,subFolder=dstSubFolder,showPassword=True))
 
-		if self.data['source']['protocol'] == 'file' and self.data['destination']['protocol'] == 'file':
-			destination = "{0}/{1}".format(makePath(self.data['destination']['path'],dstSubFolder),filename)
-			if not os.path.exists(os.path.dirname(destination)):
-				os.makedirs(os.path.dirname(destination))
-			shutil.copyfile("{0}/{1}".format(self.data['source']['path'],filename),destination)
-		else:
-			if self.data['source']['protocol'] == 'file':
-				dest_file.load_from_filename("{0}/{1}".format(self.data['source']['path'],filename))
-			elif self.data['destination']['protocol'] == 'file':
+			if self.data['source']['protocol'] == 'file' and self.data['destination']['protocol'] == 'file':
 				destination = "{0}/{1}".format(makePath(self.data['destination']['path'],dstSubFolder),filename)
 				if not os.path.exists(os.path.dirname(destination)):
 					os.makedirs(os.path.dirname(destination))
-				source_file.save_to_filename(destination)
+				shutil.copyfile("{0}/{1}".format(self.data['source']['path'],filename),destination)
 			else:
-				tmpfile = unicode(tempfile.mkstemp()[1])
-				os.remove(tmpfile)
-				source_file.save_to_filename(tmpfile)
-				dest_file.load_from_filename(tmpfile)
-				os.remove(tmpfile)
-		if delete_after:
-			source_file.delete()
+				if self.data['source']['protocol'] == 'file':
+					try:
+						dest_file.load_from_filename("{0}/{1}".format(self.data['source']['path'],filename))
+					except IOError as e:
+						self.logger.error(
+							"Connection error to {0}"
+							.format(self.data['destination'])
+						)
+						raise e
+				elif self.data['destination']['protocol'] == 'file':
+					destination = "{0}/{1}".format(makePath(self.data['destination']['path'],dstSubFolder),filename)
+					if not os.path.exists(os.path.dirname(destination)):
+						os.makedirs(os.path.dirname(destination))
+					source_file.save_to_filename(destination)
+				else:
+					tmpfile = unicode(tempfile.mkstemp()[1])
+					os.remove(tmpfile)
+					source_file.save_to_filename(tmpfile)
+					dest_file.load_from_filename(tmpfile)
+					os.remove(tmpfile)
+			if delete_after:
+				source_file.delete()
+		else:
+			self.logger.info('Transferer is disabled. No transfer.')
 
 	def delete(self,filename):
 		logging.info('[Transferer] Deleting file {0}'.format(self.get_uri("source",filename)))
