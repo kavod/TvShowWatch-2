@@ -64,6 +64,20 @@
       "template":"myTvDB_next_episode_wo_firstaired_episodesInfo.xml",
       "match_querystring":true,
       "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/banners/_cache/graphical/123-g4.jpg",
+      "method":"GET",
+      "template":"myTvDB_banner.jpg",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/banners/_cache/graphical/321-g4.jpg",
+      "method":"GET",
+      "template":"myTvDB_banner.jpg",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
     }
   ]
 }
