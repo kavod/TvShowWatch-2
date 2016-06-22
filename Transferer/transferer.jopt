@@ -1,7 +1,20 @@
 {
 	"fields": {
+		"enable": {
+			"order":1
+		},
+		"source":{
+			"order":2
+		},
+		"destination":{
+			"order":3
+		},
+		"pathPattern":{
+			"order":4
+		},
 		"delete_after": {
-			"rightLabel": "Delete files immediatly after transfer?"
+			"rightLabel": "Delete files immediatly after transfer?",
+			"order":5
 		}
 	},
 	"definitions":{
