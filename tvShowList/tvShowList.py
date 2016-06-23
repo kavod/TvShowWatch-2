@@ -94,7 +94,12 @@ class tvShowList(list):
 					tvShow = self.getTvShow(item['seriesid'])
 					tvShow.setValue(item)
 				else:
-					tvShow = tvShowSchedule.tvShowSchedule(item['seriesid'],bannerDir=self.banner_dir,autoComplete=False,verbosity=self.verbosity)
+					tvShow = tvShowSchedule.tvShowSchedule(
+						item['seriesid'],
+						bannerDir=self.banner_dir,
+						autoComplete=False,
+						verbosity=self.verbosity
+					)
 					tvShow.setValue(item)
 					self.add(tvShow)
 			for key in [item['seriesid'] for item in self if not self.inList(item['seriesid'])]:

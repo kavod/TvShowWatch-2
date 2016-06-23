@@ -1,0 +1,7 @@
+{
+  "description":"General test scenario for tvShowList (includes thetvdb, t411, kat)",
+  "templatedir":"tests/wwwoman/content",
+  "includes":["t411_success.json","kat_success.json","thetvdb.json"],
+  "uriList":[
+  ]
+}

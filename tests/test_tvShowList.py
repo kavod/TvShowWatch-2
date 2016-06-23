@@ -9,7 +9,6 @@ import datetime
 import dateutil.parser
 import tempfile
 import shutil
-import httpretty
 import logging
 import myTvDB
 import torrentProvider
@@ -20,26 +19,11 @@ import tvShowSchedule
 import tvShowList
 import wwwoman
 
-httpretty.HTTPretty.allow_net_connect = False
-
 T411_URL = (item for item in torrentProvider.TRACKER_CONF if item["id"] == "t411").next()['url']
 
-httpretty_urls = [
-	#("http://thetvdb.com/api/GetSeries.php",'tests/httpretty_myTvDB1.xml'),
-	#("http://thetvdb.com/api/A2894E6CB335E443/series/123/en.xml",'tests/httpretty_myTvDB2.xml'),
-	#("http://thetvdb.com/api/A2894E6CB335E443/series/123/all/en.xml",'tests/httpretty_myTvDB3.xml'),
-	#("http://thetvdb.com/api/A2894E6CB335E443/series/321/en.xml",'tests/httpretty_myTvDB4.xml'),
-	#("http://thetvdb.com/api/A2894E6CB335E443/series/321/all/en.xml",'tests/httpretty_myTvDB5.xml'),
-	#("http://thetvdb.com/banners/_cache/graphical/123-g4.jpg",'tests/image.jpg'),
-	#("http://thetvdb.com/banners/_cache/graphical/321-g4.jpg",'tests/image.jpg'),
-	(T411_URL + "/auth",'tests/httpretty_t411_auth.json'),
-	(T411_URL + "/users/profile/12345678",'tests/httpretty_t411_auth.json'),
-	(T411_URL + "/torrents/search/home",'tests/httpretty_t411_search_home.json'),
-	(T411_URL + "/torrents/search/TvShow%201%20S01E01%20720p",'tests/httpretty_t411_search_not_found.json'),
-	(T411_URL + "/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
-	("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",'tests/httpretty_kat_download_home.magnet'),
-				]
 DEBUG=False
+DEBUG_TVSHOWLIST=DEBUG
+DEBUG_DOWNLOADER=DEBUG
 wwwoman.wwwomanScenario.scenario_path = "tests/wwwoman/scenario"
 
 class TestTvShowList(unittest.TestCase):
@@ -64,7 +48,7 @@ class TestTvShowList(unittest.TestCase):
 
 	def loadFullConfig(self):
 		self.confFilename = "tests/fullConfig.json"
-		self.downloader = Downloader.Downloader(verbosity=DEBUG)
+		self.downloader = Downloader.Downloader(verbosity=DEBUG_DOWNLOADER)
 		self.downloader.loadConfig(self.confFilename)
 		self.transferer = Transferer.Transferer(id="transferer",verbosity=DEBUG)
 		self.transfererData = {"enable":True,"source": {"path": self.tmpdir1, "protocol": "file"}, "destination": {"path": self.tmpdir2, "protocol": "file"}}
@@ -81,11 +65,8 @@ class TestTvShowList(unittest.TestCase):
 		self.assertIsInstance(self.l1,tvShowList.tvShowList)
 		self.assertEqual(self.l1,[])
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_loadFile(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
 		shutil.copyfile('tests/tvShowList2.json',tmpfile)
@@ -96,11 +77,8 @@ class TestTvShowList(unittest.TestCase):
 
 		os.remove(tmpfile)
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_save(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		self.l1.add(self.tvShow1)
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
@@ -135,33 +113,24 @@ class TestTvShowList(unittest.TestCase):
 		},data),
 		os.remove(tmpfile)
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_add_TvShow_achieved(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		self.l1.add(self.tvShow1)
 		self.assertEqual(len(self.l1),1)
 		self.assertEqual(self.l1[0]['season'],0)
 		self.assertEqual(self.l1[0]['episode'],0)
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_add_TvShow_from_id(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		self.l1.add(self.id1)
 		self.assertEqual(len(self.l1),1)
 		self.assertEqual(self.l1[0]['season'],0)
 		self.assertEqual(self.l1[0]['episode'],0)
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_add_TvShow_from_tvShowSchedule(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		self.tvShowSchedule1
 		self.l1.add(self.tvShowSchedule1)
@@ -170,74 +139,53 @@ class TestTvShowList(unittest.TestCase):
 		self.assertEqual(self.l1[0]['episode'],0)
 		self.assertEqual(self.l1[0]['status'],0)
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_add_TvShow_with_episode(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		self.l1.add(self.id1,season=1,epno=2)
 		self.assertEqual(len(self.l1),1)
 		self.assertEqual(self.l1[0]['season'],1)
 		self.assertEqual(self.l1[0]['episode'],2)
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_add_TvShow_with_wrong_episode(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		with self.assertRaises(Exception):
 			self.l1.add(tvShow=self.id1,season=7,epno=2)
 		self.assertEqual(len(self.l1),0)
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_add_TvShow_already_in(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		self.l1.add(self.id1)
 		with self.assertRaises(Exception):
 			self.l1.add(self.tvShow1)
 		self.assertEqual(len(self.l1),1)
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_add_TvShow_multi(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		self.l1.add(self.id1)
 		self.l1.add(self.tvShow2)
 		self.assertEqual(len(self.l1),2)
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_inList(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		self.l1.add(self.tvShow1)
 		self.assertTrue(self.l1.inList(self.id1))
 		self.assertTrue(self.l1.inList(self.tvShow1))
 		self.assertFalse(self.l1.inList(self.tvShow2))
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_getTvShow(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		self.l1.add(self.tvShow1)
 		self.assertEqual(self.l1.getTvShow(self.id1)['seriesid'],self.id1)
 		self.assertIsNone(self.l1.getTvShow(self.id2))
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_delete(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		self.l1.add(self.tvShow1)
 		self.l1.add(self.tvShow2)
@@ -256,71 +204,20 @@ class TestTvShowList(unittest.TestCase):
 		self.assertTrue(self.l1.inList(self.id2))
 		self.assertRaises(Exception,self.l1.delete,999)
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList_complete.json")
 	def test_update(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", responses=[
-			httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_kat_search_not_found.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_kat_search_home.json','r').read())
-		])
-		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-			httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-			httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-		])
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
-			status=302,
-			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
-		)
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
-			status=200,
-			body=open('tests/httpretty_kat_download_home.magnet').read()
-		)
-
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
 		shutil.copyfile('tests/tvShowList3.json',tmpfile)
 
 		self.loadFullConfig()
-		myList = tvShowList.tvShowList(banner_dir=self.tmpdirBanner,tvShows=tmpfile,verbosity=DEBUG)
+		myList = tvShowList.tvShowList(banner_dir=self.tmpdirBanner,tvShows=tmpfile,verbosity=DEBUG_TVSHOWLIST)
 
 		self.assertEqual(myList[0]['status'],0) # 321 S1E2 0 => 10
 		self.assertEqual(myList[1]['status'],0) # 123 S1E1 0 => 22
 		myList.update(downloader=self.downloader,transferer=self.transferer,searcher=self.torrentSearch,wait=True,force=True)
 		self.assertEqual(myList[0]['status'],10) # 321 S1E2 0 => 10
 		self.assertEqual(myList[1]['status'],22) # 123 S1E1 0 => 22
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
-			status=302,
-			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
-		)
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
-			status=200,
-			body=open('tests/httpretty_kat_download_home.magnet').read()
-		)
 
 		myList[0].set(season=1,episode=1,status=10)
 		myList[1].set(status=0)
@@ -329,20 +226,7 @@ class TestTvShowList(unittest.TestCase):
 		myList.update(wait=True,force=True)
 		self.assertEqual(myList[0]['status'],22) # 321 S1E1 10 => 22
 		self.assertEqual(myList[1]['status'],30) # 123 S1E1 0 => 30
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
-			status=302,
-			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
-		)
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
-			status=200,
-			body=open('tests/httpretty_kat_download_home.magnet').read()
-		)
 
-		#myList[0].set(season=1,episode=1,status=10)
 		myList[1].set(season=1,episode=1,status=10)
 		self.assertEqual(myList[0]['status'],22) # 321 S1E1 22 => 30
 		self.assertEqual(myList[1]['status'],10) # 123 S1E1 10 => 30
@@ -352,11 +236,8 @@ class TestTvShowList(unittest.TestCase):
 
 		os.remove(tmpfile)
 
-	@httpretty.activate
-	@wwwoman.register_scenario("thetvdb.json")
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_getValue(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.creation()
 		self.l1.add(self.tvShow1)
 		self.l1.add(self.tvShow2)
