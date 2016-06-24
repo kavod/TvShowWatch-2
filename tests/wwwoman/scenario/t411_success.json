@@ -24,6 +24,11 @@
       "template":"t411_search_home.json"
     },
     {
+      "uri":"/torrents/search/TvShow%201%20S01E01%20720p",
+      "method":"POST",
+      "template":"t411_search_not_found.json"
+    },
+    {
       "uri":"torrents/download/4711811",
       "method":"POST",
       "template":"t411_download.torrent"

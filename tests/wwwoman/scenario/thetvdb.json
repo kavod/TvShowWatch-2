@@ -52,6 +52,20 @@
       "content_type": "text/xml; charset=utf-8"
     },
     {
+      "uri":"http://thetvdb.com/api/A2894E6CB335E443/series/111/en.xml",
+      "method":"GET",
+      "template":"myTvDB8.xml",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
+      "uri":"http://thetvdb.com/api/A2894E6CB335E443/series/111/all/en.xml",
+      "method":"GET",
+      "template":"myTvDB9.xml",
+      "match_querystring":true,
+      "content_type": "text/xml; charset=utf-8"
+    },
+    {
       "uri":"http://thetvdb.com/api/A2894E6CB335E443/series/222/en.xml",
       "method":"GET",
       "template":"myTvDB_next_episode_wo_firstaired_showInfo.xml",

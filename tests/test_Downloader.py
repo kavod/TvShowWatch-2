@@ -11,6 +11,7 @@ import Downloader
 import httpretty
 import logging
 import LogTestCase
+import wwwoman
 
 httpretty.HTTPretty.allow_net_connect = False
 
@@ -22,6 +23,8 @@ httpretty_urls = [
 
 class TestDownloader(LogTestCase.LogTestCase):
 	def setUp(self):
+		wwwoman.wwwomanScenario.scenario_path = "tests/wwwoman/scenario"
+
 		self.configFile1 = "tests/downloader1.json"
 		self.conf1 = {"client":"transmission","transConf":{"address":"localhost","port":9091}}
 
@@ -85,36 +88,22 @@ class TestDownloader(LogTestCase.LogTestCase):
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
                             ])
-		if self.testTransmission:
-			self.d = Downloader.Downloader(verbosity=DEBUG)
-			self.d.loadConfig(self.configFileTransmission)
-			logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
-			if self.d.getValue()['client'] is not None:
-				filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+		self.d = Downloader.Downloader(verbosity=DEBUG)
+		self.d.loadConfig(self.configFileTransmission)
+		logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
+		self.assertIsNotNone(self.d.getValue()['client'])
+		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
-				tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
-				os.remove(tmpfile)
-				shutil.copyfile(filename, tmpfile)
+		tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(filename, tmpfile)
 
-				id = self.d.add_torrent(tmpfile)
-				self.assertEqual(id,"3")
-				self.assertFalse(os.path.isfile(tmpfile))
-				return id
+		id = self.d.add_torrent(tmpfile)
+		self.assertEqual(id,"3")
+		self.assertFalse(os.path.isfile(tmpfile))
 
-	@httpretty.activate
+	@wwwoman.register_scenario("synology.json")
 	def test_add_torrent_synology(self):
-		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
-                               httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
-							   ])
-   		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
-			httpretty.Response(body='{"data":{"offeset":0,"tasks":[],"total":0},"success":true}'), # list
-			httpretty.Response(body='{"data":{"offeset":0,"tasks":[],"total":0},"success":true}'), # list
-			httpretty.Response(body='''{"data":{"offeset":0,"tasks":[{"id":"dbid_160","size":"0","status":"waiting","status_extra":null,
-				"title":"tmpvgwQmq.torrent","type":"bt","username":"test"}],"total":1},"success":true}'''), # list
-   							   ])
-   		httpretty.register_uri(httpretty.POST, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
-			httpretty.Response(body='{"success":true}'), # create
-			])
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
 		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
@@ -129,18 +118,6 @@ class TestDownloader(LogTestCase.LogTestCase):
 
 	@httpretty.activate
 	def test_add_torrent_none(self):
-		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
-                               httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
-							   ])
-   		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
-			httpretty.Response(body='{"data":{"offeset":0,"tasks":[],"total":0},"success":true}'), # list
-			httpretty.Response(body='{"data":{"offeset":0,"tasks":[],"total":0},"success":true}'), # list
-			httpretty.Response(body='''{"data":{"offeset":0,"tasks":[{"id":"dbid_160","size":"0","status":"waiting","status_extra":null,
-				"title":"tmpvgwQmq.torrent","type":"bt","username":"test"}],"total":1},"success":true}'''), # list
-   							   ])
-   		httpretty.register_uri(httpretty.POST, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
-			httpretty.Response(body='{"success":true}'), # create
-			])
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFileNone)
 		self.d['torrentFolder'] = unicode(tempfile.mkdtemp())
@@ -251,7 +228,7 @@ class TestDownloader(LogTestCase.LogTestCase):
 		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",status=500)
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
-		self.d.logger.debug("[Downloader] Data:\n".format(unicode(self.d)))
+		logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
 		if self.d.getValue()['client'] is not None:
 			filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
@@ -290,36 +267,11 @@ class TestDownloader(LogTestCase.LogTestCase):
 			files = self.d.get_files(id)
 			self.assertEquals(files,['file1.txt', 'file2.tgz', 'foo/file4.txt'])
 
-	@httpretty.activate
+	@wwwoman.register_scenario("synology_get_progression.json")
 	def test_get_files_synology(self):
-		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
-                               httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
-							   ])
-   		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
-			httpretty.Response(body='''{"data": {"total": 1, "tasks": [{"additional":{"detail":{"connected_leechers":0,
-				"connected_seeders":1,"create_time":"1463927215","destination":"home/downloads","priority":"auto","total_peers":0,
-				"uri":"tmpvgwQmq.torrent"},"file":[{"filename":"tracked_by_h33t_com.txt","priority":"normal","size":"185",
-				"size_downloaded":"185"},{"filename":"Ubuntu.Linux.Toolbox-2nd.Edition.tgz","priority":"normal","size":"7010029",
-				"size_downloaded":"4454125"},{"filename":"Torrent downloaded from AhaShare.com.txt","priority":"normal","size":"58",
-				"size_downloaded":"58"},{"filename":"Torrent Downloaded From ExtraTorrent.cc.txt","priority":"normal","size":"352",
-				"size_downloaded":"352"}],"transfer":{"size_downloaded":"4454720","size_uploaded":"0","speed_download":1172,
-				"speed_upload":0}},"status": "downloading", "username": "test",	"status_extra": null,
-				"title": "Ubuntu Linux Toolbox - 1000+ Commands for Ubuntu and Debian Power Users", "type": "bt", "id": "dbid_160",
-				"size": "7010624"}], "offeset": 0}, "success": true}'''), # list
-			httpretty.Response(body='''{"data": {"total": 1, "tasks": [{"additional":{"detail":{"connected_leechers":0,
-				"connected_seeders":1,"create_time":"1463927215","destination":"home/downloads","priority":"auto","total_peers":0,
-				"uri":"tmpvgwQmq.torrent"},"file":[{"filename":"tracked_by_h33t_com.txt","priority":"normal","size":"185",
-				"size_downloaded":"185"},{"filename":"Ubuntu.Linux.Toolbox-2nd.Edition.tgz","priority":"normal","size":"7010029",
-				"size_downloaded":"4454125"},{"filename":"Torrent downloaded from AhaShare.com.txt","priority":"normal","size":"58",
-				"size_downloaded":"58"},{"filename":"Torrent Downloaded From ExtraTorrent.cc.txt","priority":"normal","size":"352",
-				"size_downloaded":"352"}],"transfer":{"size_downloaded":"4454720","size_uploaded":"0","speed_download":1172,
-				"speed_upload":0}},"status": "downloading", "username": "test",	"status_extra": null,
-				"title": "Ubuntu Linux Toolbox - 1000+ Commands for Ubuntu and Debian Power Users", "type": "bt", "id": "dbid_160",
-				"size": "7010624"}], "offeset": 0}, "success": true}'''), # list
-				])
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
-		logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
+		self.d.logger.debug("[Downloader] Data:\n".format(unicode(self.d)))
 		if self.d.getValue()['client'] is not None:
 			filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
@@ -364,33 +316,8 @@ class TestDownloader(LogTestCase.LogTestCase):
 			self.assertEquals(progression,75)
 
 
-	@httpretty.activate
+	@wwwoman.register_scenario("synology_get_progression.json")
 	def test_get_progression_synology(self):
-		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
-                               httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
-							   ])
-   		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
-			httpretty.Response(body='''{"data": {"total": 1, "tasks": [{"additional":{"detail":{"connected_leechers":0,
-				"connected_seeders":1,"create_time":"1463927215","destination":"home/downloads","priority":"auto","total_peers":0,
-				"uri":"tmpvgwQmq.torrent"},"file":[{"filename":"tracked_by_h33t_com.txt","priority":"normal","size":"185",
-				"size_downloaded":"185"},{"filename":"Ubuntu.Linux.Toolbox-2nd.Edition.tgz","priority":"normal","size":"7010029",
-				"size_downloaded":"4454125"},{"filename":"Torrent downloaded from AhaShare.com.txt","priority":"normal","size":"58",
-				"size_downloaded":"58"},{"filename":"Torrent Downloaded From ExtraTorrent.cc.txt","priority":"normal","size":"352",
-				"size_downloaded":"352"}],"transfer":{"size_downloaded":"4454720","size_uploaded":"0","speed_download":1172,
-				"speed_upload":0}},"status": "downloading", "username": "test",	"status_extra": null,
-				"title": "Ubuntu Linux Toolbox - 1000+ Commands for Ubuntu and Debian Power Users", "type": "bt", "id": "dbid_160",
-				"size": "7010624"}], "offeset": 0}, "success": true}'''), # list
-			httpretty.Response(body='''{"data": {"total": 1, "tasks": [{"additional":{"detail":{"connected_leechers":0,
-				"connected_seeders":1,"create_time":"1463927215","destination":"home/downloads","priority":"auto","total_peers":0,
-				"uri":"tmpvgwQmq.torrent"},"file":[{"filename":"tracked_by_h33t_com.txt","priority":"normal","size":"185",
-				"size_downloaded":"185"},{"filename":"Ubuntu.Linux.Toolbox-2nd.Edition.tgz","priority":"normal","size":"7010029",
-				"size_downloaded":"4454125"},{"filename":"Torrent downloaded from AhaShare.com.txt","priority":"normal","size":"58",
-				"size_downloaded":"58"},{"filename":"Torrent Downloaded From ExtraTorrent.cc.txt","priority":"normal","size":"352",
-				"size_downloaded":"352"}],"transfer":{"size_downloaded":"4454720","size_uploaded":"0","speed_download":1172,
-				"speed_upload":0}},"status": "downloading", "username": "test",	"status_extra": null,
-				"title": "Ubuntu Linux Toolbox - 1000+ Commands for Ubuntu and Debian Power Users", "type": "bt", "id": "dbid_160",
-				"size": "7010624"}], "offeset": 0}, "success": true}'''), # list
-				])
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
 		logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
@@ -421,15 +348,8 @@ class TestDownloader(LogTestCase.LogTestCase):
 			with self.assertRaises(Downloader.DownloaderSlotNotExists):
 				self.d.start_torrent(5)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("synology_start_failed.json")
 	def test_synology_start_fail(self):
-		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
-                               httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
-							   ])
-   		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
-			httpretty.Response(body='{"data":[{"error":405,"id":"dbid_161"}]}'), # start
-			])
-
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
 
@@ -448,28 +368,8 @@ class TestDownloader(LogTestCase.LogTestCase):
 		self.d.loadConfig(self.configFileTransmission)
 		self.d.start_torrent(3)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("synology_start_success.json")
 	def test_synology_start_success(self):
-		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
-                               httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
-							   ])
-   		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
-			httpretty.Response(body='{"data":[{"error":0,"id":"dbid_161"}]}'), # start
-			])
-
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
 		self.d.start_torrent('dbid_161')
-
-	#Interactives tests
-	"""def test_cliConf(self):
-		tmpfile = unicode(tempfile.mkstemp('.json')[1])
-		os.remove(tmpfile)
-		self.d = Downloader.Downloader()
-		self.d.loadConfig(tmpfile)
-		self.d.cliConf()
-
-	def test_displayConf(self):
-		self.d = Downloader.Downloader()
-		self.d.loadConfig(self.configFile1)
-		self.d.displayConf()"""

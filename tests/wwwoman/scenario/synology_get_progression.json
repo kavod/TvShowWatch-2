@@ -1,0 +1,19 @@
+{
+  "description":"Test for synology get_progression",
+  "templatedir":"tests/wwwoman/content",
+  "baseuri":"https://localhost:5001",
+  "uriList":[
+    {
+      "uri":"/webapi/auth.cgi?session=DownloadStation&account=test&version=2&format=cookie&passwd=nioufniouf&api=SYNO.API.Auth&method=login",
+      "match_querystring":true,
+      "body":"{\"data\":{\"sid\":\"ZexNvOGV.xh7kA4GEN01857\"},\"success\":true}",
+      "method":"GET"
+    },
+    {
+      "uri":"/webapi/DownloadStation/task.cgi?additional=detail%2Ctransfer%2Cfile&api=SYNO.DownloadStation.Task&_sid=ZexNvOGV.xh7kA4GEN01857&session=DownloadStation&version=1&method=list",
+      "match_querystring":true,
+      "template":"synology_1_torrent_multifiles.json",
+      "method":"GET"
+    }
+  ]
+}

@@ -21,6 +21,7 @@ import torrentSearch
 import Transferer
 import ActivityLog
 import shutil
+import wwwoman
 
 httpretty.HTTPretty.allow_net_connect = False
 
@@ -42,7 +43,6 @@ httpretty_urls = [
 	(T411_URL + "/torrents/search/home",'tests/httpretty_t411_search_home.json'),
 	(T411_URL + "/torrents/search/TvShow%201%20S01E01%20720p",'tests/httpretty_t411_search_not_found.json'),
 	(T411_URL + "/torrents/download/4711811",'tests/httpretty_t411_download.torrent'),
-	#("https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",'tests/httpretty_kat_download_home.magnet'),
 				]
 DEBUG=False
 DEBUG_TORRENT_SEARCH=DEBUG
@@ -50,11 +50,10 @@ DEBUG_TVSHOWSCHEDULE=DEBUG
 DEBUG_ACTIVITYLOG=DEBUG
 DEBUG_TRANSFERER=DEBUG
 
+wwwoman.wwwomanScenario.scenario_path = "tests/wwwoman/scenario"
+
 class TestTvShowSchedule(LogTestCase.LogTestCase):
-	@httpretty.activate
 	def setUp(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		self.downloader = Downloader.Downloader(verbosity=DEBUG)
 		self.transferer = Transferer.Transferer(id="transferer",verbosity=DEBUG_TRANSFERER)
 		self.configFileTransmission = "tests/downloaderTransmission.json"
@@ -86,23 +85,17 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
 		self.assertEqual(tvShow['status'],0)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_creation_without_overview_and_banner(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=111,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
 		tvShow.set(season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),info={'seriesname':'About Face'})
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
 		self.assertEqual(tvShow['info']['overview'],"")
 
-	@httpretty.activate
 	@mock.patch('os.path.getmtime')
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_creation_with_new_banner_dl(self,mock_getmtime):
 		mock_getmtime.return_value=time.mktime((datetime.datetime.now() - datetime.timedelta(days=45)).timetuple())
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tmpdir = unicode(tempfile.mkdtemp())
 		tmpfile = '{0}/banner_123.jpg'.format(tmpdir)
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,bannerDir=tmpdir,autoComplete=True,verbosity=DEBUG_TVSHOWSCHEDULE)
@@ -115,10 +108,8 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		os.remove(tmpfile)
 		shutil.rmtree(tmpdir)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_creation_with_fresh_banner(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tmpdir = unicode(tempfile.mkdtemp())
 		tmpfile = '{0}/banner_123.jpg'.format(tmpdir)
 		shutil.copyfile('tests/image1.jpg',tmpfile)
@@ -132,12 +123,10 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		os.remove(tmpfile)
 		shutil.rmtree(tmpdir)
 
-	@httpretty.activate
 	@mock.patch('os.path.getmtime')
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_creation_with_outdated_banner(self,mock_getmtime):
 		mock_getmtime.return_value=time.mktime((datetime.datetime.now() - datetime.timedelta(days=45)).timetuple())
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tmpdir = unicode(tempfile.mkdtemp())
 		tmpfile = '{0}/banner_123.jpg'.format(tmpdir)
 		shutil.copyfile('tests/image1.jpg',tmpfile)
@@ -151,10 +140,8 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		os.remove(tmpfile)
 		shutil.rmtree(tmpdir)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_delete_banner(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tmpdir = unicode(tempfile.mkdtemp())
 		tmpfile = '{0}/banner_123.jpg'.format(tmpdir)
 		shutil.copyfile('tests/image1.jpg',tmpfile)
@@ -165,30 +152,21 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.assertFalse(os.path.isfile(tmpfile))
 		shutil.rmtree(tmpdir)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_creation_from_MyTvDB(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		t = myTvDB.myTvDB()
 		tvShow = tvShowSchedule.tvShowScheduleFromMyTvDB(t[123],verbosity=DEBUG_TVSHOWSCHEDULE)
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
 		self.assertEqual(tvShow['status'],0)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_creation_from_id(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tvShow = tvShowSchedule.tvShowScheduleFromId(123,verbosity=DEBUG_TVSHOWSCHEDULE)
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
 		self.assertEqual(tvShow['status'],0)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_get_progression(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
            httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
@@ -209,10 +187,8 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		)
 		self.assertEqual(tvShow.get_progression(downloader=self.downloader),75)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_0_to_10(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
 		activilylog = ActivityLog.ActivityLog(tmpfile,verbosity=DEBUG_ACTIVITYLOG)
@@ -250,6 +226,7 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		)
 		os.remove(tmpfile)
 
+	#@wwwoman.register_scenario("tvShowList1.json")
 	@httpretty.activate
 	def test_update_0_to_22(self): # Added to waiting for torrent availability
 		for mock_url in httpretty_urls:
@@ -308,31 +285,14 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		)
 		os.remove(tmpfile)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_0_to_30(self): # Added to Download in progress
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
            httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
         ])
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
-
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
-			status=302,
-			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
-		)
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
-			status=200,
-			body=open('tests/httpretty_kat_download_home.magnet').read()
-		)
 
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
@@ -391,11 +351,8 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		)
 		os.remove(tmpfile)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_0_to_90(self): # Added to TvShow Achieved
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
 		tvShow.set(
 			info={'seriesname':'TvShow 1'}
@@ -404,13 +361,8 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],90)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_10_to_21(self): # not broadcasted to waiting for torrent push
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-
-
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
 		emptyTS = torrentSearch.torrentSearch(
@@ -454,32 +406,14 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],22)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_10_to_30_transmission(self): # not broadcasted to Download in progress
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
            httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
         ])
-
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
-			status=302,
-			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
-		)
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
-			status=200,
-			body=open('tests/httpretty_kat_download_home.magnet').read()
-		)
 
 		self.downloader.loadConfig(self.configFileTransmission)
 
@@ -496,14 +430,8 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],30)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_10_to_30_synology(self): # not broadcasted to Download in progress
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
-
 		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
 		   httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
 		])
@@ -516,18 +444,6 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		httpretty.register_uri(httpretty.POST, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
 		httpretty.Response(body='{"success":true}'), # create
 		])
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
-			status=302,
-			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
-		)
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
-			status=200,
-			body=open('tests/httpretty_kat_download_home.magnet').read()
-		)
 
 		self.downloader.loadConfig(self.configFileSynology)
 
@@ -544,26 +460,8 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],30)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_10_to_10_none(self): # not broadcasted to Download in progress
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
-			status=302,
-			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
-		)
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
-			status=200,
-			body=open('tests/httpretty_kat_download_home.magnet').read()
-		)
-
 		self.downloader.loadConfig(self.configFileNone)
 		self.downloader['torrentFolder'] = unicode(tempfile.mkdtemp())
 
@@ -579,33 +477,16 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],10)
-		logging.debug("{0}/{1}".format(self.downloader['torrentFolder'],'[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'))
-		self.assertTrue(os.path.isfile("{0}/{1}".format(self.downloader['torrentFolder'],'[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent')))
+		logging.debug("{0}/{1}".format(self.downloader['torrentFolder'],'F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent'))
+		self.assertTrue(os.path.isfile("{0}/{1}".format(self.downloader['torrentFolder'],'F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent')))
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_20_to_22_file_corrupt(self): # Waiting for torrent availability to itself caused by corrupted file
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
            httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_add_torrent_corrupt.json','r').read()),
         ])
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
-			status=302,
-			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
-		)
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
-			status=200,
-			body=open('tests/httpretty_kat_download_home.magnet').read()
-		)
 		self.downloader.loadConfig(self.configFileTransmission)
 
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
@@ -621,27 +502,9 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 				tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],22)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_20_to_22_downloader_connection_error(self): # Waiting for torrent availability to itself caused by connection error
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",status=500)
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
-			status=302,
-			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
-		)
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
-			status=200,
-			body=open('tests/httpretty_kat_download_home.magnet').read()
-		)
-
 		self.downloader.loadConfig(self.configFileTransmission)
 
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
@@ -657,31 +520,14 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 				tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],22)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_20_to_30(self): # Waiting for torrent availability to Download in progress
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
            httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
            httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
         ])
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9.torrent",
-			status=302,
-			location='https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent'
-		)
-		httpretty.register_uri(
-			httpretty.GET,
-			"https://torcache.net/torrent/F261769DEEF448D86B23A8A0F2CFDEF0F64113C9/[kat.cr]home.is.a.2009.documentary.by.yann.arthus.bertrand.flv.en.torrent",
-			status=200,
-			body=open('tests/httpretty_kat_download_home.magnet').read()
-		)
 		self.downloader.loadConfig(self.configFileTransmission)
 
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
@@ -697,12 +543,6 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 
 	@httpretty.activate
 	def test_update_21_to_22(self): # pushing torrent required -to- wathing torrent on torrent providers
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
 		tvShow.set(
 			season=1,
@@ -716,13 +556,8 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],22)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_22_to_21(self): # Watching torrent from TP but no TP setup
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-
-
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])
 		os.remove(tmpfile)
 		emptyTS = torrentSearch.torrentSearch(
@@ -746,15 +581,10 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.assertEqual(tvShow['status'],21)
 		os.remove(tmpfile)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_30_to_10(self): # Download in progress to Added
 		files = ['file1.txt','file2.tgz','foo/file4.txt']
 
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
                                httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
@@ -855,15 +685,10 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		)
 		os.remove(tmpfile)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_30_to_10_with_delete_after(self): # Download in progress to Added
 		files = ['file1.txt','file2.tgz','foo/file4.txt']
 
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
                                httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
@@ -900,15 +725,10 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/season 1/"+myFile))
 		self.assertEqual(tvShow['status'],10)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_30_to_90(self): # Download in progress to Achieved
 		files = ['file1.txt','file2.tgz','foo/file4.txt']
 
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
-		httpretty.register_uri(httpretty.POST, T411_URL + "/torrents/search/TvShow%201%20S01E02%20720p", body=open('tests/httpretty_kat_search_not_found.json','r').read())
-		httpretty.register_uri(httpretty.POST, "https://kat.cr/json.php", body=open('tests/httpretty_kat_search_home.json','r').read())
 		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
                                httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
@@ -943,11 +763,8 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/season 1/"+myFile))
 		self.assertEqual(tvShow['status'],90)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_90_to_10(self): # Achieved to watching
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
 		tvShow.set(
 			nextUpdate=datetime.datetime.now(),
@@ -957,11 +774,8 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
 		self.assertEqual(tvShow['status'],10)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_90_to_90(self):
-		for mock_url in httpretty_urls:
-			httpretty.register_uri(httpretty.GET, mock_url[0],body=open(mock_url[1],'r').read())
-			httpretty.register_uri(httpretty.POST, mock_url[0],body=open(mock_url[1],'r').read())
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=456,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
 		tvShow.set(
 			nextUpdate=datetime.datetime.now(),
