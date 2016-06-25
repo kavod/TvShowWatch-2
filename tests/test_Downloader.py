@@ -8,22 +8,16 @@ import tempfile
 import shutil
 import json
 import Downloader
-import httpretty
 import logging
 import LogTestCase
 import wwwoman
 
-httpretty.HTTPretty.allow_net_connect = False
-
 DEBUG=False
-
-httpretty_urls = [
-	("http://localhost:9091/transmission/rpc",'tests/httpretty_transmission_add_torrent.json'),
-	]
 
 class TestDownloader(LogTestCase.LogTestCase):
 	def setUp(self):
 		wwwoman.wwwomanScenario.scenario_path = "tests/wwwoman/scenario"
+		wwwoman.wwwoman.allow_net_connect = False
 
 		self.configFile1 = "tests/downloader1.json"
 		self.conf1 = {"client":"transmission","transConf":{"address":"localhost","port":9091}}
@@ -41,28 +35,17 @@ class TestDownloader(LogTestCase.LogTestCase):
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.assertIsInstance(self.d,Downloader.Downloader)
 
-	@httpretty.activate
 	def test_loadConfig(self):
-		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                            ])
 		self.assertTrue(os.path.isfile(self.configFile1))
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile1)
 
-	@httpretty.activate
 	def test_synoloadConfig(self):
 		self.assertTrue(os.path.isfile(self.configFile3))
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
 
-	@httpretty.activate
 	def test_loadConfig_with_path(self):
-		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                            ])
 		self.assertTrue(os.path.isfile(self.configFile2))
 		self.d = Downloader.Downloader()
 		self.d.loadConfig(self.configFile2,path=['downloader'])
@@ -81,13 +64,8 @@ class TestDownloader(LogTestCase.LogTestCase):
 		self.assertEqual(data,{"downloader":{}})
 		os.remove(tmpfile)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("transmission_sess_get_add.json")
 	def test_add_torrent_transmission(self):
-		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                            ])
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFileTransmission)
 		logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
@@ -101,6 +79,7 @@ class TestDownloader(LogTestCase.LogTestCase):
 		id = self.d.add_torrent(tmpfile)
 		self.assertEqual(id,"3")
 		self.assertFalse(os.path.isfile(tmpfile))
+		self.assertEqual(len(wwwoman.wwwoman.latest_requests),3)
 
 	@wwwoman.register_scenario("synology.json")
 	def test_add_torrent_synology(self):
@@ -116,7 +95,6 @@ class TestDownloader(LogTestCase.LogTestCase):
 		self.assertEqual(id,"dbid_160")
 		self.assertFalse(os.path.isfile(tmpfile))
 
-	@httpretty.activate
 	def test_add_torrent_none(self):
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFileNone)
@@ -134,186 +112,138 @@ class TestDownloader(LogTestCase.LogTestCase):
 		self.assertTrue(os.path.isfile(destfile))
 		os.remove(destfile)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("transmission_sess_get_add_corrupt.json")
 	def test_add_torrent_transmission_corrupt(self):
-		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-           httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-           httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-           httpretty.Response(body=open('tests/httpretty_transmission_add_torrent_corrupt.json','r').read()),
-        ])
-		if self.testTransmission:
-			self.d = Downloader.Downloader(verbosity=DEBUG)
-			self.d.loadConfig(self.configFileTransmission)
-			if self.d.getValue()['client'] is not None:
-				filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+		self.d = Downloader.Downloader(verbosity=DEBUG)
+		self.d.loadConfig(self.configFileTransmission)
+		self.assertIsNotNone(self.d.data['client'])
+		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
-				tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
-				os.remove(tmpfile)
-				shutil.copyfile(filename, tmpfile)
+		tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(filename, tmpfile)
 
-				with self.assertRaises(Downloader.DownloaderCorruptedTorrent):
-					with self.assertLogs(logger=self.d.logger,level='ERROR'):
-						id = self.d.add_torrent(tmpfile)
-				os.remove(tmpfile)
+		with self.assertRaises(Downloader.DownloaderCorruptedTorrent):
+			with self.assertLogs(logger=self.d.logger,level='ERROR'):
+				id = self.d.add_torrent(tmpfile)
+		os.remove(tmpfile)
+		self.assertEqual(len(wwwoman.wwwoman.latest_requests),3)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("transmission_sess_get_add.json")
 	def test_get_status_transmission(self):
-		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                            ])
 		self.d = Downloader.Downloader()
 		self.d.loadConfig(self.configFileTransmission)
-		if self.d.data['client'] is not None:
-			filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+		self.assertIsNotNone(self.d.data['client'])
+		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
-			tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
-			os.remove(tmpfile)
-			shutil.copyfile(filename, tmpfile)
+		tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(filename, tmpfile)
 
-			id = self.d.add_torrent(tmpfile,delTorrent=True)
-			self.assertEqual(id,"3")
-			self.assertFalse(os.path.isfile(tmpfile))
+		id = self.d.add_torrent(tmpfile,delTorrent=True)
+		self.assertEqual(id,"3")
+		self.assertFalse(os.path.isfile(tmpfile))
 		status = self.d.get_status(id)
 		self.assertIn(status,['check pending', 'checking', 'downloading', 'seeding'])
+		self.assertEqual(len(wwwoman.wwwoman.latest_requests),4)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("synology_get_progression.json")
 	def test_get_status_synology(self):
-		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",responses=[
-                               httpretty.Response(body='{"data":{"sid":"ZexNvOGV.xh7kA4GEN01857"},"success":true}')
-							   ])
-   		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/DownloadStation/task.cgi",responses=[
-			httpretty.Response(body='''{"data": {"total": 1, "tasks": [{"additional":{"detail":{"connected_leechers":0,
-				"connected_seeders":1,"create_time":"1463927215","destination":"home/downloads","priority":"auto","total_peers":0,
-				"uri":"tmpvgwQmq.torrent"},"file":[{"filename":"tracked_by_h33t_com.txt","priority":"normal","size":"185",
-				"size_downloaded":"185"},{"filename":"Ubuntu.Linux.Toolbox-2nd.Edition.tgz","priority":"normal","size":"7010029",
-				"size_downloaded":"4454125"},{"filename":"Torrent downloaded from AhaShare.com.txt","priority":"normal","size":"58",
-				"size_downloaded":"58"},{"filename":"Torrent Downloaded From ExtraTorrent.cc.txt","priority":"normal","size":"352",
-				"size_downloaded":"352"}],"transfer":{"size_downloaded":"4454720","size_uploaded":"0","speed_download":1172,
-				"speed_upload":0}},"status": "downloading", "username": "test",	"status_extra": null,
-				"title": "Ubuntu Linux Toolbox - 1000+ Commands for Ubuntu and Debian Power Users", "type": "bt", "id": "dbid_160",
-				"size": "7010624"}], "offeset": 0}, "success": true}'''), # list
-			httpretty.Response(body='''{"data": {"total": 1, "tasks": [{"additional":{"detail":{"connected_leechers":0,
-				"connected_seeders":1,"create_time":"1463927215","destination":"home/downloads","priority":"auto","total_peers":0,
-				"uri":"tmpvgwQmq.torrent"},"file":[{"filename":"tracked_by_h33t_com.txt","priority":"normal","size":"185",
-				"size_downloaded":"185"},{"filename":"Ubuntu.Linux.Toolbox-2nd.Edition.tgz","priority":"normal","size":"7010029",
-				"size_downloaded":"4454125"},{"filename":"Torrent downloaded from AhaShare.com.txt","priority":"normal","size":"58",
-				"size_downloaded":"58"},{"filename":"Torrent Downloaded From ExtraTorrent.cc.txt","priority":"normal","size":"352",
-				"size_downloaded":"352"}],"transfer":{"size_downloaded":"4454720","size_uploaded":"0","speed_download":1172,
-				"speed_upload":0}},"status": "downloading", "username": "test",	"status_extra": null,
-				"title": "Ubuntu Linux Toolbox - 1000+ Commands for Ubuntu and Debian Power Users", "type": "bt", "id": "dbid_160",
-				"size": "7010624"}], "offeset": 0}, "success": true}'''), # list
-				])
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
 		logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
-		if self.d.getValue()['client'] is not None:
-			filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+		self.assertIsNotNone(self.d.data['client'])
+		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
-			tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
-			os.remove(tmpfile)
-			shutil.copyfile(filename, tmpfile)
+		tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(filename, tmpfile)
 
-			id = self.d.add_torrent(tmpfile,delTorrent=True)
-			self.assertEqual(id,"dbid_160")
-			self.assertFalse(os.path.isfile(tmpfile))
+		id = self.d.add_torrent(tmpfile,delTorrent=True)
+		self.assertEqual(id,"dbid_160")
+		self.assertFalse(os.path.isfile(tmpfile))
 
-			status = self.d.get_status(id)
-			self.assertIn(status,['check pending', 'checking', 'downloading', 'seeding'])
+		status = self.d.get_status(id)
+		self.assertIn(status,['check pending', 'checking', 'downloading', 'seeding'])
+		self.assertEqual(len(wwwoman.wwwoman.latest_requests),4)
 
-	@httpretty.activate
+	@wwwoman.register(method="GET", uri="https://localhost:5001/webapi/auth.cgi",status=500)
 	def test_synology_connectionError(self):
-		httpretty.register_uri(httpretty.GET, "https://localhost:5001/webapi/auth.cgi",status=500)
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
 		logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
-		if self.d.getValue()['client'] is not None:
-			filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+		self.assertIsNotNone(self.d.data['client'])
+		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
-			tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
-			os.remove(tmpfile)
-			shutil.copyfile(filename, tmpfile)
+		tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(filename, tmpfile)
 
-			with self.assertRaises(Downloader.DownloaderConnectionError):
-				with self.assertLogs(logger=self.d.logger,level='ERROR'):
-					id = self.d.add_torrent(tmpfile,delTorrent=True)
-			os.remove(tmpfile)
-		else:
-			raise Exception("No client")
-
-	@httpretty.activate
-	def test_get_files_transmission(self):
-		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                            ])
-		if self.testTransmission:
-			self.d = Downloader.Downloader(verbosity=DEBUG)
-			self.d.loadConfig(self.configFileTransmission)
-			if self.d.data['client'] is not None:
-				filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
-
-				tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
-				os.remove(tmpfile)
-				shutil.copyfile(filename, tmpfile)
-
+		with self.assertRaises(Downloader.DownloaderConnectionError):
+			with self.assertLogs(logger=self.d.logger,level='ERROR'):
 				id = self.d.add_torrent(tmpfile,delTorrent=True)
-				self.assertEqual(id,"3")
-				self.assertFalse(os.path.isfile(tmpfile))
-			files = self.d.get_files(id)
-			self.assertEquals(files,['file1.txt', 'file2.tgz', 'foo/file4.txt'])
+		os.remove(tmpfile)
+		self.assertEqual(len(wwwoman.wwwoman.latest_requests),1)
+
+	@wwwoman.register_scenario("transmission_sess_get_add.json")
+	def test_get_files_transmission(self):
+		self.d = Downloader.Downloader(verbosity=DEBUG)
+		self.d.loadConfig(self.configFileTransmission)
+		self.assertIsNotNone(self.d.data['client'])
+		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+
+		tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(filename, tmpfile)
+
+		id = self.d.add_torrent(tmpfile,delTorrent=True)
+		self.assertEqual(id,"3")
+		self.assertFalse(os.path.isfile(tmpfile))
+		files = self.d.get_files(id)
+		self.assertEquals(files,['file1.txt', 'file2.tgz', 'foo/file4.txt'])
+		self.assertEqual(len(wwwoman.wwwoman.latest_requests),4)
 
 	@wwwoman.register_scenario("synology_get_progression.json")
 	def test_get_files_synology(self):
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
 		self.d.logger.debug("[Downloader] Data:\n".format(unicode(self.d)))
-		if self.d.getValue()['client'] is not None:
-			filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+		self.assertIsNotNone(self.d.data['client'])
+		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
-			tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
-			os.remove(tmpfile)
-			shutil.copyfile(filename, tmpfile)
+		tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(filename, tmpfile)
 
-			id = self.d.add_torrent(tmpfile,delTorrent=True)
-			self.assertEqual(id,"dbid_160")
-			self.assertFalse(os.path.isfile(tmpfile))
+		id = self.d.add_torrent(tmpfile,delTorrent=True)
+		self.assertEqual(id,"dbid_160")
+		self.assertFalse(os.path.isfile(tmpfile))
 
-			files = self.d.get_files(id)
-			self.assertEquals(files,[
-				'tracked_by_h33t_com.txt',
-				'Ubuntu.Linux.Toolbox-2nd.Edition.tgz',
-				'Torrent downloaded from AhaShare.com.txt',
-				'Torrent Downloaded From ExtraTorrent.cc.txt'
-			])
+		files = self.d.get_files(id)
+		self.assertEquals(files,[
+			'tracked_by_h33t_com.txt',
+			'Ubuntu.Linux.Toolbox-2nd.Edition.tgz',
+			'Torrent downloaded from AhaShare.com.txt',
+			'Torrent Downloaded From ExtraTorrent.cc.txt'
+		])
 
-	@httpretty.activate
+	@wwwoman.register_scenario("transmission_sess_getDl_add_getDl.json")
 	def test_get_progression_transmission(self):
-		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_add_torrent.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-                            ])
-		if self.testTransmission:
-			self.d = Downloader.Downloader(verbosity=DEBUG)
-			self.d.loadConfig(self.configFileTransmission)
-			if self.d.data['client'] is not None:
-				filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+		self.d = Downloader.Downloader(verbosity=DEBUG)
+		self.d.loadConfig(self.configFileTransmission)
+		self.assertIsNotNone(self.d.data['client'])
+		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
-				tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
-				os.remove(tmpfile)
-				shutil.copyfile(filename, tmpfile)
+		tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(filename, tmpfile)
 
-				id = self.d.add_torrent(tmpfile,delTorrent=True)
-				self.assertEqual(id,"3")
-				self.assertFalse(os.path.isfile(tmpfile))
-			progression = self.d.get_progression(id)
-			self.assertEquals(progression,75)
+		id = self.d.add_torrent(tmpfile,delTorrent=True)
+		self.assertEqual(id,"3")
+		self.assertFalse(os.path.isfile(tmpfile))
+		progression = self.d.get_progression(id)
+		self.assertEquals(progression,75)
+		self.assertEqual(len(wwwoman.wwwoman.latest_requests),4)
 
 
 	@wwwoman.register_scenario("synology_get_progression.json")
@@ -321,32 +251,29 @@ class TestDownloader(LogTestCase.LogTestCase):
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFile3)
 		logging.debug("[Downloader] Data:\n".format(unicode(self.d)))
-		if self.d.getValue()['client'] is not None:
-			filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
+		self.assertIsNotNone(self.d.data['client'])
+		filename = "{0}/{1}".format(os.path.dirname(os.path.abspath(__file__)),'test.torrent')
 
-			tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
-			os.remove(tmpfile)
-			shutil.copyfile(filename, tmpfile)
+		tmpfile = unicode(tempfile.mkstemp('.torrent')[1])
+		os.remove(tmpfile)
+		shutil.copyfile(filename, tmpfile)
 
-			id = self.d.add_torrent(tmpfile,delTorrent=True)
-			self.assertEqual(id,"dbid_160")
-			self.assertFalse(os.path.isfile(tmpfile))
+		id = self.d.add_torrent(tmpfile,delTorrent=True)
+		self.assertEqual(id,"dbid_160")
+		self.assertFalse(os.path.isfile(tmpfile))
 
-			progression = self.d.get_progression(id)
-			self.assertEquals(progression,63)
+		progression = self.d.get_progression(id)
+		self.assertEquals(progression,63)
 
-	@httpretty.activate
+	@wwwoman.register_scenario("transmission_sess_getDl_add_getDl.json")
 	def test_transmission_start_fail(self):
-		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                            	httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-								])
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFileTransmission)
 
 		with self.assertLogs(logger=self.d.logger,level='ERROR'):
 			with self.assertRaises(Downloader.DownloaderSlotNotExists):
 				self.d.start_torrent(5)
+		self.assertEqual(len(wwwoman.wwwoman.latest_requests),2)
 
 	@wwwoman.register_scenario("synology_start_failed.json")
 	def test_synology_start_fail(self):
@@ -357,16 +284,12 @@ class TestDownloader(LogTestCase.LogTestCase):
 			with self.assertRaises(Downloader.DownloaderSlotNotExists):
 				self.d.start_torrent('dbid_161')
 
-	@httpretty.activate
+	@wwwoman.register_scenario("transmission_sess_getDl_success.json")
 	def test_transmission_start_success(self):
-		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                            	httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                                httpretty.Response(body=open('tests/httpretty_transmission_torrent_get_downloading.json','r').read()),
-					        	httpretty.Response(body=open('tests/httpretty_transmission_success.json','r').read()),
-								])
 		self.d = Downloader.Downloader(verbosity=DEBUG)
 		self.d.loadConfig(self.configFileTransmission)
 		self.d.start_torrent(3)
+		self.assertEqual(len(wwwoman.wwwoman.latest_requests),3)
 
 	@wwwoman.register_scenario("synology_start_success.json")
 	def test_synology_start_success(self):

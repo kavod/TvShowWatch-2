@@ -1,0 +1,16 @@
+{
+  "description":"Successfull get_session, torrent_get, add_torrent for transmission",
+  "templatedir":"tests/wwwoman/content",
+  "baseuri":"http://localhost:9091",
+  "uriList":[
+    {
+      "uri":"/transmission/rpc",
+      "method":"POST",
+      "template":[
+        "transmission_get_session.json",
+        "transmission_torrent_get_downloading.json",
+        "transmission_success.json"
+      ]
+    }
+  ]
+}
