@@ -330,6 +330,7 @@ def test_chownrestricted():
 	except OSError:
 		result = False
 	os.remove(tmpfile)
+	return result
 
 class Users(object):
 	@cherrypy.expose
