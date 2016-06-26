@@ -11,7 +11,7 @@ import Transferer
 import LogTestCase
 
 DEBUG=False
-DEBUG_TRANSFERER=False
+DEBUG_TRANSFERER=DEBUG
 
 class TestTransferer(LogTestCase.LogTestCase):
 	def setUp(self):
@@ -31,6 +31,7 @@ class TestTransferer(LogTestCase.LogTestCase):
 		self.data4 = {"enable":True, "source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"protocol": "ftp", "host": self.ftp_server, "user": self.ftp_user, "path": "/"+self.ftp_dir, "password": self.ftp_pwd, "port": self.ftp_port}}
 		self.data5 = {"enable":False, "source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"path": self.tmpdirs[1], "protocol": "file"}}
 		self.data6 = {"source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"path": self.tmpdirs[1], "protocol": "file"}}
+		self.data7 = {"enable":True,"source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"path": self.tmpdirs[1], "protocol": "file"},"permissions":{"user":7,"group":7,"all":7,"uid":-1,"gid":-1}}
 
 	def test_creation(self):
 		trans = self.creation(id="test1")
@@ -102,6 +103,26 @@ class TestTransferer(LogTestCase.LogTestCase):
 		trans.transfer(tmpfile)
 		self.assertTrue(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
 		self.assertTrue(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
+		self.assertEqual(oct(os.stat(self.tmpdirs[1]+"/"+tmpfile).st_mode & 0777),'0664')
+
+	def test_permissions(self):
+		tmpfile = unicode(tempfile.mkstemp('.json')[1])
+		self.tmpfiles.append(tmpfile)
+		os.remove(tmpfile)
+		trans = Transferer.Transferer(
+			id="test7",
+			dataFile=tmpfile,
+			verbosity=DEBUG_TRANSFERER
+		)
+		trans.setValue(self.data7)
+		tmpfile = unicode(tempfile.mkstemp('.txt',dir=self.tmpdirs[0])[1])
+		self.tmpfiles.append(tmpfile)
+		tmpfile = os.path.basename(tmpfile)
+		self.assertFalse(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
+		trans.transfer(tmpfile)
+		self.assertTrue(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
+		self.assertTrue(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
+		self.assertEqual(oct(os.stat(self.tmpdirs[1]+"/"+tmpfile).st_mode & 0777),'0777')
 
 	def test_transfer_file_to_file(self):
 		trans = self.creation(id="test1",data=self.data1)

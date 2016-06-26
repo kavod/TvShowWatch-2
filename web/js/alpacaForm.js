@@ -1,5 +1,5 @@
-function alpacaForm(id) {
-	return {
+function alpacaForm(id,view) {
+	alpaca_params = {
 		"schemaSource": "/schema/" + id + "/",
 		"optionsSource":"/options/" + id + "/",
 		"dataSource":"/data/" + id + "/",
@@ -45,6 +45,11 @@ function alpacaForm(id) {
 			}
 		}
 	};
+
+	if (typeof(view)!='undefined')
+		alpaca_params['viewSource'] = "/view/" + id + "/"
+
+	return alpaca_params;
 };
 
 $(document).ready(function() {

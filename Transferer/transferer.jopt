@@ -12,12 +12,41 @@
 		"pathPattern":{
 			"order":4
 		},
+		"permissions":{
+			"order":7,
+			"fields":{
+				"uid":{
+					"type": "select",
+					"dataSource": "/users",
+					"hideNone":true,
+					"order":1
+				},
+				"gid":{
+					"type": "select",
+					"dataSource": "/groups",
+					"hideNone":true,
+					"order":2
+				},
+				"user":{
+					"order":3
+				},
+				"group":{
+					"order":4
+				},
+				"all":{
+					"order":5
+				}
+			}
+		},
 		"delete_after": {
 			"rightLabel": "Delete files immediatly after transfer?",
-			"order":5
+			"order":8
 		}
 	},
 	"definitions":{
+		"permission":{
+			"type":"integer"
+		},
 		"endpoint":{
 			"fields":{
 				"protocol":{

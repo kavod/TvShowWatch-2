@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import os
 import logging
 import tempfile
+import ftplib
 import shutil
 import storage
 import JSAG3
@@ -64,9 +65,6 @@ class Transferer(JSAG3.JSAG3):
 			verbosity=verbosity
 		)
 
-	#def addData(self,dataFile):
-	#	JSAG3.JSAG3.addData(self,dataFile)
-
 	def setValue(self,value):
 		JSAG3.JSAG3.setValue(self,value)
 		if 'pathPattern' not in self.keys():
@@ -123,6 +121,7 @@ class Transferer(JSAG3.JSAG3):
 				if not os.path.exists(os.path.dirname(destination)):
 					os.makedirs(os.path.dirname(destination))
 				shutil.copyfile("{0}/{1}".format(self.data['source']['path'],filename),destination)
+				self.setPerm(destination)
 			else:
 				if self.data['source']['protocol'] == 'file':
 					try:
@@ -138,6 +137,7 @@ class Transferer(JSAG3.JSAG3):
 					if not os.path.exists(os.path.dirname(destination)):
 						os.makedirs(os.path.dirname(destination))
 					source_file.save_to_filename(destination)
+					self.setPerm(destination)
 				else:
 					tmpfile = unicode(tempfile.mkstemp()[1])
 					os.remove(tmpfile)
@@ -167,3 +167,24 @@ class Transferer(JSAG3.JSAG3):
 			raise Exception("Protocol missing for destination")
 		if 'path' not in self.data['destination'].keys() or self.data['destination']['path'] is None:
 			raise Exception("Path missing for destination")
+
+	def getFileMode10(self):
+		if "permissions" in self.keys():
+			mode = 0
+			mode += self['permissions']['user']*100
+			mode += self['permissions']['group']*10
+			mode += self['permissions']['all']*1
+		else:
+			mode = 664
+		self.logger.debug("Set file permission {0}".format(unicode(mode)))
+		return int(mode)
+
+	def getFileMode8(self):
+		return int(unicode(self.getFileMode10()),8)
+
+	def setPerm(self,filename):
+		if self['destination']['protocol'] == 'file':
+			os.chmod(filename,self.getFileMode8())
+			uid = self['permissions']['uid'] if "permissions" in self.keys() and self['permissions']['uid']>-1 else os.getuid()
+			gid = self['permissions']['gid'] if "permissions" in self.keys() and self['permissions']['gid']>-1 else os.getgid()
+			os.chown(filename,uid,gid)

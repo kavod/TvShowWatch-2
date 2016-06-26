@@ -5,7 +5,8 @@
 		"source":["enable"],
 		"destination":["enable"],
 		"pathPattern":["enable"],
-		"delete_after":["enable"]
+		"delete_after":["enable"],
+		"permissions":["enable"]
 	},
 	"properties": {
 		"enable": {
@@ -26,6 +27,37 @@
 			"type": "string",
 			"default": "{seriesname}/season {seasonnumber}"
 		},
+		"permissions":{
+			"title":"Files permissions",
+			"description": "Only for destination protocol 'file'",
+			"type":"object",
+			"properties":{
+				"uid": {
+					"title": "File owner",
+					"type": "integer"
+				},
+				"gid": {
+					"title": "Group owner",
+					"type": "integer"
+				},
+				"user":{
+					"title":"User permissions",
+					"$ref":"#/definitions/permission",
+					"default":6
+				},
+				"group":{
+					"title":"Group permissions",
+					"$ref":"#/definitions/permission",
+					"default":6
+				},
+				"all":{
+					"title":"All permissions",
+					"$ref":"#/definitions/permission",
+					"default":4
+				}
+			},
+			"required":["user","group","all"]
+		},
 		"delete_after": {
 			"title": "Delete after transfer",
 			"type": "boolean",
@@ -33,6 +65,11 @@
 		}
 	},
 	"definitions": {
+		"permission":{
+					"type":"number",
+					"minimum":0,
+					"maximum":7
+		},
 		"endpoint": {
 			"type": "object",
 			"properties": {
