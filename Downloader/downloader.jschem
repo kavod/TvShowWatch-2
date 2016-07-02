@@ -140,7 +140,6 @@
 	"required":["client","torrentFolder"],
 	"dependencies": {
 		"transConf":["client"],
-		"synoConf":["client"],
-		"torrentFolder":["deleteAfter","client"]
+		"synoConf":["client"]
 	}
 }

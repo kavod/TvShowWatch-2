@@ -1,0 +1,31 @@
+{
+  "title":"Configuration",
+  "type":"object",
+  "properties":{
+    "confFile":{
+      "type":"string"
+    },
+    "resultPath":{
+      "type":"string"
+    },
+    "suite":{
+      "type":"array",
+      "items":{
+        "title":"TestCase",
+        "type":"object",
+        "properties":{
+          "className":{
+            "type":"string"
+          },
+          "lastRun":{
+      			"type":"string",
+      			"format":"datetime"
+          },
+          "success":{
+      			"type":"boolean"
+          }
+        }
+      }
+    }
+  }
+}

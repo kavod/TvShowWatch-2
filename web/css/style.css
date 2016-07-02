@@ -49,3 +49,8 @@ input[readonly] {
   background-color: white !important;
   cursor: text !important;
 }
+
+.uib-accordion-group pre{
+	background-color: transparent;
+	border: 0;
+}

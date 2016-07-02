@@ -97,3 +97,8 @@ class torrentSearch(JSAG3.JSAG3):
 		if tor['provider'] not in availProviders:
 			raise Exception("Unknown torrent provider: {0} ({1})\nKnown providers: {2}".format(tor['provider'],type(tor['provider']),unicode(availProviders)))
 		return self.providers[tor['provider']].download(tor['id'])
+
+	def test(self):
+		for provider in self.providers.values():
+			provider.connect()
+			provider.test()

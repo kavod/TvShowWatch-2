@@ -58,8 +58,22 @@
 						<li ng-class="{ active:pills.isSelected('notificator') }"><a ng-click="pills.selectTab('notificator')">Notifications</a></li>
 					</ul>
 					<div class="tab-content col-sm-8">
-						<div id="torrent-search" ng-show="pills.isSelected('torrent-search')" ng-controller="TorrentProvidersController as TPCtrl"></div>
-						<div id="downloader" ng-show="pills.isSelected('downloader')" ng-controller="TorrentClientController as TPCtrl"></div>
+						<div id="torrentSearch" ng-show="pills.isSelected('torrent-search')" ng-controller="TorrentProvidersController as TPCtrl">
+							<div class="alpacaForm"></div><br />
+							<uib-accordion close-others="oneAtATime">
+								<uib-accordion-group heading="Configuration test result" panel-class="{{TPCtrl.type}}" is-open="TPCtrl.isOpen" ng-hide="TPCtrl.hide">
+									<pre>{{TPCtrl.content}}</pre>
+								</uib-accordion-group>
+							</uib-accordion>
+						</div>
+						<div id="Downloader" ng-show="pills.isSelected('downloader')" ng-controller="TorrentClientController as TCCtrl">
+							<div class="alpacaForm"></div><br />
+							<uib-accordion close-others="oneAtATime">
+								<uib-accordion-group heading="Configuration test result" panel-class="{{TCCtrl.type}}" is-open="TCCtrl.isOpen" ng-hide="TCCtrl.hide">
+									<pre>{{TCCtrl.content}}</pre>
+								</uib-accordion-group>
+							</uib-accordion>
+						</div>
 						<div id="transfer" ng-show="pills.isSelected('transferer')" ng-controller="TransferController as TPCtrl"></div>
 						<div id="notificator" ng-show="pills.isSelected('notificator')" ng-controller="NotificatorController as TPCtrl"></div>
 					</div>

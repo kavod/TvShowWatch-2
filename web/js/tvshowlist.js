@@ -83,6 +83,8 @@
 						tvshow.progress = data[seriesid];
 					}
 				}
+			} else if (event.lastEventId == 'conf-test') {
+				$('#' + event.data).scope().updateConfTest(isOpen=true);
 			}
 		};
 		this.source = new EventSource("streamGetSeries");

@@ -6,6 +6,7 @@ import sys
 import os
 import pwd, grp
 import hashlib
+import shutil
 import json
 import jsonschema
 import cherrypy
@@ -24,6 +25,7 @@ import tvShowList
 import myTvDB
 import ActivityLog
 import utils.TSWdirectories
+import ConfTest
 
 from cherrypy.process.plugins import Daemonizer
 from cherrypy.process.plugins import PIDFile
@@ -32,6 +34,22 @@ curPath = os.path.dirname(os.path.realpath(__file__))
 directories = utils.TSWdirectories(curPath+'/utils/directory.conf')
 tmpPath = os.path.abspath(directories['tmp_path'])
 PIDFile(cherrypy.engine, tmpPath + '/TSW2.PID').subscribe()
+
+threadCollection=[]
+
+def buffyThreadSlayer():
+	for t in threadCollection:
+		if not t.isAlive():
+			t.join()
+
+testPath = unicode(tempfile.mkdtemp())
+
+def _stop():
+	print("Removing {0}".format(testPath))
+	shutil.rmtree(testPath)
+
+cherrypy.engine.signal_handler.set_handler(signal=15,listener=_stop)
+cherrypy.engine.signal_handler.subscribe()
 
 def md5sum(fname):
 	hash_md5 = hashlib.md5()
@@ -274,14 +292,27 @@ class serv_TvShowList(object):
 	progression._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'}
 
 class updateData(object):
-	def __init__(self,config):
+	def __init__(self,config,testPath=None):
 		self.config = config
+		self.testPath = testPath
+		if testPath is not None:
+			className = self.config.__module__.split(".")[:-1]
+			self.className = '.'.join(className)
+			self.dataFile = os.path.join(testPath,"test.json")
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def index(self,**params):
 		try:
 			self.config.updateData(json.loads(params['data'.encode('utf8')]))
+			if self.testPath is not None:
+				buffyThreadSlayer()
+				c=ConfTest.ConfTest(dataFile=self.dataFile,confFile=self.config.dataFile,resultPath=self.testPath,verbosity=True)
+				c.addTest('.'.join([self.className,'ConfTest']))
+				t = threading.Thread(target=c.runAll)
+				t.daemon=True
+				threadCollection.append(t)
+				t.start()
 			return {
 				"status":200,
 				"error":"Configuration updated!".encode("utf8"),
@@ -291,13 +322,30 @@ class updateData(object):
 		except jsonschema.ValidationError as e:
 			return {"status":400,"error":"Form validation failed. The main cause of this error can be one of keywords is empty".encode("utf8")}
 		except Exception as e:
-			raise Exception(unicode(list(e)))
 			return {"status":400,"error":e[0].encode("utf8")}
 
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
+	def confTest(self,**params):
+		if self.testPath is not None:
+			c=ConfTest.ConfTest(dataFile=self.dataFile,confFile=self.config.dataFile,resultPath=self.testPath,verbosity=True)
+			index = c.getTestIndex('.'.join([self.className,'ConfTest']))
+			if index is not None:
+				data = c['suite'][index]
+				filename = os.path.join(self.testPath,self.className)
+				if os.path.isfile(filename):
+					with open(filename,'r') as fd:
+						content = fd.read()
+					data["content"] = content
+				return json.loads(json.dumps(data,default=json_serial))
+
 class streamGetSeries(object):
-	def __init__(self,tvshowlist,downloader):
+	def __init__(self,tvshowlist,downloader,testPath=None,testFiles=None):
 		self.tvshowlist = tvshowlist
 		self.downloader = downloader
+		self.testPath = testPath
+		self.testFiles = [] if testFiles is None else testFiles
+		self.testFilesMd5 = dict()
 
 	@cherrypy.expose
 	def index(self):
@@ -315,6 +363,14 @@ class streamGetSeries(object):
 					yield data
 				#data = "id: server-time\r\ndata: " + time.ctime(os.path.getmtime(confPath+"/series.json")) + "\n\n"
 				data = "id: server-time\r\ndata: " + md5sum(confPath+"/series.json") + "\n\n"
+				if self.testPath is not None:
+					for testFile in self.testFiles:
+						filename = os.path.join(self.testPath,testFile)
+						if os.path.isfile(filename):
+							if (testFile not in self.testFilesMd5.keys()
+								or self.testFilesMd5[testFile] != md5sum(filename)):
+								data = "id: conf-test\r\ndata: " + testFile + "\n\n"
+								self.testFilesMd5[testFile] = md5sum(filename)
 				yield data
 				time.sleep(10)
 
@@ -401,9 +457,12 @@ def main():
 	root.livesearch = LiveSearch()
 	root.tvshowlist = serv_TvShowList(tvshowlist=tvshowlist,downloader=downloader)
 	root.activitylog = serv_ActivityLog(activitylog)
+
 	root.streamGetSeries = streamGetSeries(
 		tvshowlist=tvshowlist,
-		downloader=downloader
+		downloader=downloader,
+		testPath  =testPath,
+		testFiles =['torrentSearch','Downloader']
 	)
 	root.users = Users()
 	root.groups = Groups()
@@ -414,13 +473,14 @@ def main():
 	cherrypy.config['server.socket_port'] = 1205
 	cherrypy.config['server.socket_host'] = '0.0.0.0'.encode('utf8')
 
+
 	root = torrentsearch.getRoot(root)
 	conf = torrentsearch.getConf(conf)
-	root.update.torrentSearch = updateData(torrentsearch)
+	root.update.torrentSearch = updateData(torrentsearch,testPath)
 
 	root = downloader.getRoot(root)
 	conf = downloader.getConf(conf)
-	root.update.downloader = updateData(downloader)
+	root.update.downloader = updateData(downloader,testPath)
 
 	root = transferer.getRoot(root)
 	conf = transferer.getConf(conf)
@@ -453,7 +513,13 @@ def main():
 	)
 	wd.start()
 
+	wd = cherrypy.process.plugins.BackgroundTask(
+		interval=1,
+		function=buffyThreadSlayer
+	)
+
 	cherrypy.quickstart(root,"/".encode('utf8'),conf)
+
 
 # By jgbarah from http://stackoverflow.com/questions/11875770/how-to-overcome-datetime-datetime-not-json-serializable-in-python
 def json_serial(obj):

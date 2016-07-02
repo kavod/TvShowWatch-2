@@ -1,7 +1,7 @@
 (function(){
 	PNotify.prototype.options.styling = "bootstrap3";
 
-	var app = angular.module('appTsw', [ 'appTsw.TvShowList', 'appTsw.Config', 'ui.bootstrap', 'ngCookies' ]);
+	var app = angular.module('appTsw', [ 'appTsw.TvShowList', 'appTsw.Config', 'ui.bootstrap', 'ngCookies','ngAnimate' ]);
 
 	app.run(function($rootScope, $templateCache) {
 	   $rootScope.$on('$viewContentLoaded', function() {

@@ -24,7 +24,8 @@
 			"order":3,
 			"dependencies": {
 				"deleteAfter": false
-			}
+			},
+			"disallowEmptySpaces":true
 		},
 		"deleteAfter": {
 			"rightLabel": "Delete torrent file after it was sent to client?",
