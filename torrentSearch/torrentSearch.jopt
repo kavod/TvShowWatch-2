@@ -51,6 +51,13 @@
 			}
 		},
 		"keywords":{
+			"helper":"Keywords used for all providers",
+			"collapsible":false,
+			"actionbarStyle": "right",
+			"order":2
+		},
+		"defaultKeywords":{
+			"helper":"Default specific keywords for new TV Show",
 			"collapsible":false,
 			"actionbarStyle": "right",
 			"order":2

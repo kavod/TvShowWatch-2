@@ -25,12 +25,13 @@ with open(path + '/status.json') as data_file:
 for key,item in STATUS.items():
 	STATUS[int(key)] = item
 
-def tvShowScheduleFromMyTvDB(tvShow,bannerDir=None, verbosity=False):
+def tvShowScheduleFromMyTvDB(tvShow,bannerDir=None, keywords=None, verbosity=False):
 	if not isinstance(tvShow,myTvDB.myShow):
 		raise TypeError("Incorrect argument: {0} ({1})".format(unicode(tvShow).encode('utf8'),type(tvShow)))
 	tvShowSch = tvShowSchedule(
 		seriesid=tvShow['id'],
 		bannerDir=bannerDir,
+		keywords=keywords,
 		autoComplete=False,
 		verbosity=verbosity)
 	if 'overview' in tvShow.data.keys() and tvShow['overview'] is not None:
@@ -52,11 +53,11 @@ def tvShowScheduleFromMyTvDB(tvShow,bannerDir=None, verbosity=False):
 	)
 	return tvShowSch
 
-def tvShowScheduleFromMyTvDBEpisode(episode,bannerDir=None, verbosity=False):
+def tvShowScheduleFromMyTvDBEpisode(episode,bannerDir=None, keywords=None, verbosity=False):
 	if not isinstance(episode,myTvDB.myEpisode):
 		raise TypeError("Incorrect argument: {0} ({1})".format(unicode(episode).encode('utf8'),type(episode)))
 	tvShow = myTvDB.myTvDB()[int(episode.get(u'seriesid', 0))]
-	tvShowSch = tvShowScheduleFromMyTvDB(tvShow,bannerDir=bannerDir, verbosity=verbosity)
+	tvShowSch = tvShowScheduleFromMyTvDB(tvShow,bannerDir=bannerDir, keywords=keywords,verbosity=verbosity)
 	tvShowSch.set(
 		info={
 			"firstaired":episode.get(u'firstaired', 0)
@@ -68,11 +69,11 @@ def tvShowScheduleFromMyTvDBEpisode(episode,bannerDir=None, verbosity=False):
 	)
 	return tvShowSch
 
-def tvShowScheduleFromId(tvShow,bannerDir=None, verbosity=False):
+def tvShowScheduleFromId(tvShow,bannerDir=None, keywords=None, verbosity=False):
 	t = myTvDB.myTvDB()
 	if not isinstance(tvShow,int):
 		raise TypeError("Incorrect argument: {0}".format(unicode(tvShow).encode('utf8')))
-	return tvShowScheduleFromMyTvDB(t[int(tvShow)],bannerDir=bannerDir, verbosity=verbosity)
+	return tvShowScheduleFromMyTvDB(t[int(tvShow)],bannerDir=bannerDir, keywords=keywords,verbosity=verbosity)
 
 def fakeTvDB(tvDB):
 	global t
@@ -81,7 +82,7 @@ def fakeTvDB(tvDB):
 	t=tvDB
 
 class tvShowSchedule(JSAG3.JSAG3):
-	def __init__(self,seriesid,bannerDir=None,autoComplete=True,verbosity=False):
+	def __init__(self,seriesid,bannerDir=None,autoComplete=True,keywords=None,verbosity=False):
 		self.seriesid = int(seriesid)
 		self.verbosity = verbosity
 		curPath = os.path.dirname(os.path.realpath(__file__))
@@ -95,6 +96,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		self._setLogger(self['seriesid'] if 'seriesid' in self.keys() else None)
 		if bannerDir is not None and not isinstance(bannerDir,basestring):
 			raise ValueError("bannerDir must be string or None, not {0}".format(type(bannerDir)))
+		keywords = self.setDefaultKeywords(keywords,[])
 
 		self.bannerDir = bannerDir
 		self.downloader = None
@@ -102,7 +104,7 @@ class tvShowSchedule(JSAG3.JSAG3):
 		self.transferer = None
 		self.searcher = None
 		self.activitylog = None
-		self.set(autoComplete=autoComplete)
+		self.set(keywords=keywords,autoComplete=autoComplete)
 		self.logger.info("Creation of tvShowSchedule (seriesid: {0})".format(unicode(seriesid)))
 
 	def set(
@@ -268,11 +270,9 @@ class tvShowSchedule(JSAG3.JSAG3):
 				raise ValueError("emails must be an array of string (with email format). Got {0}".format(type(emails)))
 
 		# Keywords
+		keywords = self.setDefaultKeywords(keywords,None)
 		if keywords is not None:
-			if isinstance(keywords,list) and all(isinstance(item,basestring) for item in keywords):
-				self['keywords'] = keywords
-			else:
-				raise ValueError("keywords must be an array of string. Got {0}".format(type(keywords)))
+			self['keywords'] = keywords
 
 		self.setDefault()
 		if autoComplete:
@@ -295,6 +295,16 @@ class tvShowSchedule(JSAG3.JSAG3):
 		if 'pattern' not in self.data.keys() or self['pattern'] is None:
 			if 'seriesname' in self['info'].keys():
 				self['pattern'] = self['info']['seriesname'].lower()
+
+	@staticmethod
+	def setDefaultKeywords(keywords,default):
+		if keywords is None:
+			return default
+		else:
+			if isinstance(keywords,list) and all(isinstance(item,basestring) for item in keywords):
+				return keywords
+			else:
+				raise ValueError("keywords must be an array of string. Got {0}".format(type(keywords)))
 
 	def updateInfo(self,force=False):
 		self.logger.debug("[TvShowSchedule] updateInfo method called")

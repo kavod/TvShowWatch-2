@@ -85,6 +85,13 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
 		self.assertEqual(tvShow['status'],0)
 
+	def test_creation_defaultKeywords(self):
+		tvShow = tvShowSchedule.tvShowSchedule(seriesid=123,autoComplete=False,keywords=['niouf','niorf'],verbosity=DEBUG_TVSHOWSCHEDULE)
+		tvShow.set(season=1,episode=1,status=0,nextUpdate=datetime.datetime.now(),info={'seriesname':'Lost'},autoComplete=False)
+		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
+		self.assertEqual(tvShow['status'],0)
+		self.assertEqual(tvShow['keywords'],['niouf','niorf'])
+
 	@wwwoman.register_scenario("tvShowList1.json")
 	def test_creation_without_overview_and_banner(self):
 		tvShow = tvShowSchedule.tvShowSchedule(seriesid=111,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
@@ -160,10 +167,25 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.assertEqual(tvShow['status'],0)
 
 	@wwwoman.register_scenario("tvShowList1.json")
+	def test_creation_from_MyTvDB_with_defaultKeywords(self):
+		t = myTvDB.myTvDB()
+		tvShow = tvShowSchedule.tvShowScheduleFromMyTvDB(t[123],keywords=['niouf','niorf'],verbosity=DEBUG_TVSHOWSCHEDULE)
+		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
+		self.assertEqual(tvShow['status'],0)
+		self.assertEqual(tvShow['keywords'],['niouf','niorf'])
+
+	@wwwoman.register_scenario("tvShowList1.json")
 	def test_creation_from_id(self):
 		tvShow = tvShowSchedule.tvShowScheduleFromId(123,verbosity=DEBUG_TVSHOWSCHEDULE)
 		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
 		self.assertEqual(tvShow['status'],0)
+
+	@wwwoman.register_scenario("tvShowList1.json")
+	def test_creation_from_id_with_defaultKeywords(self):
+		tvShow = tvShowSchedule.tvShowScheduleFromId(123,keywords=['niouf','niorf'],verbosity=DEBUG_TVSHOWSCHEDULE)
+		self.assertIsInstance(tvShow,tvShowSchedule.tvShowSchedule)
+		self.assertEqual(tvShow['status'],0)
+		self.assertEqual(tvShow['keywords'],['niouf','niorf'])
 
 	@wwwoman.register_scenario("tvShowList1.json")
 	def test_get_progression(self):

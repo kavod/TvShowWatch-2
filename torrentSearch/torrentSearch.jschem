@@ -58,6 +58,15 @@
 				"type":"string",
 				"minLength":1
 			}
+		},
+		"defaultKeywords": {
+			"title":"Defaults keywords",
+			"description":"Default specific keywords for new TV Show",
+			"type":"array",
+			"items":{
+				"type":"string",
+				"minLength":1
+			}
 		}
 	}
 }

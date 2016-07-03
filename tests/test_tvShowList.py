@@ -128,6 +128,16 @@ class TestTvShowList(unittest.TestCase):
 		self.assertEqual(len(self.l1),1)
 		self.assertEqual(self.l1[0]['season'],0)
 		self.assertEqual(self.l1[0]['episode'],0)
+		self.assertEqual(self.l1[0]['keywords'],[])
+
+	@wwwoman.register_scenario("tvShowList1.json")
+	def test_add_TvShow_from_id_with_defaultKeywords(self):
+		self.creation()
+		self.l1.add(self.id1,keywords=['niouf','niorf'])
+		self.assertEqual(len(self.l1),1)
+		self.assertEqual(self.l1[0]['season'],0)
+		self.assertEqual(self.l1[0]['episode'],0)
+		self.assertEqual(self.l1[0]['keywords'],['niouf','niorf'])
 
 	@wwwoman.register_scenario("tvShowList1.json")
 	def test_add_TvShow_from_tvShowSchedule(self):
@@ -146,6 +156,16 @@ class TestTvShowList(unittest.TestCase):
 		self.assertEqual(len(self.l1),1)
 		self.assertEqual(self.l1[0]['season'],1)
 		self.assertEqual(self.l1[0]['episode'],2)
+		self.assertEqual(self.l1[0]['keywords'],[])
+
+	@wwwoman.register_scenario("tvShowList1.json")
+	def test_add_TvShow_with_episode_with_defaultKeywords(self):
+		self.creation()
+		self.l1.add(self.id1,season=1,epno=2,keywords=['niouf','niorf'])
+		self.assertEqual(len(self.l1),1)
+		self.assertEqual(self.l1[0]['season'],1)
+		self.assertEqual(self.l1[0]['episode'],2)
+		self.assertEqual(self.l1[0]['keywords'],['niouf','niorf'])
 
 	@wwwoman.register_scenario("tvShowList1.json")
 	def test_add_TvShow_with_wrong_episode(self):

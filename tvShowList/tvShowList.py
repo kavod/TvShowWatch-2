@@ -54,6 +54,12 @@ class tvShowList(list):
 		}
 		self.lock = threading.Lock()
 
+		self.downloader=None
+		self.transferer=None
+		self.searcher=None
+		self.notificator=None
+		self.activitylog=None
+
 		list.__init__(self,[])
 		if isinstance(tvShows,basestring):
 			self.addData(unicode(tvShows))
@@ -61,11 +67,6 @@ class tvShowList(list):
 			for item in tvShows:
 				self.add(item)
 
-		self.downloader=None
-		self.transferer=None
-		self.searcher=None
-		self.notificator=None
-		self.activitylog=None
 
 	# Check if filename is defined
 	def checkCompleted(self):
@@ -119,9 +120,10 @@ class tvShowList(list):
 			raise TypeError("argument must be a tvShowSchedule instance")
 		self.append(tvShow)
 
-	def _add_from_myTvDB(self,tvShow,season=None,epno=None):
+	def _add_from_myTvDB(self,tvShow,season=None,epno=None,keywords=None):
 		if not isinstance(tvShow,myTvDB.myShow) and not isinstance(tvShow,myTvDB.myEpisode):
 			raise TypeError("argument must be a myTvDB.myShow or myTvDB.myEpisode instance")
+		keywords = tvShowSchedule.tvShowSchedule.setDefaultKeywords(keywords,[])
 
 		if isinstance(tvShow,myTvDB.myEpisode):
 			id = int(tvShow.get(u'id', 0))
@@ -150,10 +152,11 @@ class tvShowList(list):
 			except:
 				raise Exception("S{0:02}E{1:02} does not exists for {2}".format(season,epno,title))
 
-			self.append(
+			self._add_from_tvShowSchedule(
 				tvShowSchedule.tvShowScheduleFromMyTvDBEpisode(
 					self.tvdb[id][season][epno],
 					bannerDir=self.banner_dir,
+					keywords=keywords,
 					verbosity=self.verbosity
 				)
 			)
@@ -162,10 +165,11 @@ class tvShowList(list):
 				self.tvdb[id]
 			except:
 				raise Exception("Unable to reconize TV show {0} (ID: {1})".format(title,unicode(id)))
-			self.append(
+			self._add_from_tvShowSchedule(
 				tvShowSchedule.tvShowScheduleFromMyTvDB(
 					self.tvdb[id],
 					bannerDir=self.banner_dir,
+					keywords=keywords,
 					verbosity=self.verbosity
 				)
 			)
@@ -182,12 +186,20 @@ class tvShowList(list):
 		with open(self.filename, 'w') as outfile:
 			json.dump(content, outfile,default=json_serial)
 
-	def add(self,tvShow,season=None,epno=None):
+	def add(self,tvShow,season=None,epno=None,keywords=None):
+		if keywords is None:
+			if self.searcher is not None:
+				keywords = self.searcher['defaultKeywords']
+			else:
+				keywords = []
+		else:
+			keywords = tvShowSchedule.tvShowSchedule.setDefaultKeywords(keywords,[])
+
 		if isinstance(tvShow,myTvDB.myShow) or isinstance(tvShow,myTvDB.myEpisode):
-			self._add_from_myTvDB(tvShow,season=season,epno=epno)
+			self._add_from_myTvDB(tvShow,season=season,epno=epno,keywords=keywords)
 		elif isinstance(tvShow,int):
 			self._create_tvdb_api()
-			self._add_from_myTvDB(self.tvdb[tvShow],season=season,epno=epno)
+			self._add_from_myTvDB(self.tvdb[tvShow],season=season,epno=epno,keywords=keywords)
 		elif isinstance(tvShow,tvShowSchedule.tvShowSchedule):
 			self._add_from_tvShowSchedule(tvShow)
 		else:
