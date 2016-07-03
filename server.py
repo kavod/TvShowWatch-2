@@ -26,6 +26,7 @@ import myTvDB
 import ActivityLog
 import utils.TSWdirectories
 import ConfTest
+import Server
 
 from cherrypy.process.plugins import Daemonizer
 from cherrypy.process.plugins import PIDFile
@@ -51,52 +52,8 @@ def _stop():
 cherrypy.engine.signal_handler.set_handler(signal=15,listener=_stop)
 cherrypy.engine.signal_handler.subscribe()
 
-def md5sum(fname):
-	hash_md5 = hashlib.md5()
-	with open(fname, "rb") as f:
-		for chunk in iter(lambda: f.read(4096), b""):
-			hash_md5.update(chunk)
-	return hash_md5.hexdigest()
-
 class Root(object):
 	pass
-
-class LiveSearch(object):
-	@cherrypy.expose
-	def index(self):
-		return ""
-
-	@cherrypy.expose
-	def result(self,result):
-		return result
-
-	def _cp_dispatch(self,vpath):
-		if len(vpath) == 1:
-			t = myTvDB.myTvDB()
-			try:
-				cherrypy.request.params['result'] = json.dumps(t.livesearch(vpath.pop()))
-			except:
-				return self.index
-			return self.result
-		else:
-			return self.index
-
-class serv_ActivityLog(object):
-	def __init__(self,activitylog):
-		self.activitylog = activitylog
-
-	@cherrypy.expose
-	def index(self):
-		return ''
-
-	@cherrypy.expose
-	@cherrypy.tools.json_out()
-	def lastdownloads(self):
-		t = myTvDB.myTvDB()
-		last_downloads = self.activitylog.get_last_downloads()
-		for dl in last_downloads:
-			dl['seriesname'] = t[dl['seriesid']].data['seriesname']
-		return last_downloads
 
 class serv_TvShowList(object):
 	def __init__(self,tvshowlist,downloader):
@@ -120,7 +77,7 @@ class serv_TvShowList(object):
 			tvShow = self.tvshowlist.getTvShow(int(tvShowID))
 		except Exception as e:
 			return self._error(400,e[0])
-		return {"status":200,"error":"TvShow {0} added".format(tvShowName),"data":json.loads(json.dumps(tvShow.getValue(),default=json_serial))}
+		return {"status":200,"error":"TvShow {0} added".format(tvShowName),"data":json.loads(json.dumps(tvShow.getValue(),default=Server.json_serial))}
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
@@ -263,7 +220,7 @@ class serv_TvShowList(object):
 	@cherrypy.tools.json_out()
 	def list(self):
 		self.checkModification()
-		return {"status":200,"error":"TvShow list retrieved in `data`","data":json.loads(json.dumps(self.tvshowlist.getValue(hidePassword=True),default=json_serial)),"debug":[]}
+		return {"status":200,"error":"TvShow list retrieved in `data`","data":json.loads(json.dumps(self.tvshowlist.getValue(hidePassword=True),default=Server.json_serial)),"debug":[]}
 
 	def checkModification(self):
 		"""if not hasattr(self,"lastModified") or os.path.getmtime(self.tvshowlist.filename) != self.lastModified:
@@ -337,7 +294,7 @@ class updateData(object):
 					with open(filename,'r') as fd:
 						content = fd.read()
 					data["content"] = content
-				return json.loads(json.dumps(data,default=json_serial))
+				return json.loads(json.dumps(data,default=Server.json_serial))
 
 class streamGetSeries(object):
 	def __init__(self,tvshowlist,downloader,testPath=None,testFiles=None):
@@ -362,56 +319,20 @@ class streamGetSeries(object):
 					data += 'data: }\n\n'
 					yield data
 				#data = "id: server-time\r\ndata: " + time.ctime(os.path.getmtime(confPath+"/series.json")) + "\n\n"
-				data = "id: server-time\r\ndata: " + md5sum(confPath+"/series.json") + "\n\n"
+				data = "id: server-time\r\ndata: " + Server.md5sum(confPath+"/series.json") + "\n\n"
 				if self.testPath is not None:
 					for testFile in self.testFiles:
 						filename = os.path.join(self.testPath,testFile)
 						if os.path.isfile(filename):
 							if (testFile not in self.testFilesMd5.keys()
-								or self.testFilesMd5[testFile] != md5sum(filename)):
+								or self.testFilesMd5[testFile] != Server.md5sum(filename)):
 								data = "id: conf-test\r\ndata: " + testFile + "\n\n"
-								self.testFilesMd5[testFile] = md5sum(filename)
+								self.testFilesMd5[testFile] = Server.md5sum(filename)
 				yield data
 				time.sleep(10)
 
 		return content()
 	index._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'}
-
-def test_chownrestricted():
-	tmpfile = unicode(tempfile.mkstemp('.txt')[1])
-	try:
-		os.chmod(tmpfile,0777)
-		os.chown(tmpfile,0,0)
-		result = True
-	except OSError:
-		result = False
-	os.remove(tmpfile)
-	return result
-
-class Users(object):
-	@cherrypy.expose
-	@cherrypy.tools.json_out()
-	def index(self):
-		result = [{"value":-1,"text":"Default (process owner)"}]
-		if test_chownrestricted():
-			# Only if root or not _POSIX_CHOWN_RESTRICTED
-			for p in pwd.getpwall():
-				if (p[2] >= 1000 and p[2]<65534) or p[2]==0:
-					result.append({"value":p[2],"text":p[0]})
-
-		return result
-
-class Groups(object):
-	@cherrypy.expose
-	@cherrypy.tools.json_out()
-	def index(self):
-		result = [{"value":-1,"text":"Default (process owner group)"}]
-		if test_chownrestricted():
-			# Only if root or not _POSIX_CHOWN_RESTRICTED
-			for p in grp.getgrall():
-				if (p[2] >= 1000 and p[2]<65534) or p[2]==0:
-					result.append({"value":p[2],"text":p[0]})
-		return result
 
 webPath = os.path.abspath(directories['web_path'])
 confPath = os.path.abspath(directories['etc_path'])
@@ -426,14 +347,6 @@ def main():
 			'tools.staticdir.index': 'index.html',
 			'tools.trailing_slash.on' : False,
 			'tools.caching.on' : False
-		},
-		"/livesearch".encode('utf8') : {
-
-		},
-		"/tvshowlist".encode('utf8') : {
-
-		},
-		"/streamGetSeries".encode('utf8') : {
 		},
 		"/status.json".encode('utf8'): {
 			"tools.staticfile.on": True,
@@ -454,9 +367,9 @@ def main():
 	activitylog = ActivityLog.ActivityLog(confPath+"/activityLog.db",verbosity=False)
 	root = Root()
 	root.update = Root()
-	root.livesearch = LiveSearch()
+	root.livesearch = Server.LiveSearch()
 	root.tvshowlist = serv_TvShowList(tvshowlist=tvshowlist,downloader=downloader)
-	root.activitylog = serv_ActivityLog(activitylog)
+	root.activitylog = Server.ActivityLog(activitylog)
 
 	root.streamGetSeries = streamGetSeries(
 		tvshowlist=tvshowlist,
@@ -464,15 +377,14 @@ def main():
 		testPath  =testPath,
 		testFiles =['torrentSearch','Downloader']
 	)
-	root.users = Users()
-	root.groups = Groups()
+	root.users = Server.Users()
+	root.groups = Server.Groups()
 
 	cherrypy.config["tools.encode.on"] = True
 	cherrypy.config["tools.encode.encoding"] = "utf-8"
 	cherrypy.config['engine.autoreload_on'] = False
 	cherrypy.config['server.socket_port'] = 1205
 	cherrypy.config['server.socket_host'] = '0.0.0.0'.encode('utf8')
-
 
 	root = torrentsearch.getRoot(root)
 	conf = torrentsearch.getConf(conf)
@@ -490,24 +402,16 @@ def main():
 	conf = notificator.getConf(conf)
 	root.update.notificator = updateData(notificator)
 
-	def backgoundProcess(tvshowlist,downloader,transferer,searcher,force):
-		tvshowlist.update(
-			downloader=downloader,
-			transferer=transferer,
-			searcher=searcher,
-			notificator=notificator,
-			activitylog=activitylog,
-			force=force
-		)
-
 	wd = cherrypy.process.plugins.BackgroundTask(
 			interval=10,
-			function=backgoundProcess,
+			function=Server.backgoundProcess,
 			kwargs={
 				"tvshowlist":tvshowlist,
 				"downloader":downloader,
 				"transferer":transferer,
 				"searcher":torrentsearch,
+				"notificator":notificator,
+				"activitylog":activitylog,
 				"force":False
 			}
 	)
@@ -519,12 +423,3 @@ def main():
 	)
 
 	cherrypy.quickstart(root,"/".encode('utf8'),conf)
-
-
-# By jgbarah from http://stackoverflow.com/questions/11875770/how-to-overcome-datetime-datetime-not-json-serializable-in-python
-def json_serial(obj):
-	"""JSON serializer for objects not serializable by default json code"""
-	if isinstance(obj, datetime.datetime):
-		serial = obj.isoformat()
-		return serial
-	raise TypeError ("Type {0} not serializable".format(type(obj)))
