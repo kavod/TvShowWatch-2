@@ -129,38 +129,6 @@
 
 			});
 		};
-
-		/*this.pushTorrent = function(seriesid) {
-			var file = this.myFile;
-		    var uploadUrl = "/fileUpload";
-			return;
-		    fileUpload.uploadFileToUrl(file, uploadUrl);
-
-			$http.post(uploadUrl, fd, {
-				withCredentials: true,
-				headers: {'Content-Type': undefined },
-				transformRequest: angular.identity
-			}).success( console.log("...all right!...") ).error( console.log("..damn!...") );
-			return;
-			var newvalue = {};
-			newvalue = {tvShowID:parseInt(seriesid)};
-			var tvshow = $.grep(tvshowlist.list, function(e){ return e.seriesid == seriesid; })[0];
-			newvalue.torrentFile = tvshow.torrentFile;
-			$http({
-				method: 'POST',
-				url: '/tvshowlist/pushTorrent',
-				data: $.param(newvalue),
-				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
-			})
-			.then(function(data) {
-			  	if (data.data.status == 200)
-			  		$('#notification').scope().alert_success(data.data);
-			  	else
-			  		$('#notification').scope().alert_error(data.data);
-
-			});
-		};*/
-
 	}]);
 
 	app.controller('NewTvShowController', [ '$http', '$scope',function($http,$scope){

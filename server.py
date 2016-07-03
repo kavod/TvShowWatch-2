@@ -56,9 +56,10 @@ class Root(object):
 	pass
 
 class serv_TvShowList(object):
-	def __init__(self,tvshowlist,downloader):
+	def __init__(self,tvshowlist,downloader,searcher):
 		self.tvshowlist = tvshowlist
 		self.downloader=downloader
+		self.searcher=searcher
 		self.checkModification()
 
 	@cherrypy.expose
@@ -173,7 +174,18 @@ class serv_TvShowList(object):
 			finally:
 				self.tvshowlist.lock.release()
 			if fname == "":
-				return {"status":200,"error":"TvShow {0} updated".format(tvShow['info']['seriesname'])}
+				return {
+					"status":200,
+					"error":"TvShow {0} updated".format(
+						tvShow['info']['seriesname']
+					),
+					"data":json.loads(
+						json.dumps(
+							tvShow.getValue(),
+							default=Server.json_serial
+						)
+					)
+				}
 			else:
 				return self._error(400,"{0} - {1}:{2}".format(e[0],fname,exc_tb.tb_lineno))
 		else:
@@ -247,6 +259,14 @@ class serv_TvShowList(object):
 
 		return content()
 	progression._cp_config = {'response.stream': True, 'tools.encode.encoding':'utf-8'}
+
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
+	def setDefaultKeywords(self,tvShowID=-1):
+		params = {'tvShowID':tvShowID}
+		keywords = self.searcher.data.setdefault('defaultKeywords',[])
+		params['keywords[]'] = keywords
+		return self.update(**params)
 
 class updateData(object):
 	def __init__(self,config,testPath=None):
@@ -368,7 +388,7 @@ def main():
 	root = Root()
 	root.update = Root()
 	root.livesearch = Server.LiveSearch()
-	root.tvshowlist = serv_TvShowList(tvshowlist=tvshowlist,downloader=downloader)
+	root.tvshowlist = serv_TvShowList(tvshowlist=tvshowlist,downloader=downloader,searcher=torrentsearch)
 	root.activitylog = Server.ActivityLog(activitylog)
 
 	root.streamGetSeries = streamGetSeries(

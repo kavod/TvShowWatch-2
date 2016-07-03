@@ -6,7 +6,7 @@
 			  $templateCache.removeAll();
 		   });
 		});
-		
+
 	app.controller('TvShowController', [ '$http', '$scope', 'fileUpload', function($http,$scope,fileUpload){
 
 		this.data = $scope.tvshow;
@@ -90,6 +90,26 @@
 
 			});
 		};
+
+		this.defaultKeywords = function() {
+			$http({
+				method: 'POST',
+				url: '/tvshowlist/setDefaultKeywords',
+				data: $.param({tvShowID:parseInt($scope.tvshow.seriesid)}),
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+			})
+			.then(function(data) {
+			  	if (data.data.status == 200)
+					{
+						$scope.tvshow.keywords = data.data.data.keywords;
+			  		$('#notification').scope().alert_success(data.data);
+					}
+			  	else
+			  		$('#notification').scope().alert_error(data.data);
+
+			});
+		};
+
 		this.forceUpdate = function() {
 			$http({
 				method: 'POST',
@@ -145,6 +165,10 @@
 				$scope.tvShowCtrl.addKeyword();
 				this.form.$setPristine();
 			}
+		};
+
+		this.defaultKeywords= function () {
+			$scope.tvShowCtrl.defaultKeywords();
 		};
 
 		this.deleteKeyword = function(keyword) {
@@ -268,21 +292,6 @@ app.filter('statusDescription', function() {
 		    }
 		};
 	}]);
-
-	/*app.directive('validFile',function(){
-	  return {
-		require:'fileModel',
-		link:function(scope,el,attrs,ngModel){
-		  //change event is fired when file is selected
-		  el.bind('change',function(){
-		    scope.$apply(function(){
-		      ngModel.$setViewValue(el.val());
-		      ngModel.$render();
-		    });
-		  });
-		}
-	  }
-	});*/
 
     app.service('fileUpload', ['$http', function ($http) {
 		this.uploadFileToUrl = function(tvshowid, file, uploadUrl){
