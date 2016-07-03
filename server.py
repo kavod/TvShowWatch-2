@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 import sys
 import os
-import pwd, grp
 import hashlib
 import shutil
 import json
