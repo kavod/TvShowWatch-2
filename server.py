@@ -52,7 +52,187 @@ cherrypy.engine.signal_handler.set_handler(signal=15,listener=_stop)
 cherrypy.engine.signal_handler.subscribe()
 
 class Root(object):
-	pass
+	@cherrypy.expose
+	def default(self):
+		return ''
+
+@cherrypy.popargs('tvshow')
+class TvShow(object):
+	def __init__(self,tvshowlist,downloader,searcher):
+		self.tvshowlist = tvshowlist
+		self.downloader=downloader
+		self.searcher=searcher
+
+
+	def _error(self,errorNo,errorDesc):
+		return {"status":errorNo,"error":errorDesc.encode("utf8")}
+
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
+	def index(self,tvshow=None,**params):
+		if cherrypy.request.method == 'GET':
+			if tvshow is None:
+				return self._QUERY()
+			else:
+				return self._GET(tvshow)
+		elif cherrypy.request.method == 'POST':
+			return self._POST(tvshow=tvshow,**params)
+		elif cherrypy.request.method == 'PUT':
+			return self._PUT(tvshow=tvshow,**params)
+		elif cherrypy.request.method == 'DELETE':
+			return self._DELETE(tvshow=tvshow)
+
+	def _QUERY(self):
+		return {
+			"status":200,
+			"error":"TvShow list retrieved in `data`",
+			"data":json.loads(
+				json.dumps(
+					self.tvshowlist.getValue(hidePassword=True),
+					default=Server.json_serial
+				)
+			),
+			"debug":[]
+		}
+
+	def _GET(self,tvshow=None):
+		tvshow = int(tvshow)
+		tvshowschedule = self.tvshowlist.getTvShow(tvshow)
+		if tvshowschedule is None:
+			return {
+				"status":400,
+				"error":"TvShow {0} not scheduled".format(unicode(tvshow)),
+				"debug":[]
+			}
+		return {
+			"status":200,
+			"error":"TvShow list retrieved in `data`",
+			"data":json.loads(
+				json.dumps(
+					self.tvshowlist.getTvShow(tvshow).getValue(hidePassword=True),
+					default=Server.json_serial
+				)
+			),
+			"debug":[]
+		}
+
+	def _POST(self,tvshow=None,**kwargs):
+		if 'title' in kwargs.keys():
+			seriesname = kwargs['title']
+			if tvshow is not None:
+				serie = int(tvshow)
+			else:
+				serie = seriesname
+		else:
+			serie = unicode(kwargs)
+			seriesname = serie
+		t = myTvDB.myTvDB()
+		try:
+			tvShow = t[serie]
+		except Exception as e:
+			return self._error(400,e[0]+unicode(serie)+unicode(seriesname.lower()))
+		if tvShow.data['seriesname'].lower() == seriesname.lower():
+			try:
+				self.tvshowlist.add(int(serie))
+				self.tvshowlist.save()
+				tvShow = self.tvshowlist.getTvShow(int(serie))
+			except Exception as e:
+				return self._error(400,e[0])
+			return {"status":200,"error":"TvShow {0} added".format(seriesname),"data":json.loads(json.dumps(tvShow.getValue(),default=Server.json_serial))}
+		return {"status":401,"error":"Unknown TvShow: '{0}'".format(seriesname)}
+
+	def _PUT(self,tvshow=None, **kwargs):
+		print(kwargs)
+		if tvshow is not None:
+			tvShowID = int(tvshow)
+			nextUpdate=None
+			status = None
+			season = None
+			episode=None
+			pattern=None
+			emails=None
+			keywords=None
+			if 'season' in kwargs.keys() and 'episode' in kwargs.keys():
+				season = int(kwargs['season'])
+				episode = int(kwargs['episode'])
+				t = myTvDB.myTvDB()
+				try:
+					t[tvShowID]
+				except:
+					return {"status":400,"error":"TvShow {0} does not exist".format(unicode(tvShowID))}
+				try:
+					t[tvShowID][season][episode]
+				except:
+					return {"status":400,"error":"No episode S{1:02}E{2:02} for TV show {0}".format(t[tvShowID].data['seriesname'],unicode(season),unicode(episode))}
+				status = 0
+			if 'pattern' in kwargs.keys():
+				pattern = unicode(kwargs['pattern'])
+			if 'emails[]' in kwargs.keys():
+				if isinstance(kwargs['emails[]'],basestring):
+					emails = [kwargs['emails[]']]
+				else:
+					emails = kwargs['emails[]']
+
+			if 'keywords[]' in kwargs.keys():
+				if isinstance(kwargs['keywords[]'],basestring):
+					keywords = [kwargs['keywords[]']]
+				else:
+					keywords = kwargs['keywords[]']
+
+			if any(item in ['season','episode','keywords[]','pattern','force'] for item in kwargs.keys()):
+				nextUpdate = datetime.datetime.now(tzlocal.get_localzone())
+			tvShow = self.tvshowlist.getTvShow(tvShowID)
+			if tvShow is None:
+				raise Exception("{0} not found in {1}".format(tvShowID,list(self.tvshowlist)))
+			fname = ""
+			self.tvshowlist.lock.acquire()
+			try:
+				tvShow.set(
+					status=status,
+					season=season,
+					episode=episode,
+					nextUpdate=nextUpdate,
+					pattern=pattern,
+					emails=emails,
+					keywords=keywords
+				)
+				self.tvshowlist.save()
+			except Exception as e:
+				exc_type, exc_obj, exc_tb = sys.exc_info()
+				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+			finally:
+				self.tvshowlist.lock.release()
+			if fname == "":
+				return {
+					"status":200,
+					"error":"TvShow {0} updated".format(
+						tvShow['info']['seriesname']
+					),
+					"data":json.loads(
+						json.dumps(
+							tvShow.getValue(),
+							default=Server.json_serial
+						)
+					)
+				}
+			else:
+				return self._error(400,"{0} - {1}:{2}".format(e[0],fname,exc_tb.tb_lineno))
+		else:
+			return self._error(400,"Unknown TV Show")
+
+	def _DELETE(self,tvshow=None):
+		if tvshow is not None:
+			try:
+				tvShowID = int(tvshow)
+				t = myTvDB.myTvDB()
+				tvShow = t[tvShowID]
+				self.tvshowlist.delete(tvShowID)
+				self.tvshowlist.save()
+				return {"status":200,"error":"TvShow {0} deleted".format(tvShow['seriesname'])}
+			except Exception as e:
+				return self._error(400,e[0])
+		else:
+			return self._error(400,"Unknown TV Show")
 
 class serv_TvShowList(object):
 	def __init__(self,tvshowlist,downloader,searcher):
@@ -375,6 +555,10 @@ def main():
 		{
 			'tools.staticfile.on': True,
 			'tools.staticfile.filename': webPath + '/static/favicon.ico'
+		},
+		'/api/tvshow'.encode('utf8'):
+		{
+			#'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
 		}
 	}
 
@@ -389,6 +573,8 @@ def main():
 	root.livesearch = Server.LiveSearch()
 	root.tvshowlist = serv_TvShowList(tvshowlist=tvshowlist,downloader=downloader,searcher=torrentsearch)
 	root.activitylog = Server.ActivityLog(activitylog)
+	root.api = Root()
+	root.api.tvshow = TvShow(tvshowlist=tvshowlist,downloader=downloader,searcher=torrentsearch)
 
 	root.streamGetSeries = streamGetSeries(
 		tvshowlist=tvshowlist,
