@@ -1,0 +1,125 @@
+<html xmlns:ng="http://angularjs.org" ng-app="app">
+  <head>
+    <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/pnotify/3.0.0/pnotify.min.css" />
+  </head>
+  <body>
+    <div ng-controller="MessageController as MsgCtrl">
+      <div ng-controller="Ctrl as Ctrl">
+        <h1>QUERY</h1> <button ng-click="Ctrl.func_query()">QUERY</button>
+        <div>{{ query }}</div>
+        <h1>GET</h1> <button ng-click="Ctrl.func_get()">GET</button>
+        <div>{{ get }}</div>
+        <h1>SAVE</h1> <button ng-click="Ctrl.func_save()">SAVE</button>
+        <div>{{ save }}</div>
+        <h1>UPDATE</h1> <button ng-click="Ctrl.func_update()">UPDATE</button>
+        <div>{{ update }}</div>
+        <h1>DELETE</h1> <button ng-click="Ctrl.func_delete()">DELETE</button>
+        <div>{{ delete }}</div>
+      </div>
+      <div id="notification" ng-controller="NotificationController as NotifCtrl"></div>
+    </div>
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.min.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-animate.min.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-cookies.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-resource.min.js"></script>
+    <script type="text/javascript" src="//angular-ui.github.io/bootstrap/ui-bootstrap-tpls-1.3.2.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/pnotify/3.0.0/pnotify.min.js"></script>
+    <script type="text/javascript">
+      (function(){
+      	PNotify.prototype.options.styling = "bootstrap3";
+        var app = angular.module('app', ['ngResource']);
+
+        app.factory('TvShow', ['$resource','$rootScope',
+          function($resource,$rootScope){
+            var func_response = function(data,headers) {
+              data = angular.fromJson(data)
+              $rootScope.$broadcast('alert',data);
+              if (typeof(data.data) === 'undefined')
+                return {}
+              else
+                return angular.fromJson(data).data;
+            };
+            result = $resource(
+              '/api/tvshow/:tvShowId',
+              {
+                tvShowId:'@seriesid',
+                title:'@title',
+                pattern:'@pattern'
+              },
+              {
+                'query': {method:'GET', transformResponse:func_response, isArray:true},
+                'get': {method:'GET', transformResponse:func_response},
+                'update': {method:'PUT', transformResponse:func_response},
+                'save': {method:'POST', transformResponse:func_response},
+                'delete': {method:'DELETE', transformResponse:func_response},
+              }
+            );
+            return result;
+          }]
+        );
+        app.controller('Ctrl',['$scope','TvShow',function($scope,TvShow) {
+          this.func_query = function() {
+            $scope.query = TvShow.query();
+          };
+          this.func_get = function() {
+            $scope.get = TvShow.get({},{seriesid:79349});
+          };
+          this.func_save = function() {
+            var tvshow = new TvShow();
+            tvshow.title="Dexter";
+            tvshow.seriesid=79349;
+            tvshow.$save(function(tvshow,putResponseHeaders) {
+              $scope.save = tvshow;
+            });
+          };
+          this.func_delete = function() {
+            $scope.delete = TvShow.delete({},{seriesid:79349},function(){
+              //$scope.$emit('alert', $scope.delete);
+            });
+
+          };
+          this.func_update = function() {
+            var tvshow = TvShow.get({},{seriesid:79349},function(){
+              tvshow.pattern="NIOUF";
+              tvshow.$update();
+              $scope.update = tvshow
+            });
+          };
+        }]);
+        app.controller('MessageController',['$scope',function($scope) {
+          $scope.$on('alert', function (event, args) {
+            $scope.$broadcast('balert',args);
+          });
+        }]);
+
+        app.controller('NotificationController',['$scope',function($scope) {
+          $scope.alert_error = function(except) {
+            new PNotify({
+              title: 'Error',
+              text: except.error + ' (' + except.status.toString() + ')',
+              type: 'error'
+            });
+          };
+
+          $scope.alert_success = function(except) {
+            new PNotify({
+              title: 'Success',
+              text: except.error,
+              type: 'success'
+            });
+          };
+
+          $scope.$on('balert', function (event, args) {
+            args =  angular.fromJson(args);
+            if (args.status.toString() == '200')
+              $scope.alert_success(args);
+            else
+              $scope.alert_error(args);
+          });
+        }]);
+      })();
+    </script>
+  </body>
+</html>
