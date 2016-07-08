@@ -1,13 +1,13 @@
 (function(){
 	var app = angular.module('appTsw.TvShowList', [ 'ngAnimate', 'ui.bootstrap', 'appTsw.TvShow' ]);
 
-		app.run(function($rootScope, $templateCache) {
-		   $rootScope.$on('$viewContentLoaded', function() {
-			  $templateCache.removeAll();
-		   });
-		});
+	app.run(function($rootScope, $templateCache) {
+	   $rootScope.$on('$viewContentLoaded', function() {
+		  $templateCache.removeAll();
+	   });
+	});
 
-	app.controller('TvShowListController', [ '$http', '$scope', 'fileUpload',function($http,$scope,fileUpload){
+	app.controller('TvShowListController', [ '$http', '$scope', 'fileUpload', 'TvShowList', function($http,$scope,fileUpload,TvShowList){
 		$scope.oneAtATime = true;
 
 		var serie_time = "0";
@@ -17,12 +17,10 @@
 
 		this.build_tvShowList = function() {
 			tvshowlist.list = [];
-			$http.get('/tvshowlist/list')
-				.success(function(data) {
-					tvshowlist.list = data.data;
-				});
+			TvShowList.async().then(function(data) {
+				tvshowlist.list = data;
+			})
 		};
-		build_tvShowList = this.build_tvShowList;
 		this.build_tvShowList();
 
 		this.tvShowChanged = function(newTvShow){
@@ -38,23 +36,20 @@
 				tvshowlist.list.push(newTvShow);
 			}
 		}
-		tvShowChanged = this.tvShowChanged;
 
 		this.update_tvShowList = function(){
 			$http.get('/tvshowlist/list')
 				.success(function(data) {
 					for (var i = 0; i<data.data.length ; i++)
 					{
-						tvShowChanged(data.data[i]);
+						this.tvShowChanged(data.data[i]);
 					}
 				});
 		};
-		update_tvShowList = this.update_tvShowList;
 
 		this.update_home = function(){
 			$('#lastdownloads').scope().updateLog();
 		}
-		update_home = this.update_home;
 
 		this.check_update = function(event){
 			if (event.lastEventId == 'server-time')
@@ -67,8 +62,8 @@
 				{
 					console.log([serie_time,event.data])
 					serie_time = event.data;
-					update_tvShowList();
-					update_home();
+					this.update_tvShowList();
+					this.update_home();
 				}
 			} else if (event.lastEventId == 'progression') {
 				var data = JSON.parse(event.data);
@@ -165,16 +160,32 @@
 		};
 	}]);
 
-    app.directive('tvshow',function(){
-    	return {
-    		restrict: 'E',
-    		scope: {
-    			tvshow: '=',
-    			tvshowlist: '='
-    		},
-    		controller:'TvShowController',
-    		controllerAs:'tvShowCtrl',
-    		templateUrl: 'tvShowListElement.html'
-    	};
-    });
+  app.directive('tvshow',function(){
+  	return {
+  		restrict: 'E',
+  		scope: {
+  			tvshow: '=',
+  			tvshowlist: '='
+  		},
+  		controller:'TvShowController',
+  		controllerAs:'tvShowCtrl',
+  		templateUrl: 'tvShowListElement.html'
+  	};
+  });
+
+	app.factory('TvShowList',function($http){
+		var list;
+		var myService = {
+			async: function() {
+				if (!list) {
+					list = $http.get('/tvshowlist/list').then(function(response) {
+						return response.data.data;
+					});
+				}
+				return list;
+			}
+		};
+		return myService;
+	});
+
 })();
