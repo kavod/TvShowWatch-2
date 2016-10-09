@@ -42,14 +42,21 @@
 				"port": {
 					"order":2
 				},
-				"username": {
+				"ssltls":
+				{
 					"order":3
 				},
+				"path": {
+					"order":4
+				},
+				"username": {
+					"order":5
+				},
 				"password": {
-					"order": 4
+					"order": 6
 				},
 				"maxSlots": {
-					"order": 5
+					"order": 7
 				},
 				"cleanMethod": {
 					"label": "Clean method",
@@ -65,7 +72,7 @@
 						}
 					],
 					"removeDefaultNone": true,
-					"order":6
+					"order":8
 				}
 			},
 			"order":4,

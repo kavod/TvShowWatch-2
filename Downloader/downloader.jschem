@@ -40,6 +40,20 @@
 					"max":65535,
 					"default":9091
 				},
+				"ssltls":
+				{
+					"title":"SSL/TLS encryption",
+					"description":"Is SSL/TLS encryption enabled?",
+					"type":"boolean",
+					"default":false
+				},
+				"path":
+				{
+					"title":"URI path",
+					"description":"URI path for transmission client",
+					"type":"string",
+					"default":"/transmission/rpc"
+				},
 				"username":
 				{
 					"title":"Username",

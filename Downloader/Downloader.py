@@ -239,13 +239,29 @@ class Downloader(JSAG3.JSAG3):
 			return id
 
 	#TransmissionRPC
+	def _transUri(self):
+		if 'ssltls' not in self.transConf.keys():
+			self.transConf['ssltls'] = False
+		if 'path' not in self.transConf.keys():
+			self.transConf['path'] = "/transmission/rpc"
+		protocol = 'https' if self.transConf['ssltls'] else 'http'
+		uri = "{0}://{1}:{2}{3}".format(
+			protocol,
+			self.transConf['address'],
+			unicode(self.transConf['port']),
+			self.transConf['path']
+		)
+		self.logger.debug("URI of transmission is {0}".format(uri))
+		return uri
+
 	def _transConnect(self):
 		if self.transmission is None:
 			self.transConf = self.getValue(hidePassword=False)['transConf']
 			try:
 				self.transmission = transmissionrpc.Client(
-										address=self.transConf['address'],
-										port=self.transConf['port'],
+										address=self._transUri(),
+										#address=self.transConf['address'],
+										#port=self.transConf['port'],
 										user=self.transConf['username'] if 'username' in self.transConf.keys() else '',
 										password=self.transConf['password'] if 'password' in self.transConf.keys() else ''
 										)
