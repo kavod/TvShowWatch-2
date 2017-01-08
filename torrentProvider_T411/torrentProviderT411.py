@@ -11,7 +11,7 @@ import logging
 import tempfile
 from simplejson.decoder import JSONDecodeError
 
-torrentProvider.TRACKER_CONF.append({'id':'t411','name':'T411','url':'https://api.t411.ch','param':['username','password']})
+torrentProvider.TRACKER_CONF.append({'id':'t411','name':'T411','url':'https://api.t411.li','param':['username','password']})
 
 def connect_t411(self):
 	if not self.token: #If no token, let's connect

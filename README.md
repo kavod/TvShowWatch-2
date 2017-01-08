@@ -58,7 +58,7 @@ After that, TvShowWatch-2 can:
 
 
 [SynoCommunity]: https://synocommunity.com/
-[T411]: https://t411.ch
+[T411]: https://t411.li
 [Synology]: http://www.synology.com
 [releases]: https://github.com/kavod/TvShowWatch-2/releases
 [Transmission]: https://www.transmissionbt.com/download/

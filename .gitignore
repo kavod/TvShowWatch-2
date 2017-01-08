@@ -13,3 +13,6 @@ package.tgz
 syno/package.tgz
 syno/tvshowwatch2.spk
 utils/directory.conf
+nosetests.json
+privkey.pem
+tests.json

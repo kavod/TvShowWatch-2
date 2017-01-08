@@ -1,7 +1,7 @@
 {
   "description":"Successfull auth and search on T411",
   "templatedir":"tests/wwwoman/content",
-  "baseuri":"https://api.t411.ch",
+  "baseuri":"https://api.t411.li",
   "uriList":[
     {
       "uri":"auth",
