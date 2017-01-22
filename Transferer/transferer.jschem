@@ -6,7 +6,9 @@
 		"destination":["enable"],
 		"pathPattern":["enable"],
 		"delete_after":["enable"],
-		"permissions":["enable"]
+		"permissions":["enable"],
+		"time_restriction":["enable"],
+		"time_restriction_conf":["enable","time_restriction"]
 	},
 	"properties": {
 		"enable": {
@@ -62,6 +64,30 @@
 			"title": "Delete after transfer",
 			"type": "boolean",
 			"default": false
+		},
+		"time_restriction": {
+			"title": "Time restriction",
+			"type": "boolean",
+			"default": false
+		},
+		"time_restriction_conf": {
+			"title": "Time restriction configuration",
+			"type": "object",
+			"properties": {
+				"start": {
+					"title": "Start of time restriction",
+					"type": "string",
+					"format": "time",
+					"default": "00:00:00"
+				},
+				"end": {
+					"title": "End of time restriction",
+					"type": "string",
+					"format": "time",
+					"default": "00:00:00"
+				}
+			},
+			"required": ["start","end"]
 		}
 	},
 	"definitions": {

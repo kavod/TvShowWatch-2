@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import os
+import datetime
 import logging
 import tempfile
 import ftplib
@@ -35,6 +36,8 @@ URI_PATTERNS = {
 	"ftp":'ftp://{1}:{2}@{3}{4}{5}/{0}',
 	"ftps":'ftps://{1}:{2}@{3}{4}{5}/{0}'
 }
+
+TIME_FORMAT = "%H:%M:%S"
 
 def return_if_filled(var,data):
 	if var in data.keys():
@@ -106,48 +109,68 @@ class Transferer(JSAG3.JSAG3):
 
 	def transfer(self,filename,dstSubFolder=None,delete_after=False):
 		if 'enable' in self.data.keys() and self.data['enable']:
-			self.logger.info(
-				'Transfering file from {0} to {1}'.format(
-					self.get_uri("source",filename).decode('utf-8'),
-					self.get_uri("destination",filename).decode('utf-8')
-				)
-			)
-
-			source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
-			dest_file = storage.get_storage(self.get_uri("destination",filename=filename,subFolder=dstSubFolder,showPassword=True))
-
-			if self.data['source']['protocol'] == 'file' and self.data['destination']['protocol'] == 'file':
-				destination = "{0}/{1}".format(makePath(self.data['destination']['path'],dstSubFolder),filename)
-				if not os.path.exists(os.path.dirname(destination)):
-					os.makedirs(os.path.dirname(destination))
-				shutil.copyfile("{0}/{1}".format(self.data['source']['path'],filename),destination)
-				self.setPerm(destination)
+			if 'time_restriction' in self.data.keys() and self.data['time_restriction']:
+				time_restriction_conf = self.data['time_restriction_conf']
+				convertDate = lambda x : datetime.datetime.time(datetime.datetime.strptime(x,TIME_FORMAT))
+				start_time = convertDate(time_restriction_conf['start'])
+				end_time = convertDate(time_restriction_conf['end'])
 			else:
-				if self.data['source']['protocol'] == 'file':
-					try:
-						dest_file.load_from_filename("{0}/{1}".format(self.data['source']['path'],filename))
-					except IOError as e:
-						self.logger.error(
-							"Connection error to {0}"
-							.format(self.data['destination'])
-						)
-						raise e
-				elif self.data['destination']['protocol'] == 'file':
+				start_time = datetime.time()
+				end_time = datetime.time(23,59,59)
+			now = datetime.datetime.time(datetime.datetime.now())
+			if now >= start_time and now <= end_time:
+				self.logger.debug(
+					'Transfering file from {0} to {1}'.format(
+						self.get_uri("source",filename).decode('utf-8'),
+						self.get_uri("destination",filename).decode('utf-8')
+					)
+				)
+
+				source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
+				dest_file = storage.get_storage(self.get_uri("destination",filename=filename,subFolder=dstSubFolder,showPassword=True))
+
+				if self.data['source']['protocol'] == 'file' and self.data['destination']['protocol'] == 'file':
 					destination = "{0}/{1}".format(makePath(self.data['destination']['path'],dstSubFolder),filename)
 					if not os.path.exists(os.path.dirname(destination)):
 						os.makedirs(os.path.dirname(destination))
-					source_file.save_to_filename(destination)
+					shutil.copyfile("{0}/{1}".format(self.data['source']['path'],filename),destination)
 					self.setPerm(destination)
 				else:
-					tmpfile = unicode(tempfile.mkstemp()[1])
-					os.remove(tmpfile)
-					source_file.save_to_filename(tmpfile)
-					dest_file.load_from_filename(tmpfile)
-					os.remove(tmpfile)
-			if delete_after:
-				source_file.delete()
+					if self.data['source']['protocol'] == 'file':
+						try:
+							dest_file.load_from_filename("{0}/{1}".format(self.data['source']['path'],filename))
+						except IOError as e:
+							self.logger.error(
+								"Connection error to {0}"
+								.format(self.data['destination'])
+							)
+							raise e
+					elif self.data['destination']['protocol'] == 'file':
+						destination = "{0}/{1}".format(makePath(self.data['destination']['path'],dstSubFolder),filename)
+						if not os.path.exists(os.path.dirname(destination)):
+							os.makedirs(os.path.dirname(destination))
+						source_file.save_to_filename(destination)
+						self.setPerm(destination)
+					else:
+						tmpfile = unicode(tempfile.mkstemp()[1])
+						os.remove(tmpfile)
+						source_file.save_to_filename(tmpfile)
+						dest_file.load_from_filename(tmpfile)
+						os.remove(tmpfile)
+				if delete_after:
+					source_file.delete()
+				return True
+			else:
+				self.logger.debug(
+					'Not in the restriction period {0}-{1}. Waiting for period'.format(
+						start_time.strftime(TIME_FORMAT),
+						end_time.strftime(TIME_FORMAT)
+					)
+				)
+				return False
 		else:
-			self.logger.info('Transferer is disabled. No transfer.')
+			self.logger.debug('Transferer is disabled. No transfer.')
+			return True
 
 	def delete(self,filename):
 		logging.info('[Transferer] Deleting file {0}'.format(self.get_uri("source",filename)))

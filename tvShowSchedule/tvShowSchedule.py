@@ -763,7 +763,10 @@ class tvShowSchedule(JSAG3.JSAG3):
 		files = self.downloader.get_files(self['downloader_id'])
 		if 'enable' in self.transferer.keys() and self.transferer['enable']:
 			for myFile in files:
-				self.transferer.transfer(myFile,dstSubFolder=self.getLocalPath(self.transferer['pathPattern']),delete_after=False)
+				rtn = self.transferer.transfer(myFile,dstSubFolder=self.getLocalPath(self.transferer['pathPattern']),delete_after=False)
+				if rtn is False:
+					# No transfer due to outside restricted period. No status update
+					return
 			self.logger.info(
 				"Transfer achieved in folder {0}"
 				.format(self.getLocalPath(self.transferer['pathPattern']))

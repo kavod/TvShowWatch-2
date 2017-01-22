@@ -3,15 +3,20 @@
 from __future__ import unicode_literals
 
 import os
+import datetime
 import unittest
 import tempfile
 import shutil
 import mock
 import Transferer
 import LogTestCase
+import mock_dt
 
 DEBUG=False
 DEBUG_TRANSFERER=DEBUG
+
+target0930 = datetime.datetime(2009, 1, 8, 9, 30)
+target1230 = datetime.datetime(2009, 1, 8, 12, 30)
 
 class TestTransferer(LogTestCase.LogTestCase):
 	def setUp(self):
@@ -32,6 +37,7 @@ class TestTransferer(LogTestCase.LogTestCase):
 		self.data5 = {"enable":False, "source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"path": self.tmpdirs[1], "protocol": "file"}}
 		self.data6 = {"source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"path": self.tmpdirs[1], "protocol": "file"}}
 		self.data7 = {"enable":True,"source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"path": self.tmpdirs[1], "protocol": "file"},"permissions":{"user":7,"group":7,"all":7,"uid":-1,"gid":-1}}
+		self.data8 = {"enable":True,"source": {"path": self.tmpdirs[0], "protocol": "file"}, "destination": {"path": self.tmpdirs[1], "protocol": "file"},"permissions":{"user":7,"group":7,"all":7,"uid":-1,"gid":-1},"time_restriction":True,"time_restriction_conf":{"start":"10:00:00","end":"15:00:00"}}
 
 	def test_creation(self):
 		trans = self.creation(id="test1")
@@ -81,9 +87,31 @@ class TestTransferer(LogTestCase.LogTestCase):
 		self.tmpfiles.append(tmpfile)
 		tmpfile = os.path.basename(tmpfile)
 		self.assertFalse(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
-		trans.transfer(tmpfile,delete_after=True)
+		self.assertTrue(trans.transfer(tmpfile,delete_after=True))
 		self.assertTrue(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
 		self.assertFalse(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
+
+	def test_transfer_out_of_restriction(self):
+		with mock_dt.mock_datetime_now(target0930, datetime):
+			trans = self.creation(id="test8",data=self.data8)
+			tmpfile = unicode(tempfile.mkstemp('.txt',dir=self.tmpdirs[0])[1])
+			self.tmpfiles.append(tmpfile)
+			tmpfile = os.path.basename(tmpfile)
+			self.assertFalse(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
+			self.assertFalse(trans.transfer(tmpfile,delete_after=True))
+			self.assertTrue(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
+			self.assertFalse(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
+
+	def test_transfer_in_restriction(self):
+		with mock_dt.mock_datetime_now(target1230, datetime):
+			trans = self.creation(id="test8",data=self.data8)
+			tmpfile = unicode(tempfile.mkstemp('.txt',dir=self.tmpdirs[0])[1])
+			self.tmpfiles.append(tmpfile)
+			tmpfile = os.path.basename(tmpfile)
+			self.assertFalse(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
+			self.assertTrue(trans.transfer(tmpfile))
+			self.assertTrue(os.path.isfile(self.tmpdirs[0]+"/"+tmpfile))
+			self.assertTrue(os.path.isfile(self.tmpdirs[1]+"/"+tmpfile))
 
 	def test_transfer_no_enable_key(self):
 		tmpfile = unicode(tempfile.mkstemp('.json')[1])

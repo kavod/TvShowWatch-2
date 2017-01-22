@@ -41,6 +41,23 @@
 		"delete_after": {
 			"rightLabel": "Delete files immediatly after transfer?",
 			"order":8
+		},
+		"time_restriction": {
+			"order":9,
+			"rightLabel": "Restrict transfer on a period of each day"
+		},
+		"time_restriction_conf": {
+			"order":10,
+			"fields": {
+				"start": {
+					"dateFormat": "HH:mm:ss",
+					"placeholder": "Format: HH:mm:ss"
+				},
+				"end": {
+					"dateFormat": "HH:mm:ss",
+					"placeholder": "Format: HH:mm:ss"
+				}
+			}
 		}
 	},
 	"definitions":{

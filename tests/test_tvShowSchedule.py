@@ -22,8 +22,11 @@ import Transferer
 import ActivityLog
 import shutil
 import wwwoman
+import mock_dt
 
 httpretty.HTTPretty.allow_net_connect = False
+target0930 = datetime.datetime(2009, 1, 8, 9, 30)
+target1230 = datetime.datetime(2009, 1, 8, 12, 30)
 
 T411_URL = (item for item in torrentProvider.TRACKER_CONF if item["id"] == "t411").next()['url']
 
@@ -605,107 +608,113 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 
 	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_30_to_10(self): # Download in progress to Added
-		files = ['file1.txt','file2.tgz','foo/file4.txt']
+		with mock_dt.mock_datetime_now(target1230, datetime):
+			files = ['file1.txt','file2.tgz','foo/file4.txt']
 
-		httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
-                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
-                            ])
-		tmpfile = unicode(tempfile.mkstemp('.json')[1])
-		os.remove(tmpfile)
-		activitylog = ActivityLog.ActivityLog(tmpfile,verbosity=DEBUG_ACTIVITYLOG)
+			httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+	                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+	                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+	                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+	                            ])
+			tmpfile = unicode(tempfile.mkstemp('.json')[1])
+			os.remove(tmpfile)
+			activitylog = ActivityLog.ActivityLog(tmpfile,verbosity=DEBUG_ACTIVITYLOG)
 
-		os.makedirs(self.tmpdir1+"/foo")
-		for myFile in files:
-			with open(self.tmpdir1+"/"+myFile, 'a'):
-				os.utime(self.tmpdir1+"/"+myFile, None)
-		self.downloader.loadConfig(self.configFileTransmission)
-		self.transferer.addData(self.configFileTvShowSchedule)
-		self.transferer.setValue(self.transfererData)
-		self.transferer.data['pathPattern'] = "{seriesname}/season {seasonnumber}/episode {episodenumber}"
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
-		tvShow.set(
-			season=1,
-			episode=1,
-			nextUpdate=datetime.datetime.now(),
-			info={'seriesname':'TvShow 2'},
-			status=30,
-			downloader_id=3
-		)
-		for myFile in files:
-			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
-			self.assertFalse(os.path.isfile(self.tmpdir2+"/"+myFile))
-		tvShow.update(
-			downloader=self.downloader,
-			transferer=self.transferer,
-			searcher=self.ts,
-			activitylog=activitylog,
-			force=True
-		)
-		for myFile in files:
-			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
-			os.remove(self.tmpdir1+"/"+myFile)
-			self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/season 1/episode 1/"+myFile))
-		self.assertEqual(tvShow['status'],10)
+			os.makedirs(self.tmpdir1+"/foo")
+			for myFile in files:
+				with open(self.tmpdir1+"/"+myFile, 'a'):
+					os.utime(self.tmpdir1+"/"+myFile, None)
+			self.downloader.loadConfig(self.configFileTransmission)
+			self.transferer.addData(self.configFileTvShowSchedule)
+			self.transferer.setValue(self.transfererData)
+			self.transferer.data['pathPattern'] = "{seriesname}/season {seasonnumber}/episode {episodenumber}"
+			self.transferer.data['time_restriction'] = True
+			self.transferer.data['time_restriction_conf'] = {
+				"start":"10:00:00",
+				"end":"15:00:00"
+			}
+			tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
+			tvShow.set(
+				season=1,
+				episode=1,
+				nextUpdate=datetime.datetime.now(),
+				info={'seriesname':'TvShow 2'},
+				status=30,
+				downloader_id=3
+			)
+			for myFile in files:
+				self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
+				self.assertFalse(os.path.isfile(self.tmpdir2+"/"+myFile))
+			tvShow.update(
+				downloader=self.downloader,
+				transferer=self.transferer,
+				searcher=self.ts,
+				activitylog=activitylog,
+				force=True
+			)
+			for myFile in files:
+				self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
+				os.remove(self.tmpdir1+"/"+myFile)
+				self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/season 1/episode 1/"+myFile))
+			self.assertEqual(tvShow['status'],10)
 
-		log = activitylog.get_entry(seriesid=321)
-		del(log[0]['datetime'])
-		del(log[1]['datetime'])
-		del(log[2]['datetime'])
-		del(log[3]['datetime'])
-		self.assertEqual(
-			log,
-			[{
-				'seriesid': 321,
-				'episode': 1,
-				'season': 1,
-				'oldStatus': 30,
-				'newStatus': 35,
-				'type': u'info',
-				'id': 1
-			},{
-				'seriesid': 321,
-				'episode': 1,
-				'season': 1,
-				'oldStatus': 35,
-				'newStatus': 39,
-				'type': u'info',
-				'id': 2
-			},{
-				'seriesid': 321,
-				'episode': 2,
-				'season': 1,
-				'oldStatus': 39,
-				'newStatus': 0,
-				'type': u'info',
-				'id': 3
-			},{
-				'seriesid': 321,
-				'episode': 2,
-				'season': 1,
-				'oldStatus': 0,
-				'newStatus': 10,
-				'type': u'info',
-				'id': 4
-			}]
-		)
+			log = activitylog.get_entry(seriesid=321)
+			del(log[0]['datetime'])
+			del(log[1]['datetime'])
+			del(log[2]['datetime'])
+			del(log[3]['datetime'])
+			self.assertEqual(
+				log,
+				[{
+					'seriesid': 321,
+					'episode': 1,
+					'season': 1,
+					'oldStatus': 30,
+					'newStatus': 35,
+					'type': u'info',
+					'id': 1
+				},{
+					'seriesid': 321,
+					'episode': 1,
+					'season': 1,
+					'oldStatus': 35,
+					'newStatus': 39,
+					'type': u'info',
+					'id': 2
+				},{
+					'seriesid': 321,
+					'episode': 2,
+					'season': 1,
+					'oldStatus': 39,
+					'newStatus': 0,
+					'type': u'info',
+					'id': 3
+				},{
+					'seriesid': 321,
+					'episode': 2,
+					'season': 1,
+					'oldStatus': 0,
+					'newStatus': 10,
+					'type': u'info',
+					'id': 4
+				}]
+			)
 
-		log = activitylog.get_last_downloads()
-		del(log[0]['datetime'])
-		self.assertEqual(
-			log,
-			[{
-				'seriesid': 321,
-				'episode': 1,
-				'season': 1,
-				'oldStatus': 35,
-				'newStatus': 39,
-				'type': u'info',
-				'id': 2
-			}]
-		)
-		os.remove(tmpfile)
+			log = activitylog.get_last_downloads()
+			del(log[0]['datetime'])
+			self.assertEqual(
+				log,
+				[{
+					'seriesid': 321,
+					'episode': 1,
+					'season': 1,
+					'oldStatus': 35,
+					'newStatus': 39,
+					'type': u'info',
+					'id': 2
+				}]
+			)
+			os.remove(tmpfile)
 
 	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_30_to_10_with_delete_after(self): # Download in progress to Added
@@ -746,6 +755,76 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 			os.remove(self.tmpdir1+"/"+myFile)
 			self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/season 1/"+myFile))
 		self.assertEqual(tvShow['status'],10)
+
+	@wwwoman.register_scenario("tvShowList1.json")
+	def test_update_30_to_35(self): # Download in progress to To be transfered due to outside restricted period
+		with mock_dt.mock_datetime_now(target0930, datetime):
+			files = ['file1.txt','file2.tgz','foo/file4.txt']
+
+			httpretty.register_uri(httpretty.POST, "http://localhost:9091/transmission/rpc",responses=[
+	                               httpretty.Response(body=open('tests/httpretty_transmission_get_session.json','r').read()),
+	                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+	                               httpretty.Response(body=open('tests/httpretty_transmission_torrent_get.json','r').read()),
+	                            ])
+			tmpfile = unicode(tempfile.mkstemp('.json')[1])
+			os.remove(tmpfile)
+			activitylog = ActivityLog.ActivityLog(tmpfile,verbosity=DEBUG_ACTIVITYLOG)
+
+			os.makedirs(self.tmpdir1+"/foo")
+			for myFile in files:
+				with open(self.tmpdir1+"/"+myFile, 'a'):
+					os.utime(self.tmpdir1+"/"+myFile, None)
+			self.downloader.loadConfig(self.configFileTransmission)
+			self.transferer.addData(self.configFileTvShowSchedule)
+			self.transferer.setValue(self.transfererData)
+			self.transferer.data['pathPattern'] = "{seriesname}/season {seasonnumber}/episode {episodenumber}"
+			self.transferer.data['time_restriction'] = True
+			self.transferer.data['time_restriction_conf'] = {
+				"start":"10:00:00",
+				"end":"15:00:00"
+			}
+			tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
+			tvShow.set(
+				season=1,
+				episode=1,
+				nextUpdate=datetime.datetime.now(),
+				info={'seriesname':'TvShow 2'},
+				status=30,
+				downloader_id=3
+			)
+			for myFile in files:
+				self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
+				self.assertFalse(os.path.isfile(self.tmpdir2+"/"+myFile))
+			tvShow.update(
+				downloader=self.downloader,
+				transferer=self.transferer,
+				searcher=self.ts,
+				activitylog=activitylog,
+				force=True
+			)
+			for myFile in files:
+				self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
+				self.assertFalse(os.path.isfile(self.tmpdir2+"/TvShow 2/season 1/episode 1/"+myFile))
+			self.assertEqual(tvShow['status'],35)
+
+			log = activitylog.get_entry(seriesid=321)
+			del(log[0]['datetime'])
+			self.assertEqual(
+				log,
+				[{
+					'seriesid': 321,
+					'episode': 1,
+					'season': 1,
+					'oldStatus': 30,
+					'newStatus': 35,
+					'type': u'info',
+					'id': 1
+				}]
+			)
+
+			log = activitylog.get_last_downloads()
+			self.assertEquals(log,[])
+			os.remove(tmpfile)
 
 	@wwwoman.register_scenario("tvShowList1.json")
 	def test_update_30_to_90(self): # Download in progress to Achieved
