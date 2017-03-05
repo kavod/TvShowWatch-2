@@ -8,7 +8,7 @@ import logging
 import tempfile
 import ftplib
 import shutil
-import storage
+#import storage
 import JSAG3
 
 '''
@@ -56,6 +56,24 @@ def makePath(path,subFolder=None):
 		return "{0}/{1}".format(path,subFolder)
 	else:
 		return path
+
+def FTPObject(endpoint):
+	if endpoint['protocol'] == 'ftp':
+		FTPObj = ftplib.FTP
+	elif endpoint['protocol'] == 'ftps':
+		FTPObj = ftplib.FTP_TLS
+	else:
+		raise Exception("Only ftp or ftps protocols are now supported")
+	ftp = FTPObj()
+	ftp.connect(
+		endpoint['host'],
+		endpoint['port']
+	)
+	ftp.login(
+		endpoint['user'],
+		endpoint['password']
+	)
+	return ftp
 
 class Transferer(JSAG3.JSAG3):
 	def __init__(self,id="transferer",dataFile=None,verbosity=False):
@@ -126,8 +144,8 @@ class Transferer(JSAG3.JSAG3):
 					)
 				)
 
-				source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
-				dest_file = storage.get_storage(self.get_uri("destination",filename=filename,subFolder=dstSubFolder,showPassword=True))
+				#source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
+				#dest_file = storage.get_storage(self.get_uri("destination",filename=filename,subFolder=dstSubFolder,showPassword=True))
 
 				if self.data['source']['protocol'] == 'file' and self.data['destination']['protocol'] == 'file':
 					destination = "{0}/{1}".format(makePath(self.data['destination']['path'],dstSubFolder),filename)
@@ -138,7 +156,15 @@ class Transferer(JSAG3.JSAG3):
 				else:
 					if self.data['source']['protocol'] == 'file':
 						try:
-							dest_file.load_from_filename("{0}/{1}".format(self.data['source']['path'],filename))
+							#dest_file.load_from_filename("{0}/{1}".format(self.data['source']['path'],filename))
+							ftp = FTPObject(self.data['destination'])
+							sourcefile = open("{0}/{1}".format(self.data['source']['path'],filename),'rb')
+							destpath = makePath(self.data['destination']['path'],dstSubFolder)
+							if destpath[0] == '/':
+								destpath = destpath[1:]
+							ftp.cwd(destpath)
+							ftp.storbinary('STOR '+filename,sourcefile)
+							ftp.quit()
 						except IOError as e:
 							self.logger.error(
 								"Connection error to {0}"
@@ -149,16 +175,43 @@ class Transferer(JSAG3.JSAG3):
 						destination = "{0}/{1}".format(makePath(self.data['destination']['path'],dstSubFolder),filename)
 						if not os.path.exists(os.path.dirname(destination)):
 							os.makedirs(os.path.dirname(destination))
-						source_file.save_to_filename(destination)
+						#source_file.save_to_filename(destination)
+						ftp = FTPObject(self.data['source'])
+						destfile = open(destination,'rb')
+						#sourcefilename = "{0}/{1}".format(self.data['source']['path'],filename)
+						ftp.cwd(self.data['source']['path'])
+						ftp.retrbinary('RETR ' + filename, destfile.write, 1024)
+						ftp.quit()
 						self.setPerm(destination)
 					else:
+						sourcefilename = "{0}/{1}".format(self.data['source']['path'],filename)
+						destfilename = "{0}/{1}".format(self.data['destination']['path'],filename)
+
+						destpath = makePath(self.data['destination']['path'],dstSubFolder)
+						if destpath[0] == '/':
+							destpath = destpath[1:]
+
 						tmpfile = unicode(tempfile.mkstemp()[1])
 						os.remove(tmpfile)
-						source_file.save_to_filename(tmpfile)
-						dest_file.load_from_filename(tmpfile)
+						localfile = open(tmpfile,"wb")
+						if not os.path.exists(os.path.dirname(destination)):
+							os.makedirs(os.path.dirname(destination))
+						#source_file.save_to_filename(destination)
+						ftp = FTPObject(self.data['source'])
+						ftp.retrbinary('RETR ' + sourcefilename, localfile.write, 1024)
+						ftp.quit()
+						close(localfile)
+
+						ftp = FTPObject(self.data['destination'])
+						ftp.cwd(destpath)
+						ftp.storbinary('STOR '+filename,tmpfile)
+						ftp.quit()
+
+						#source_file.save_to_filename(tmpfile)
+						#dest_file.load_from_filename(tmpfile)
 						os.remove(tmpfile)
 				if delete_after:
-					source_file.delete()
+					self.delete(filename)
 				return True
 			else:
 				self.logger.debug(
@@ -174,8 +227,15 @@ class Transferer(JSAG3.JSAG3):
 
 	def delete(self,filename):
 		logging.info('[Transferer] Deleting file {0}'.format(self.get_uri("source",filename)))
-		source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
-		source_file.delete()
+		#source_file = storage.get_storage(self.get_uri("source",filename,showPassword=True))
+		#source_file.delete()
+		sourcefilename = "{0}/{1}".format(self.data['source']['path'],filename)
+		if self.data['source']['protocol'] == "file":
+			os.remove(sourcefilename)
+			return
+		ftp = FTPObject(self.data['source'])
+		ftp.delete(sourcefilename)
+		return
 
 	def checkUsable(self):
 		if 'source' not in self.data.keys() or self.data['source'] is None:
