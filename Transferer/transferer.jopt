@@ -75,18 +75,6 @@
 							"text": "Local file"
 						},
 						{
-							"value": "swift",
-							"text" : "OpenStack Swift"
-						},
-						{
-							"value": "cloud",
-							"text" : "Rackspace CloudFiles"
-						},
-						{
-							"value": "s3",
-							"text" : "Amazon S3"
-						},
-						{
 							"value": "ftp",
 							"text" : "FTP"
 						},
