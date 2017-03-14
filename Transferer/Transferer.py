@@ -177,7 +177,7 @@ class Transferer(JSAG3.JSAG3):
 							os.makedirs(os.path.dirname(destination))
 						#source_file.save_to_filename(destination)
 						ftp = FTPObject(self.data['source'])
-						destfile = open(destination,'rb')
+						destfile = open(destination,'wb')
 						#sourcefilename = "{0}/{1}".format(self.data['source']['path'],filename)
 						ftp.cwd(self.data['source']['path'])
 						ftp.retrbinary('RETR ' + filename, destfile.write, 1024)
