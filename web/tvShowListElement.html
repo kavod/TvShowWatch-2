@@ -1,10 +1,11 @@
 <uib-accordion-group is-disabled="tvshow.isDisable === true">
       <uib-accordion-heading>
 			<div class="tvShowTitle">{{ tvshow.info.seriesname }}</div>
-			<div class="tvShowEpisode">S{{tvshow.season | numberFixedLen:2}}E{{tvshow.episode | numberFixedLen:2}}</div>
-			<span uib-popover="{{tvshow.status | statusDescription}}" popover-trigger="mouseenter" popover-placement="bottom-left">
+			<div ng-show="tvshow.season" class="tvShowEpisode">S{{tvshow.season | numberFixedLen:2}}E{{tvshow.episode | numberFixedLen:2}}</div>
+			<div uib-popover="{{tvshow.status | statusDescription}}" popover-trigger="mouseenter" popover-placement="bottom-left" class="tvShowStatus">
         {{tvshow.status | statusLabel}}
-      </span>
+      </div>
+      <div ng-show="tvshow.info.firstaired" ng-class="classDate(tvshow.info.firstaired)" class="tvShowNext">Next: {{ formatDate(tvshow.info.firstaired) | date:'dd/MM/yyyy' }}</div>
       </uib-accordion-heading>
 	<div>
 		<img ng-show="tvshow.info.banner" ng-src="{{tvshow.info.banner ? 'static/banner_'+tvshow.seriesid+'.jpg' : '//:0'}}" class="img-responsive"/>

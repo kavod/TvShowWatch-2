@@ -11,6 +11,26 @@
 
 		this.data = $scope.tvshow;
 
+		$scope.formatDate = function(date){
+					var dateOut = Date.parse(date);
+					return dateOut;
+		};
+
+		$scope.classDate = function(date){
+					var now = new Date();
+					var dateOut = Date.parse(date);
+					var nbDays = Math.abs(dateOut - now)/1000/60/60/24;
+					if (nbDays<7) {
+						return 'dateGreen';
+					} else {
+						if (nbDays>30) {
+							return 'dateRed';
+						} else {
+							return 'dateOrange';
+						}
+					}
+		};
+
 		this.updateEpisode = function(seriesid) {
 			var newvalue = {};
 			newvalue = {tvShowID:parseInt($scope.tvshow.seriesid)};

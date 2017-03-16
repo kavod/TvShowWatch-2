@@ -6,6 +6,18 @@
 	border-color:#78FA89;
 }
 
+.dateRed {
+	color: 'red';
+}
+
+.dateOrange {
+	color: 'orange';
+}
+
+.dateGreen {
+	color: 'green';
+}
+
 .tvShowTitle {
 	display: inline-block;
 	width:250px;
@@ -17,6 +29,11 @@
 }
 
 .tvShowStatus {
+	display: inline-block;
+	width:400px;
+}
+
+.tvShowNext {
 	display: inline-block;
 	width:150px;
 }

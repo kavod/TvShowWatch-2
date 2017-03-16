@@ -845,23 +845,34 @@ class TestTvShowSchedule(LogTestCase.LogTestCase):
 		self.downloader.loadConfig(self.configFileTransmission)
 		self.transferer.addData(self.configFileTvShowSchedule)
 		self.transferer.setValue(self.transfererData)
-		tvShow = tvShowSchedule.tvShowSchedule(seriesid=321,autoComplete=False,verbosity=DEBUG_TVSHOWSCHEDULE)
+		tvShow = tvShowSchedule.tvShowSchedule(
+			seriesid=321,
+			autoComplete=False,
+			verbosity=DEBUG_TVSHOWSCHEDULE
+		)
+		firstaired = datetime.datetime.now() - datetime.timedelta(days=45)
 		tvShow.set(
 			season=1,
 			episode=2,
 			nextUpdate=datetime.datetime.now(),
-			info={'seriesname':'TvShow 2'},
+			info={'seriesname':'TvShow 2','firstaired':firstaired},
 			status=30,
 			downloader_id=3
 		)
 		for myFile in files:
 			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
 			self.assertFalse(os.path.isfile(self.tmpdir2+"/"+myFile))
-		tvShow.update(downloader=self.downloader,transferer=self.transferer,searcher=self.ts,force=True)
+		tvShow.update(
+			downloader=self.downloader,
+			transferer=self.transferer,
+			searcher=self.ts,
+			force=True
+		)
 		for myFile in files:
 			self.assertTrue(os.path.isfile(self.tmpdir1+"/"+myFile))
 			os.remove(self.tmpdir1+"/"+myFile)
 			self.assertTrue(os.path.isfile(self.tmpdir2+"/TvShow 2/season 1/"+myFile))
+		self.assertFalse('firstaired' in tvShow['info'].keys())
 		self.assertEqual(tvShow['status'],90)
 
 	@wwwoman.register_scenario("tvShowList1.json")

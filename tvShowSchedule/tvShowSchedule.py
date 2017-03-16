@@ -217,16 +217,20 @@ class tvShowSchedule(JSAG3.JSAG3):
 						self['info']['overview'] = unicode(info['overview'])
 					else:
 						raise ValueError("info.overview must be a string, not {0}".format(type(info['overview'])))
-				if 'firstaired' in info.keys() and info['firstaired'] is not None:
-					firstaired = info['firstaired']
-					if isinstance(firstaired,basestring):
-						firstaired = dateutil.parser.parse(firstaired)
-					if isinstance(firstaired,datetime.datetime):
-						if firstaired.tzinfo is None or firstaired.tzinfo.utcoffset(firstaired) is None:
-							firstaired = tzlocal.get_localzone().localize(firstaired)
-						self['info']['firstaired'] = firstaired
+				if 'firstaired' in info.keys():
+					if info['firstaired'] is not None:
+						firstaired = info['firstaired']
+						if isinstance(firstaired,basestring):
+							firstaired = dateutil.parser.parse(firstaired)
+						if isinstance(firstaired,datetime.datetime):
+							if firstaired.tzinfo is None or firstaired.tzinfo.utcoffset(firstaired) is None:
+								firstaired = tzlocal.get_localzone().localize(firstaired)
+							self['info']['firstaired'] = firstaired
+						else:
+							raise ValueError("info.firstaired must be a datetime, not {0}".format(type(firstaired)))
 					else:
-						raise ValueError("info.firstaired must be a datetime, not {0}".format(type(firstaired)))
+						if 'firstaired' in self['info'].keys():
+							del(self['info']['firstaired'])
 				if 'infoUpdate' in info.keys() and info['infoUpdate'] is not None:
 					infoUpdate = info['infoUpdate']
 					if isinstance(infoUpdate,basestring):
@@ -476,8 +480,9 @@ class tvShowSchedule(JSAG3.JSAG3):
 			raise Exception("No ActivityLog provided")
 
 	def _setAchieved(self):
+		info = {"firstaired":None}
 		nextUpdate = datetime.datetime.now(tzlocal.get_localzone()) + datetime.timedelta(days=30)
-		self.set(season = 0,episode = 0,status = 90,nextUpdate=nextUpdate)
+		self.set(season = 0,episode = 0,info = info, status = 90,nextUpdate=nextUpdate)
 
 	def _setNotYetAired(self,episode):
 		nextUpdate = min(tzlocal.get_localzone().localize(datetime.datetime.strptime(episode['firstaired'],'%Y-%m-%d')),datetime.datetime.now(tzlocal.get_localzone())+datetime.timedelta(days=7))
