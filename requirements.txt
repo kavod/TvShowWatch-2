@@ -9,3 +9,5 @@ httpretty>=0.8.14
 mock>=1.0.1
 cherrypy>=3.7.0
 wwwoman>=0.2
+python-dateutil>=2.6.0
+
